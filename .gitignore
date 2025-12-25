@@ -361,3 +361,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/CT_Saved.mhd
+/CT_Saved.mhd.vvi
+/CT_Saved.raw
+/CT_Saved1.mhd
+/CT_Saved1.mhd.vvi
+/CT_Saved1.raw
+/(null).-85899346
+/output.mha
+/output.mha.vvi
