@@ -138,6 +138,18 @@ vtkSmartPointer<vtkImageData> CTViewer::getVTKImage()
     //vtkSmartPointer<vtkImageData> vtkImage = connector->GetOutput();
     // 1. 获取 ITK 方向矩阵（LPS）
     InputImageType::DirectionType itkDir = image->GetDirection();
+    // 保存方向矩阵
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            direction[i * 3 + j] = itkDir[i][j];
+        }
+    }
+    InputImageType::PointType itkOrigin = image->GetOrigin();
+    origin[0] = itkOrigin[0];
+    origin[1] = itkOrigin[1];
+    origin[2] = itkOrigin[2];
 
     // 2. 构造 RAS 方向矩阵
     vtkNew<vtkMatrix4x4> rasMatrix;

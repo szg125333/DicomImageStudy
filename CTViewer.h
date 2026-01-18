@@ -18,10 +18,19 @@ public:
     explicit CTViewer(const std::string& dicomFolder);
     vtkSmartPointer<vtkImageData> getVTKImage();
     std::vector<std::string> GetAllCTFilePaths(const std::string& dicomFolder);
+    void getDirection(double out[9]) const {
+        memcpy(out, direction, sizeof(double) * 9);
+    }
+
+    void getOrigin(double out[3]) const {
+        memcpy(out, origin, sizeof(double) * 3);
+    }
 
 private:
     std::string dicomFolder="";
     itk::ImageToVTKImageFilter<InputImageType>::Pointer connector;
+    double direction[9];   // 3×3 方向矩阵
+    double origin[3];      // DICOM 原点 (0020,0032)
 
 };
 

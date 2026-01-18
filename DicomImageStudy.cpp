@@ -46,36 +46,34 @@ void DicomImageStudy::loadDicom(const std::string& folder)
     vtkSmartPointer<vtkImageData> vtkImage = ct.getVTKImage();  // 从 CTViewer 获取 VTK 图像
 
     vtkSmartPointer<vtkMetaImageWriter> writer = vtkSmartPointer<vtkMetaImageWriter>::New();
-    vtkImage->SetOrigin(0, 0, 0);
+    // 这一句如果你要“物理坐标 = DICOM 坐标”，其实不建议写死为 0,0,0
+    // vtkImage->SetOrigin(0, 0, 0);
 
     writer->SetInputData(vtkImage);
     writer->SetFileName("CT_Saved.mhd"); // .raw 文件会自动生成在同目录
-    // 二进制模式保存（体积更小）
-    writer->SetCompression(false); // 若需要压缩可设为 true
+    writer->SetCompression(false);
     writer->Write();
 
     if (vtkImage)
     {
-        //viewer->SetInputData(vtkImage);
-        if (!vtkImage->GetPointData() || !vtkImage->GetPointData()->GetScalars()) { 
-            qDebug() << "Error: vtkImage has no scalar data!"; return;
+        if (!vtkImage->GetPointData() || !vtkImage->GetPointData()->GetScalars()) {
+            qDebug() << "Error: vtkImage has no scalar data!";
+            return;
         }
         double range[2];
         vtkImage->GetScalarRange(range);
-        qDebug()<<"range:" << range[0]<<" "<<range[1];
-        //viewer->SetColorWindow(range[1] - range[0]);
-        //viewer->SetColorLevel((range[1] + range[0]) / 2.0);
+        qDebug() << "range:" << range[0] << " " << range[1];
 
+        // 左上角文字
         vtkSmartPointer<vtkTextActor> textActor = vtkSmartPointer<vtkTextActor>::New();
         textActor->SetInput("X: -, Y: -, Value: -");
         textActor->GetTextProperty()->SetFontSize(20);
         textActor->GetTextProperty()->SetColor(1.0, 1.0, 0.0); // 黄色
         textActor->SetDisplayPosition(10, 10); // 左上角
-
         viewer->GetRenderer()->AddActor2D(textActor);
 
-
-        vtkSmartPointer<vtkImageMapToWindowLevelColors> wl = vtkSmartPointer<vtkImageMapToWindowLevelColors>::New();
+        vtkSmartPointer<vtkImageMapToWindowLevelColors> wl =
+            vtkSmartPointer<vtkImageMapToWindowLevelColors>::New();
         wl->SetInputData(vtkImage);
         wl->SetWindow(2000);
         wl->SetLevel(500);
@@ -86,18 +84,28 @@ void DicomImageStudy::loadDicom(const std::string& folder)
         int midSlice = (viewer->GetSliceMin() + viewer->GetSliceMax()) / 2;
         viewer->SetSlice(midSlice);
 
-        // 设置交互样式，支持滚轮切片、右键调窗宽窗位
+        // 自定义交互样式
         vtkSmartPointer<MyInteractorStyle> style = vtkSmartPointer<MyInteractorStyle>::New();
         style->SetImageViewer(viewer);
         style->SetTextActor(textActor);
+
         vtkImageActor* actor = viewer->GetImageActor();
         style->SetImageActor(actor);
+        double direction[9];
+        double origin[3];
+
+        ct.getDirection(direction);
+        ct.getOrigin(origin);
+
+        style->SetDirection(direction);
+        style->SetOrigin(origin);
+
 
         viewer->GetRenderWindow()->GetInteractor()->SetInteractorStyle(style);
 
         qDebug() << "SliceMin:" << viewer->GetSliceMin()
             << "SliceMax:" << viewer->GetSliceMax();
-        double* origin = vtkImage->GetOrigin();
+        //double* origin = vtkImage->GetOrigin();
         double* spacing = vtkImage->GetSpacing();
         qDebug() << "Origin:" << origin[0] << origin[1] << origin[2];
         qDebug() << "Spacing:" << spacing[0] << spacing[1] << spacing[2];
