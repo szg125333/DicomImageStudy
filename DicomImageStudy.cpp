@@ -45,14 +45,14 @@ void DicomImageStudy::loadDicom(const std::string& folder)
     CTViewer ct(folder);
     vtkSmartPointer<vtkImageData> vtkImage = ct.getVTKImage();  // 从 CTViewer 获取 VTK 图像
 
-    vtkSmartPointer<vtkMetaImageWriter> writer = vtkSmartPointer<vtkMetaImageWriter>::New();
-    // 这一句如果你要“物理坐标 = DICOM 坐标”，其实不建议写死为 0,0,0
-    // vtkImage->SetOrigin(0, 0, 0);
+    //vtkSmartPointer<vtkMetaImageWriter> writer = vtkSmartPointer<vtkMetaImageWriter>::New();
+    //// 这一句如果你要“物理坐标 = DICOM 坐标”，其实不建议写死为 0,0,0
+    //// vtkImage->SetOrigin(0, 0, 0);
 
-    writer->SetInputData(vtkImage);
-    writer->SetFileName("CT_Saved.mhd"); // .raw 文件会自动生成在同目录
-    writer->SetCompression(false);
-    writer->Write();
+    //writer->SetInputData(vtkImage);
+    //writer->SetFileName("CT_Saved.mhd"); // .raw 文件会自动生成在同目录
+    //writer->SetCompression(false);
+    //writer->Write();
 
     if (vtkImage)
     {

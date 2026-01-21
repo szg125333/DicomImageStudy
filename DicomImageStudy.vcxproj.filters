@@ -46,12 +46,18 @@
     <ClCompile Include="MyInteractorStyle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ImageOrientationResampler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CTViewer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MyInteractorStyle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageOrientationResampler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
