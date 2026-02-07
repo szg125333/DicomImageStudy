@@ -11,19 +11,17 @@
 #include "itkNumericSeriesFileNames.h"
 #include "itkMetaDataDictionary.h" 
 #include "itkMetaDataObject.h"
+#include "itkImageToVTKImageFilter.h"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 #include <string>
 
-#include "itkImage.h"
 #include "itkImageFileReader.h"
-#include "itkImageFileWriter.h"
-#include "itkGDCMImageIO.h"
-#include "itkMetaDataDictionary.h"
-#include "itkMetaDataObject.h"
 #include "itkExtractImageFilter.h"
 #include <gdcmUIDGenerator.h>
+#include <QGridLayout.h>
+#include "ThreeViewWidget.h"
 
 
 // 故意制造内存泄漏的函数
@@ -45,19 +43,19 @@ int main(int argc, char* argv[])
     //// 调用泄漏函数
     //LeakSomeMemory();
     //LeakArray();
-    using ImageType = itk::Image<short, 3>; using SliceType = itk::Image<short, 2>;
-    DicomImageStudy window;
-    window.resize(800, 600);
+    //using ImageType = itk::Image<short, 3>; using SliceType = itk::Image<short, 2>;
+    //DicomImageStudy window;
+    //window.resize(800, 600);
 
     //window.loadDicom("C:\\Workspace\\testData\\registrationData\\Head1\\CT");
-    window.loadDicom("C:\\Workspace\\testData\\HFP");
-    window.show();
+    //window.loadDicom("C:\\Workspace\\testData\\HFP");
+    //window.show();
 
-    //ImageOrientationResampler resampler;
+    ImageOrientationResampler resampler;
     ////std::vector<std::string> dicomFiles= resampler.loadDicomSeries("C:\\Workspace\\testData\\registrationData\\Head1\\CBCT");
-    //std::vector<std::string> dicomFiles= resampler.loadDicomSeries("C:\\Workspace\\testData\\HFP");
-    //dicomFiles= resampler.SortDicomFiles(dicomFiles);
-    //auto cbctImage = resampler.ReadDicomSeries(dicomFiles);    // 读取 CBCT 序列
+    std::vector<std::string> dicomFiles= resampler.loadDicomSeries("C:\\Workspace\\testData\\HFP");
+    dicomFiles= resampler.SortDicomFiles(dicomFiles);
+    auto cbctImage = resampler.ReadDicomSeries(dicomFiles);    // 读取 CBCT 序列
     //itk::MetaDataDictionary baseDict = cbctImage->GetMetaDataDictionary();
     //// 从原始图像获取字典
     //// 修改体位相关标签
@@ -86,6 +84,18 @@ int main(int argc, char* argv[])
     //std::vector<std::string> outputDicomFiles = resampler.GenerateOutputFileNames(dicomFiles, "C:\\Workspace\\testData\\PositionTest\\HFP");
     ////resampler.WriteSlicesUsingNames(cbctHfsImage, outputDicomFiles);
     //resampler.WriteSlicesUsingNames(cbctHfsImage, outputDicomFiles, baseDict);
+
+
+
+    using ITKToVTKFilterType = itk::ImageToVTKImageFilter<itk::Image<short, 3>>;
+    auto itkToVtk = ITKToVTKFilterType::New();
+    itkToVtk->SetInput(cbctImage);
+    itkToVtk->Update();
+
+    ThreeViewWidget w; 
+    w.SetImageData(itkToVtk->GetOutput());
+    w.resize(1200, 400);
+    w.show();
 
     return app.exec();
 }
