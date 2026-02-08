@@ -2,6 +2,7 @@
 #include <QObject>
 #include <array>
 #include <memory>
+#include "IViewController.h"
 #include "InteractionMode.h"
 #include "IViewRenderer.h"
 #include "IInteractionStrategy.h"
@@ -12,7 +13,7 @@ class vtkActor2D;
 class vtkActor;
 class vtkLineSource;
 
-class ThreeViewController : public QObject {
+class ThreeViewController : public QObject, public IViewController {
     Q_OBJECT
 public:
     enum ViewType { Axial = 0, Sagittal = 1, Coronal = 2 };
@@ -27,18 +28,18 @@ public:
     void SetInteractionMode(InteractionMode mode);
     InteractionMode GetInteractionMode() const { return m_mode; }
     
-    void ChangeSlice(int viewIndex, int delta);
+    void ChangeSlice(int viewIndex, int delta)override;
     IViewRenderer* GetRenderer(int viewIndex) { return m_renderers[viewIndex]; }
-    void LocatePoint(int viewIndex, int* pos);
+    void LocatePoint(int viewIndex, int* pos)override;
     void syncCameras();
 
     // 更新交叉点到所有视图 
     void UpdateCrosshairInAllViews();
-    void SetWindowLevel(double ww, double wl);
+    void SetWindowLevel(double ww, double wl)override;
     void SetWindowWidth(double ww) { m_windowWidth = ww; } 
     void SetWindowLevel(double wl) { m_windowLevel = wl; } 
-    double GetWindowWidth() const { return m_windowWidth; } 
-    double GetWindowLevel() const { return m_windowLevel; }
+    double GetWindowWidth() const override { return m_windowWidth; }
+    double GetWindowLevel() const override { return m_windowLevel; }
 signals:
     void sliceChanged(int viewIndex, int slice);
 

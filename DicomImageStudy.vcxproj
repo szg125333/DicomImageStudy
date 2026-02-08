@@ -132,9 +132,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CTViewer.h" />
+    <ClInclude Include="IInteractionContext.h" />
     <ClInclude Include="IInteractionStrategy.h" />
     <ClInclude Include="ImageOrientationResampler.h" />
     <ClInclude Include="InteractionMode.h" />
+    <ClInclude Include="IViewController.h" />
     <ClInclude Include="IViewRenderer.h" />
     <ClInclude Include="MyInteractorStyle.h" />
     <ClInclude Include="NormalStrategy.h" />

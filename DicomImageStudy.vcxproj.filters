@@ -99,6 +99,12 @@
     <ClInclude Include="WindowLevelStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IInteractionContext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IViewController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="ThreeViewWidget.h">

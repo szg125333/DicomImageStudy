@@ -2,16 +2,16 @@
 #include "IInteractionStrategy.h"
 #include <QDebug>
 
-class ThreeViewController;
+#include "IViewController.h" 
 
 class NormalStrategy : public IInteractionStrategy {
 public:
-    NormalStrategy(ThreeViewController* ctrl) : m_ctrl(ctrl) {}
+    NormalStrategy(IViewController* ctrl) : m_ctrl(ctrl) {}
 
     void HandleEvent(EventType type, int idx, void* data) override;
 
 private:
-    ThreeViewController* m_ctrl;
+    IViewController* m_ctrl;  // ← 指向抽象接口
 
     // 用于窗宽窗位调整
     int m_lastPos[2] = { 0,0 };

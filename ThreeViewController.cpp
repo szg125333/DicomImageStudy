@@ -223,16 +223,6 @@ void ThreeViewController::syncFrom(ViewType srcView, int srcSlice) {
     else if (m_crossPoint[2] > m_maxSlice[Axial]) {
         m_crossPoint[2] = m_maxSlice[Axial];
     }
-
-    //// --- 更新所有视图到交叉点 ---
-    //updateSliceInternal(Axial, m_crossPoint[2]);
-    //emit sliceChanged(Axial, m_crossPoint[2]);
-
-    //updateSliceInternal(Sagittal, m_crossPoint[0]);
-    //emit sliceChanged(Sagittal, m_crossPoint[0]);
-
-    //updateSliceInternal(Coronal, m_crossPoint[1]);
-    //emit sliceChanged(Coronal, m_crossPoint[1]);
 }
 
 void ThreeViewController::ChangeSlice(int viewIndex, int delta) {
