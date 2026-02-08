@@ -103,10 +103,6 @@ void ThreeViewWidget::setupRenderersAndController()
         this, [this](int viewIndex, int slice) {
             emit sliceChanged(viewIndex, slice);
         });
-
-    // 如果你有 UI 控件（滑块、标签等），在这里连接 controller->sliceChanged 更新它们
-    // 例如：
-    // connect(m_controller, &ThreeViewController::sliceChanged, this, &ThreeViewWidget::onSomeUiUpdate);
 }
 
 void ThreeViewWidget::SetImageData(vtkImageData* image)

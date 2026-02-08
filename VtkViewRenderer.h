@@ -26,16 +26,20 @@ public:
     void Render() override;
 
     // 统一注册接口
-    void OnEvent(EventType type, std::function<void()> cb);
+    void OnEvent(EventType type, std::function<void(void*)> cb);
+    
+    vtkSmartPointer<vtkImageViewer2> GetViewer() override { return m_viewer; }
+    vtkSmartPointer<vtkRenderer> GetOverlayRenderer() { return m_overlayRenderer; }
 
 private:
     QPointer<QVTKOpenGLNativeWidget> m_widget;
     vtkSmartPointer<vtkImageViewer2> m_viewer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
+    vtkSmartPointer<vtkRenderer>  m_overlayRenderer;
 
-    std::unordered_map<EventType, std::function<void()>> m_callbacks;
+    std::unordered_map<EventType, std::function<void(void*)>> m_callbacks;
     vtkSmartPointer<vtkCallbackCommand> m_vtkCmd;
     static void VtkGenericCallback(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata);
 
-    InteractionMode mode = InteractionMode::Normal;
+    bool m_dragging = false; // 拖动状态标志
 };

@@ -1,17 +1,19 @@
 #pragma once
 #include <functional>
-
-class vtkImageData;
+#include <vtkSmartPointer.h> 
+#include <vtkImageViewer2.h>
 
 enum class SliceOrientation { XY = 0, YZ = 1, XZ = 2 };
 
 enum class EventType {
     WheelForward,
     WheelBackward,
-    LeftClick,
+    LeftPress,
+    LeftMove,
+    LeftRelease,
     RightClick,
-    // 可以继续扩展更多事件
 };
+
 
 class IViewRenderer {
 public:
@@ -21,5 +23,7 @@ public:
     virtual void SetSlice(int slice) = 0;
     virtual int GetSlice() const = 0;
     virtual void Render() = 0;
-    virtual void OnEvent(EventType type, std::function<void()> cb) = 0;
+    virtual void OnEvent(EventType type, std::function<void(void*)> cb) = 0;
+
+    virtual vtkSmartPointer<vtkImageViewer2> GetViewer() = 0;
 };

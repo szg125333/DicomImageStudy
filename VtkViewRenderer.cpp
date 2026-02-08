@@ -6,6 +6,8 @@
 #include <vtkInteractorStyleImage.h>
 #include <vtkCallbackCommand.h>
 #include <vtkImageData.h>
+#include <vtkRenderer.h>
+#include <QDebug>
 
 VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
     : m_widget(widget)
@@ -22,18 +24,29 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
         }
     }
 
-    // 一个统一的 callback
     m_vtkCmd = vtkSmartPointer<vtkCallbackCommand>::New();
     m_vtkCmd->SetCallback(VtkGenericCallback);
     m_vtkCmd->SetClientData(this);
 
     if (m_widget && m_widget->renderWindow()->GetInteractor()) {
         auto interactor = m_widget->renderWindow()->GetInteractor();
-        interactor->AddObserver(vtkCommand::MouseWheelForwardEvent, m_vtkCmd);
-        interactor->AddObserver(vtkCommand::MouseWheelBackwardEvent, m_vtkCmd);
-        interactor->AddObserver(vtkCommand::LeftButtonPressEvent, m_vtkCmd);
-        interactor->AddObserver(vtkCommand::RightButtonPressEvent, m_vtkCmd);
+        interactor->AddObserver(vtkCommand::MouseWheelForwardEvent, m_vtkCmd, 1.0f);
+        interactor->AddObserver(vtkCommand::MouseWheelBackwardEvent, m_vtkCmd, 1.0f);
+        interactor->AddObserver(vtkCommand::LeftButtonPressEvent, m_vtkCmd, 1.0f);
+        interactor->AddObserver(vtkCommand::MouseMoveEvent, m_vtkCmd, 1.0f);
+        interactor->AddObserver(vtkCommand::LeftButtonReleaseEvent, m_vtkCmd, 1.0f);
+        interactor->AddObserver(vtkCommand::RightButtonPressEvent, m_vtkCmd, 1.0f);
     }
+
+    m_renderWindow->SetNumberOfLayers(2);
+
+    m_overlayRenderer = vtkSmartPointer<vtkRenderer>::New();
+    m_overlayRenderer->SetLayer(1);
+    m_overlayRenderer->InteractiveOff();
+    m_renderWindow->AddRenderer(m_overlayRenderer);
+    m_overlayRenderer->SetActiveCamera(m_viewer->GetRenderer()->GetActiveCamera());
+    m_overlayRenderer->ResetCameraClippingRange();
+
 }
 
 VtkViewRenderer::~VtkViewRenderer() {
@@ -42,8 +55,13 @@ VtkViewRenderer::~VtkViewRenderer() {
         interactor->RemoveObservers(vtkCommand::MouseWheelForwardEvent);
         interactor->RemoveObservers(vtkCommand::MouseWheelBackwardEvent);
         interactor->RemoveObservers(vtkCommand::LeftButtonPressEvent);
+        interactor->RemoveObservers(vtkCommand::MouseMoveEvent);
+        interactor->RemoveObservers(vtkCommand::LeftButtonReleaseEvent);
         interactor->RemoveObservers(vtkCommand::RightButtonPressEvent);
     }
+
+    m_viewer->GetRenderer()->RemoveAllViewProps();
+    m_viewer->GetRenderWindow()->Finalize();
 }
 
 void VtkViewRenderer::SetInputData(vtkImageData* img) { m_viewer->SetInputData(img); }
@@ -56,25 +74,59 @@ void VtkViewRenderer::SetSlice(int slice) { m_viewer->SetSlice(slice); }
 int VtkViewRenderer::GetSlice() const { return m_viewer->GetSlice(); }
 void VtkViewRenderer::Render() { m_viewer->Render(); }
 
-void VtkViewRenderer::OnEvent(EventType type, std::function<void()> cb) {
+void VtkViewRenderer::OnEvent(EventType type, std::function<void(void*)> cb) {
     m_callbacks[type] = std::move(cb);
 }
 
-void VtkViewRenderer::VtkGenericCallback(vtkObject*, unsigned long eid, void* clientdata, void*) {
+void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata) {
     auto self = static_cast<VtkViewRenderer*>(clientdata);
     if (!self) return;
 
+    auto interactor = static_cast<vtkRenderWindowInteractor*>(caller);
+    int pos[2];
+    interactor->GetEventPosition(pos);
+
     EventType type;
     switch (eid) {
-    case vtkCommand::MouseWheelForwardEvent: type = EventType::WheelForward; break;
-    case vtkCommand::MouseWheelBackwardEvent: type = EventType::WheelBackward; break;
-    case vtkCommand::LeftButtonPressEvent: type = EventType::LeftClick; break;
-    case vtkCommand::RightButtonPressEvent: type = EventType::RightClick; break;
-    default: return;
+    case vtkCommand::MouseWheelForwardEvent:
+        type = EventType::WheelForward;
+        break;
+    case vtkCommand::MouseWheelBackwardEvent:
+        type = EventType::WheelBackward;
+        break;
+    case vtkCommand::LeftButtonPressEvent:
+        type = EventType::LeftPress;
+        self->m_dragging = true;
+        break;
+    case vtkCommand::MouseMoveEvent:
+        if (self->m_dragging) {
+            type = EventType::LeftMove;
+        }
+        else {
+            return;
+        }
+        break;
+    case vtkCommand::LeftButtonReleaseEvent:
+        type = EventType::LeftRelease;
+        self->m_dragging = false;
+        break;
+    case vtkCommand::RightButtonPressEvent:
+        type = EventType::RightClick;
+        break;
+    default:
+        return;
     }
 
     auto it = self->m_callbacks.find(type);
     if (it != self->m_callbacks.end() && it->second) {
-        it->second();
+        // 注意：pos是局部数组，最好传递一个拷贝
+        auto posCopy = std::make_shared<std::array<int, 2>>(std::array<int, 2>{pos[0], pos[1]});
+        it->second(posCopy.get());
+
+        vtkCallbackCommand* cb = static_cast<vtkCallbackCommand*>(self->m_vtkCmd);
+        cb->SetAbortFlag(1);
     }
 }
+
+
+

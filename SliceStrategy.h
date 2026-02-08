@@ -5,7 +5,7 @@
 class SliceStrategy : public IInteractionStrategy {
 public:
     SliceStrategy(ThreeViewController* ctrl) : m_ctrl(ctrl) {}
-    void HandleEvent(EventType type, int idx) override {
+    void HandleEvent(EventType type, int idx, void* data) override {
         if (type == EventType::WheelForward) {
             m_ctrl->RequestSetSlice(static_cast<ThreeViewController::ViewType>(idx),
                 m_ctrl->GetSlice(static_cast<ThreeViewController::ViewType>(idx)) + 1);

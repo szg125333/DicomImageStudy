@@ -7,5 +7,5 @@ class ThreeViewController;
 class IInteractionStrategy {
 public:
     virtual ~IInteractionStrategy() = default;
-    virtual void HandleEvent(EventType type, int viewIndex) = 0;
+    virtual void HandleEvent(EventType type, int viewIndex,void* data) = 0;
 };

@@ -116,8 +116,10 @@
   <ItemGroup>
     <ClCompile Include="ImageOrientationResampler.cpp" />
     <ClCompile Include="MyInteractorStyle.cpp" />
+    <ClCompile Include="NormalStrategy.cpp" />
     <ClCompile Include="ThreeViewController.cpp" />
     <ClCompile Include="VtkViewRenderer.cpp" />
+    <ClCompile Include="WindowLevelStrategy.cpp" />
     <QtRcc Include="DicomImageStudy.qrc" />
     <QtUic Include="DicomImageStudy.ui" />
     <QtMoc Include="DicomImageStudy.h" />
@@ -135,8 +137,10 @@
     <ClInclude Include="InteractionMode.h" />
     <ClInclude Include="IViewRenderer.h" />
     <ClInclude Include="MyInteractorStyle.h" />
+    <ClInclude Include="NormalStrategy.h" />
     <ClInclude Include="SliceStrategy.h" />
     <ClInclude Include="VtkViewRenderer.h" />
+    <ClInclude Include="WindowLevelStrategy.h" />
     <ClInclude Include="ZoomStrategy.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

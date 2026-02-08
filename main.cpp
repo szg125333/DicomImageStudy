@@ -52,8 +52,8 @@ int main(int argc, char* argv[])
     //window.show();
 
     ImageOrientationResampler resampler;
-    ////std::vector<std::string> dicomFiles= resampler.loadDicomSeries("C:\\Workspace\\testData\\registrationData\\Head1\\CBCT");
-    std::vector<std::string> dicomFiles= resampler.loadDicomSeries("C:\\Workspace\\testData\\HFP");
+    std::vector<std::string> dicomFiles= resampler.loadDicomSeries("C:\\Workspace\\testData\\registrationData\\Head1\\CBCT");
+    //std::vector<std::string> dicomFiles= resampler.loadDicomSeries("C:\\Workspace\\testData\\HFP");
     dicomFiles= resampler.SortDicomFiles(dicomFiles);
     auto cbctImage = resampler.ReadDicomSeries(dicomFiles);    // ¶ÁÈ¡ CBCT ÐòÁÐ
     //itk::MetaDataDictionary baseDict = cbctImage->GetMetaDataDictionary();
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 
     ThreeViewWidget w; 
     w.SetImageData(itkToVtk->GetOutput());
-    w.resize(1200, 400);
+    w.resize(1200, 800);
     w.show();
 
     return app.exec();
