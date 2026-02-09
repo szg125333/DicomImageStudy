@@ -51,3 +51,4 @@ void SimpleWindowLevelManager::Shutdown() {
     m_overlayRenderer = nullptr;
     m_initialized = false;
 }
+

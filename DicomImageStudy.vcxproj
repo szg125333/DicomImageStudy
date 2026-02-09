@@ -118,6 +118,7 @@
     <ClCompile Include="MyInteractorStyle.cpp" />
     <ClCompile Include="NormalStrategy.cpp" />
     <ClCompile Include="SimpleCrosshairManager.cpp" />
+    <ClCompile Include="SimpleOverlayManager.cpp" />
     <ClCompile Include="SimpleWindowLevelManager.cpp" />
     <ClCompile Include="ThreeViewController.cpp" />
     <ClCompile Include="VtkViewRenderer.cpp" />
@@ -139,6 +140,7 @@
     <ClInclude Include="IInteractionStrategy.h" />
     <ClInclude Include="ImageOrientationResampler.h" />
     <ClInclude Include="InteractionMode.h" />
+    <ClInclude Include="IOverlayManager.h" />
     <ClInclude Include="IRenderManager.h" />
     <ClInclude Include="IViewController.h" />
     <ClInclude Include="IViewRenderer.h" />
@@ -146,6 +148,7 @@
     <ClInclude Include="MyInteractorStyle.h" />
     <ClInclude Include="NormalStrategy.h" />
     <ClInclude Include="SimpleCrosshairManager.h" />
+    <ClInclude Include="SimpleOverlayManager.h" />
     <ClInclude Include="SimpleWindowLevelManager.h" />
     <ClInclude Include="SliceStrategy.h" />
     <ClInclude Include="ViewTypes.h" />

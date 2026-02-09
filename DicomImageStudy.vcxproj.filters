@@ -76,6 +76,9 @@
     <ClCompile Include="SimpleWindowLevelManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SimpleOverlayManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CTViewer.h">
@@ -133,6 +136,12 @@
       <Filter>Interface</Filter>
     </ClInclude>
     <ClInclude Include="SimpleWindowLevelManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IOverlayManager.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleOverlayManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
