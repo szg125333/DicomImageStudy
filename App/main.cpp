@@ -10,6 +10,11 @@ int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
 
+    QString exeDir = QCoreApplication::applicationDirPath();
+    QString logPath = exeDir + "/memory_leak_report.txt";
+    std::wstring wlog = logPath.toStdWString();
+    VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, wlog.c_str());
+
     ImageOrientationResampler resampler;
     std::vector<std::string> dicomFiles= resampler.loadDicomSeries("C:\\Workspace\\testData\\registrationData\\Head1\\CBCT");
     dicomFiles= resampler.SortDicomFiles(dicomFiles);

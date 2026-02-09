@@ -24,7 +24,6 @@ void NormalStrategy::HandleEvent(EventType type, int idx, void* data) {
     }
     else if (type == EventType::LeftMove) {
         if (!m_dragging) {
-            qDebug() << "  -> m_dragging is false, ignoring";
             return;
         }
 
