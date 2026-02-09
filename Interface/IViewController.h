@@ -1,6 +1,8 @@
 // IViewController.h
 #pragma once
 
+class IViewRenderer;
+
 class IViewController {
 public:
     virtual ~IViewController() = default;
@@ -10,4 +12,5 @@ public:
     virtual double GetWindowLevel() const = 0;
     virtual void SetWindowLevel(double window, double level) = 0;
     virtual void LocatePoint(int viewIndex, int pos[2]) = 0;
+    virtual IViewRenderer* GetRenderer(int viewIndex) = 0;
 };

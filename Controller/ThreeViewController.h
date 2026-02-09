@@ -61,7 +61,7 @@ public:
     /// @brief 获取指定视图的渲染器
     /// @param viewIndex 视图索引
     /// @return IViewRenderer 指针
-    IViewRenderer* GetRenderer(int viewIndex) { return m_renderers[viewIndex]; }
+    IViewRenderer* GetRenderer(int viewIndex) override { return m_renderers[viewIndex]; }
 
     /// @brief 根据点击位置定位
     /// 

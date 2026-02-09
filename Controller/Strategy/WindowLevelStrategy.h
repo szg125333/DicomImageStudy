@@ -2,16 +2,16 @@
 #include "IInteractionStrategy.h"
 #include <QDebug>
 
-class ThreeViewController;
+class IViewController;
 
 class WindowLevelStrategy : public IInteractionStrategy {
 public:
-    explicit WindowLevelStrategy(ThreeViewController* ctrl);
+    explicit WindowLevelStrategy(IViewController* ctrl);
 
     void HandleEvent(EventType type, int viewIndex, void* data) override;
 
 private:
-    ThreeViewController* m_ctrl;
+    IViewController* m_ctrl;
     int m_lastPos[2] = { 0,0 };
     double m_window = 400;   // ≥ı º¥∞øÌ
     double m_level = 40;    // ≥ı º¥∞Œª

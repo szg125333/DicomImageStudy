@@ -1,5 +1,5 @@
 ﻿#include "Controller/Strategy/NormalStrategy.h"
-#include "Controller/ThreeViewController.h"
+#include "Interface/IViewController.h"
 #include "Interface/IViewRenderer.h"
 #include <cmath>
 #include <QDebug>  // 添加调试

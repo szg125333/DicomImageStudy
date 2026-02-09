@@ -1,5 +1,5 @@
 #include "WindowLevelStrategy.h"
-#include "Controller/ThreeViewController.h"
+#include "Interface/IViewController.h"
 #include "Interface/IViewRenderer.h"
 #include <vtkImageViewer2.h>
 #include <vtkRenderer.h>
@@ -7,7 +7,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkTextProperty.h>
 
-WindowLevelStrategy::WindowLevelStrategy(ThreeViewController* ctrl)
+WindowLevelStrategy::WindowLevelStrategy(IViewController* ctrl)
     : m_ctrl(ctrl) {
 }
 
