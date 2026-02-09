@@ -117,6 +117,8 @@
     <ClCompile Include="ImageOrientationResampler.cpp" />
     <ClCompile Include="MyInteractorStyle.cpp" />
     <ClCompile Include="NormalStrategy.cpp" />
+    <ClCompile Include="SimpleCrosshairManager.cpp" />
+    <ClCompile Include="SimpleWindowLevelManager.cpp" />
     <ClCompile Include="ThreeViewController.cpp" />
     <ClCompile Include="VtkViewRenderer.cpp" />
     <ClCompile Include="WindowLevelStrategy.cpp" />
@@ -132,15 +134,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CTViewer.h" />
+    <ClInclude Include="ICrosshairManager.h" />
     <ClInclude Include="IInteractionContext.h" />
     <ClInclude Include="IInteractionStrategy.h" />
     <ClInclude Include="ImageOrientationResampler.h" />
     <ClInclude Include="InteractionMode.h" />
+    <ClInclude Include="IRenderManager.h" />
     <ClInclude Include="IViewController.h" />
     <ClInclude Include="IViewRenderer.h" />
+    <ClInclude Include="IWindowLevelManager.h" />
     <ClInclude Include="MyInteractorStyle.h" />
     <ClInclude Include="NormalStrategy.h" />
+    <ClInclude Include="SimpleCrosshairManager.h" />
+    <ClInclude Include="SimpleWindowLevelManager.h" />
     <ClInclude Include="SliceStrategy.h" />
+    <ClInclude Include="ViewTypes.h" />
     <ClInclude Include="VtkViewRenderer.h" />
     <ClInclude Include="WindowLevelStrategy.h" />
     <ClInclude Include="ZoomStrategy.h" />

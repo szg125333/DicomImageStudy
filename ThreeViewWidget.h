@@ -5,6 +5,7 @@
 #include <array>
 #include <memory>
 #include <vtkImageData.h>
+#include "ViewTypes.h"
 
 class QVTKOpenGLNativeWidget;
 class VtkViewRenderer;
@@ -22,7 +23,6 @@ public:
     void SetImageData(vtkImageData* image);
 
     // 直接请求设置某视图切片（转发到 controller）
-    enum ViewType { Axial = 0, Sagittal = 1, Coronal = 2 };
     void RequestSetSlice(ViewType view, int slice);
 
 signals:

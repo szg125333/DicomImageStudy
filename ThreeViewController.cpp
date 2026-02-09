@@ -4,6 +4,8 @@
 #include "ZoomStrategy.h"
 #include "VtkViewRenderer.h"
 #include "WindowLevelStrategy.h"
+#include "SimpleCrosshairManager.h"
+#include "SimpleWindowLevelManager.h"
 #include <vtkImageData.h>
 #include <vtkRenderer.h>
 #include <vtkLineSource.h>
@@ -18,6 +20,8 @@
 #include <vtkCellPicker.h>
 #include <vtkCamera.h>
 #include <QDebug>
+#include <QCoreApplication>
+#include <QThread>
 
 ThreeViewController::ThreeViewController(QObject* parent) : QObject(parent) {
     m_renderers.fill(nullptr);
@@ -29,9 +33,80 @@ ThreeViewController::ThreeViewController(QObject* parent) : QObject(parent) {
     SetInteractionMode(InteractionMode::Normal);
 }
 
+static void ShutdownCrosshairsImpl(std::array<std::unique_ptr<ICrosshairManager>, 3>& managers) {
+    for (int i = 0; i < 3; ++i) {
+        if (managers[i]) {
+            // 从 renderer 中移除 actor 等清理工作
+            managers[i]->Shutdown();
+            // 释放对象（unique_ptr 在离开作用域时也会释放，但这里显式 reset 更直观）
+            managers[i].reset();
+        }
+    }
+}
+
+static void ShutdownCrosshairsImpl(std::array<std::unique_ptr<IWindowLevelManager>, 3>& managers) {
+    for (int i = 0; i < 3; ++i) {
+        if (managers[i]) {
+            // 从 renderer 中移除 actor 等清理工作
+            managers[i]->Shutdown();
+            // 释放对象（unique_ptr 在离开作用域时也会释放，但这里显式 reset 更直观）
+            managers[i].reset();
+        }
+    }
+}
+
+ThreeViewController::~ThreeViewController() {
+    // 如果当前线程就是主线程（Qt GUI 线程），直接清理
+    QThread* guiThread = QCoreApplication::instance() ? QCoreApplication::instance()->thread() : nullptr;
+    if (QThread::currentThread() == guiThread) {
+        ShutdownCrosshairsImpl(m_crosshairManagers);
+        ShutdownCrosshairsImpl(m_windowLevelManagers);
+        return;
+    }
+
+    // 否则，调度到主线程同步执行清理，确保在析构返回前完成
+    // 使用 QMetaObject::invokeMethod + BlockingQueuedConnection 保证同步执行
+    bool invoked = QMetaObject::invokeMethod(
+        QCoreApplication::instance(),
+        // functor 支持 Qt5.10+；如果你的 Qt 版本较旧，请改为使用槽函数或信号/槽桥接
+        [this]() {
+            ShutdownCrosshairsImpl(m_crosshairManagers);
+            ShutdownCrosshairsImpl(m_windowLevelManagers);
+        },
+        Qt::BlockingQueuedConnection
+    );
+
+    if (!invoked) {
+        // 如果调度失败（极少见），作为兜底在当前线程尝试清理（谨慎）
+        ShutdownCrosshairsImpl(m_crosshairManagers);
+        ShutdownCrosshairsImpl(m_windowLevelManagers);
+    }
+}
+
 void ThreeViewController::SetRenderers(std::array<IViewRenderer*, 3> renderers) {
     m_renderers = renderers;
     registerEvents(); // 初始注册
+
+    // 初始化 crosshair managers（如果尚未）
+    for (int i = 0; i < 3; ++i) {
+        if (!m_renderers[i]) continue;
+        if (!m_crosshairManagers[i]) {
+            m_crosshairManagers[i] = std::make_unique<SimpleCrosshairManager>();
+            // 使用 overlay renderer（你已有的 GetOverlayRenderer）
+            auto overlayRen = dynamic_cast<VtkViewRenderer*>(m_renderers[i])->GetOverlayRenderer();
+            if (overlayRen) {
+                m_crosshairManagers[i]->Initialize(overlayRen);
+            }
+        }
+
+        if (!m_windowLevelManagers[i]) {
+            m_windowLevelManagers[i] = std::make_unique<SimpleWindowLevelManager>();
+            auto overlayRen = dynamic_cast<VtkViewRenderer*>(m_renderers[i])->GetOverlayRenderer();
+            if (overlayRen) m_windowLevelManagers[i]->Initialize(overlayRen, m_renderers[i]->GetViewer());
+        }
+    }
+
+
 }
 
 void ThreeViewController::SetInteractionMode(InteractionMode mode) {
@@ -109,6 +184,7 @@ void ThreeViewController::SetImageData(vtkImageData* image) {
 
     int dims[3];
     m_image->GetDimensions(dims);
+    double m_crossPoint[3];
 
     // 初始化交叉点到图像中心
     m_crossPoint[0] = dims[0] / 2; // x
@@ -116,9 +192,9 @@ void ThreeViewController::SetImageData(vtkImageData* image) {
     m_crossPoint[2] = dims[2] / 2; // z
 
     // 更新三视图到交叉点
-    updateSliceInternal(Axial, m_crossPoint[2]);
-    updateSliceInternal(Sagittal, m_crossPoint[0]);
-    updateSliceInternal(Coronal, m_crossPoint[1]);
+    updateSliceInternal(ViewType::Axial, m_crossPoint[2]);
+    updateSliceInternal(ViewType::Sagittal, m_crossPoint[0]);
+    updateSliceInternal(ViewType::Coronal, m_crossPoint[1]);
 
     double range[2];
     m_image->GetScalarRange(range); // 获取像素值范围 [min, max]
@@ -143,7 +219,6 @@ void ThreeViewController::SetImageData(vtkImageData* image) {
     }
 }
 
-
 void ThreeViewController::computeSliceRanges() {
     if (!m_image) return;
     int dims[3];
@@ -154,9 +229,10 @@ void ThreeViewController::computeSliceRanges() {
 }
 
 void ThreeViewController::RequestSetSlice(ViewType view, int slice) {
-    if (!m_renderers[view]) return;
-    if (slice < m_minSlice[view]) slice = m_minSlice[view];
-    if (slice > m_maxSlice[view]) slice = m_maxSlice[view];
+    int idx = static_cast<int>(view);
+    if (!m_renderers[idx]) return;
+    if (slice < m_minSlice[idx]) slice = m_minSlice[idx];
+    if (slice > m_maxSlice[idx]) slice = m_maxSlice[idx];
 
     if (m_internalUpdate) {
         updateSliceInternal(view, slice);
@@ -165,64 +241,23 @@ void ThreeViewController::RequestSetSlice(ViewType view, int slice) {
 
     m_internalUpdate = true;
     updateSliceInternal(view, slice);
-    syncFrom(view, slice);
     emit sliceChanged(static_cast<int>(view), slice);
 
     m_internalUpdate = false;
 }
 
 void ThreeViewController::updateSliceInternal(ViewType view, int slice) {
-    if (m_renderers[view]) {
-        m_renderers[view]->SetSlice(slice);
-        m_renderers[view]->Render();
+    int idx = static_cast<int>(view);
+    if (m_renderers[idx]) {
+        m_renderers[idx]->SetSlice(slice);
+        m_renderers[idx]->Render();
     }
 }
 
 int ThreeViewController::GetSlice(ViewType view) const {
-    if (!m_renderers[view]) return 0;
-    return m_renderers[view]->GetSlice();
-}
-
-void ThreeViewController::syncFrom(ViewType srcView, int srcSlice) {
-    if (!m_image) return;
-    int dims[3];
-    m_image->GetDimensions(dims);
-
-    // 根据源视图更新交叉点坐标
-    if (srcView == Axial) {
-        m_crossPoint[2] = srcSlice; // z
-    }
-    else if (srcView == Sagittal) {
-        m_crossPoint[0] = srcSlice; // x
-    }
-    else if (srcView == Coronal) {
-        m_crossPoint[1] = srcSlice; // y
-    }
-
-    // --- 显式边界检查 ---
-    // X (Sagittal)
-    if (m_crossPoint[0] < m_minSlice[Sagittal]) {
-        m_crossPoint[0] = m_minSlice[Sagittal];
-    }
-    else if (m_crossPoint[0] > m_maxSlice[Sagittal]) {
-        m_crossPoint[0] = m_maxSlice[Sagittal];
-    }
-
-    // Y (Coronal)
-    if (m_crossPoint[1] < m_minSlice[Coronal]) {
-        m_crossPoint[1] = m_minSlice[Coronal];
-    }
-    else if (m_crossPoint[1] > m_maxSlice[Coronal]) {
-        m_crossPoint[1] = m_maxSlice[Coronal];
-    }
-
-    // Z (Axial)
-    if (m_crossPoint[2] < m_minSlice[Axial]) {
-        m_crossPoint[2] = m_minSlice[Axial];
-    }
-    else if (m_crossPoint[2] > m_maxSlice[Axial]) {
-        m_crossPoint[2] = m_maxSlice[Axial];
-    }
+    int idx = static_cast<int>(view);
+    if (!m_renderers[idx]) return 0;
+    return m_renderers[idx]->GetSlice();
 }
 
 void ThreeViewController::ChangeSlice(int viewIndex, int delta) {
@@ -231,19 +266,13 @@ void ThreeViewController::ChangeSlice(int viewIndex, int delta) {
     int newSlice = current + delta;
 
     // 边界检查
-    if (newSlice < m_minSlice[view]) newSlice = m_minSlice[view];
-    if (newSlice > m_maxSlice[view]) newSlice = m_maxSlice[view];
-
-    // 更新交叉点坐标
-    if (view == Axial)      m_crossPoint[2] = newSlice; // z
-    else if (view == Sagittal) m_crossPoint[0] = newSlice; // x
-    else if (view == Coronal)  m_crossPoint[1] = newSlice; // y
+    if (newSlice < m_minSlice[static_cast<int>(view)]) newSlice = m_minSlice[static_cast<int>(view)];
+    if (newSlice > m_maxSlice[static_cast<int>(view)]) newSlice = m_maxSlice[static_cast<int>(view)];
 
     // 调用 RequestSetSlice 来更新并同步
     RequestSetSlice(view, newSlice);
 }
 
-// LocatePoint: 从 display -> world -> ijk -> physical(world/mm)，保存到 m_crossPoint
 void ThreeViewController::LocatePoint(int viewIndex, int* pos) {
     auto viewer = m_renderers[viewIndex]->GetViewer();
     if (!viewer || !m_image) return;
@@ -263,34 +292,21 @@ void ThreeViewController::LocatePoint(int viewIndex, int* pos) {
 		return; // 没有拾取到有效位置，直接返回
     }
 
-    // Step 2: 根据当前视图类型，强制修正对应坐标轴，使其严格落在当前 slice 平面上
-    double origin[3], spacing[3];
-    m_image->GetOrigin(origin);
-    m_image->GetSpacing(spacing);
-    int currentSlice = viewer->GetSlice();
-
-    // Step 3: 存储物理坐标（用于十字线渲染）
-    m_crossPoint[0] = picked[0];
-    m_crossPoint[1] = picked[1];
-    m_crossPoint[2] = picked[2];
-
-    qDebug() << "CrossPoint (world/physical):"
-        << m_crossPoint[0] << m_crossPoint[1] << m_crossPoint[2];
-
     // Step 4: 转为 IJK（连续值），用于更新其他视图的 slice
     double ijk[3];
     m_image->TransformPhysicalPointToContinuousIndex(picked, ijk);
 
     // 更新三视图 slice（取整）
-    updateSliceInternal(Axial, static_cast<int>(std::round(ijk[2])));
-    updateSliceInternal(Sagittal, static_cast<int>(std::round(ijk[0])));
-    updateSliceInternal(Coronal, static_cast<int>(std::round(ijk[1])));
+    updateSliceInternal(ViewType::Axial, static_cast<int>(std::round(ijk[2])));
+    updateSliceInternal(ViewType::Sagittal, static_cast<int>(std::round(ijk[0])));
+    updateSliceInternal(ViewType::Coronal, static_cast<int>(std::round(ijk[1])));
 
     // Step 5: 更新十字线
-    UpdateCrosshairInAllViews();
+	std::array<double, 3> worldPoint = { picked[0], picked[1], picked[2] };
+    UpdateCrosshairInAllViews(worldPoint);
 }
 
-void ThreeViewController::UpdateCrosshairInAllViews() {
+void ThreeViewController::UpdateCrosshairInAllViews(std::array<double, 3> worldPoint) {
     if (!m_image) return;
 
     int dims[3];
@@ -305,100 +321,39 @@ void ThreeViewController::UpdateCrosshairInAllViews() {
         worldMax[j] = origin[j] + (dims[j] - 1) * spacing[j];
     }
 
-    for (int i = 0; i < m_renderers.size(); ++i) {
+    //double worldPoint[3] = { picked[0], picked[1], picked[2] };
+
+    for (int i = 0; i < 3; ++i) {
+        if (!m_renderers[i]) continue;
+
+        // 直接交给 manager 计算端点并更新
+        if (m_crosshairManagers[i]) {
+            m_crosshairManagers[i]->UpdateCrosshair(worldPoint,
+                static_cast<ViewType>(i),
+                worldMin,
+                worldMax);
+        }
+
+        // 渲染：建议改为 RequestRender，由 RenderWindowManager 合并；这里保留兼容调用
         auto viewer = m_renderers[i]->GetViewer();
-        if (!viewer) continue;
-        vtkRenderer* ren = viewer->GetRenderer();
-
-        auto overlayRen = dynamic_cast<VtkViewRenderer*>(m_renderers[i])->GetOverlayRenderer();
-
-        if (!m_crossActorsH3D[i]) {
-            m_crossLinesH3D[i] = vtkSmartPointer<vtkLineSource>::New();
-            auto hMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-            hMapper->SetInputConnection(m_crossLinesH3D[i]->GetOutputPort());
-            m_crossActorsH3D[i] = vtkSmartPointer<vtkActor>::New();
-            m_crossActorsH3D[i]->SetMapper(hMapper);
-            m_crossActorsH3D[i]->GetProperty()->SetColor(0, 1, 0);
-            overlayRen->AddActor(m_crossActorsH3D[i]);
-
-            m_crossLinesV3D[i] = vtkSmartPointer<vtkLineSource>::New();
-            auto vMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-            vMapper->SetInputConnection(m_crossLinesV3D[i]->GetOutputPort());
-            m_crossActorsV3D[i] = vtkSmartPointer<vtkActor>::New();
-            m_crossActorsV3D[i]->SetMapper(vMapper);
-            m_crossActorsV3D[i]->GetProperty()->SetColor(0, 1, 0);
-            overlayRen->AddActor(m_crossActorsV3D[i]);
-        }
-
-
-        double hP1[3], hP2[3], vP1[3], vP2[3];
-        if (i == Axial) { // XY
-            double z = m_crossPoint[2];
-            hP1[0] = worldMin[0]; hP1[1] = m_crossPoint[1]; hP1[2] = z;
-            hP2[0] = worldMax[0]; hP2[1] = m_crossPoint[1]; hP2[2] = z;
-            vP1[0] = m_crossPoint[0]; vP1[1] = worldMin[1]; vP1[2] = z;
-            vP2[0] = m_crossPoint[0]; vP2[1] = worldMax[1]; vP2[2] = z;
-        }
-        else if (i == Sagittal) { // YZ
-            double x = m_crossPoint[0];
-            hP1[0] = x; hP1[1] = worldMin[1]; hP1[2] = m_crossPoint[2];
-            hP2[0] = x; hP2[1] = worldMax[1]; hP2[2] = m_crossPoint[2];
-            vP1[0] = x; vP1[1] = m_crossPoint[1]; vP1[2] = worldMin[2];
-            vP2[0] = x; vP2[1] = m_crossPoint[1]; vP2[2] = worldMax[2];
-        }
-        else if (i == Coronal) { // XZ
-            double y = m_crossPoint[1];
-            hP1[0] = worldMin[0]; hP1[1] = y; hP1[2] = m_crossPoint[2];
-            hP2[0] = worldMax[0]; hP2[1] = y; hP2[2] = m_crossPoint[2];
-            vP1[0] = m_crossPoint[0]; vP1[1] = y; vP1[2] = worldMin[2];
-            vP2[0] = m_crossPoint[0]; vP2[1] = y; vP2[2] = worldMax[2];
-        }
-
-        qDebug() << "Horizontal Line P1:" << hP1[0] << hP1[1] << hP1[2];
-        qDebug() << "Horizontal Line P2:" << hP2[0] << hP2[1] << hP2[2];
-        qDebug() << "Vertical Line P1:" << vP1[0] << vP1[1] << vP1[2];
-        qDebug() << "Vertical Line P2:" << vP2[0] << vP2[1] << vP2[2];
-
-        m_crossLinesH3D[i]->SetPoint1(hP1);
-        m_crossLinesH3D[i]->SetPoint2(hP2);
-        m_crossLinesH3D[i]->Modified();
-
-        m_crossLinesV3D[i]->SetPoint1(vP1);
-        m_crossLinesV3D[i]->SetPoint2(vP2);
-        m_crossLinesV3D[i]->Modified();
-
-        viewer->Render();
+        if (viewer) viewer->Render();
     }
 }
-
 
 void ThreeViewController::SetWindowLevel(double ww, double wl) {
     m_windowWidth = ww;
     m_windowLevel = wl;
-
     for (int i = 0; i < 3; ++i) {
-        auto viewer = m_renderers[i]->GetViewer();
-        if (!viewer) continue;
-        viewer->SetColorWindow(ww);
-        viewer->SetColorLevel(wl);
-
-        // 每个视图独立的 TextActor
-        if (!m_textActors[i]) {
-            m_textActors[i] = vtkSmartPointer<vtkTextActor>::New();
-            m_textActors[i]->GetTextProperty()->SetColor(1.0, 1.0, 0.0);
-            m_textActors[i]->SetDisplayPosition(10, 10);
-            auto prop = m_textActors[i]->GetTextProperty();
-            prop->SetFontSize(12);
-            viewer->GetRenderer()->AddActor2D(m_textActors[i]);
+        if (m_windowLevelManagers[i]) {
+            m_windowLevelManagers[i]->SetWindowLevel(ww, wl);
         }
-        m_textActors[i]->SetInput(QString("WW:%1 WL:%2").arg(ww).arg(wl).toStdString().c_str());
-        viewer->Render();
+        // 不直接 Render，建议 RequestRender
+        if (m_renderers[i]) m_renderers[i]->Render();
     }
 }
 
-
 void ThreeViewController::syncCameras() {
-    auto refCam = m_renderers[Axial]->GetViewer()->GetRenderer()->GetActiveCamera();
+    auto refCam = m_renderers[static_cast<int>(ViewType::Axial)]->GetViewer()->GetRenderer()->GetActiveCamera();
     double scale = refCam->GetParallelScale();
 
     for (int i = 0; i < 3; ++i) {

@@ -80,9 +80,9 @@ void ThreeViewWidget::setupRenderersAndController()
     }
 
     // 设置方向
-    m_renderers[Axial]->SetOrientation(SliceOrientation::XY);
-    m_renderers[Sagittal]->SetOrientation(SliceOrientation::YZ);
-    m_renderers[Coronal]->SetOrientation(SliceOrientation::XZ);
+    m_renderers[static_cast<int>(ViewType::Axial)]->SetOrientation(SliceOrientation::XY);
+    m_renderers[static_cast<int>(ViewType::Sagittal)]->SetOrientation(SliceOrientation::YZ);
+    m_renderers[static_cast<int>(ViewType::Coronal)]->SetOrientation(SliceOrientation::XZ);
 
     // 如果外部没有注入 controller，则由 widget 创建并拥有它
     if (!m_controller) {
@@ -92,10 +92,11 @@ void ThreeViewWidget::setupRenderersAndController()
 
     // 将 renderer 指针数组传给 controller
     std::array<IViewRenderer*, 3> arr = {
-        m_renderers[Axial].get(),
-        m_renderers[Sagittal].get(),
-        m_renderers[Coronal].get()
+        m_renderers[static_cast<int>(ViewType::Axial)].get(),
+        m_renderers[static_cast<int>(ViewType::Sagittal)].get(),
+        m_renderers[static_cast<int>(ViewType::Coronal)].get()
     };
+
     m_controller->SetRenderers(arr);
 
     // 转发 controller 的 sliceChanged 信号到 widget 的信号
@@ -114,5 +115,5 @@ void ThreeViewWidget::SetImageData(vtkImageData* image)
 void ThreeViewWidget::RequestSetSlice(ViewType view, int slice)
 {
     if (!m_controller) return;
-    m_controller->RequestSetSlice(static_cast<ThreeViewController::ViewType>(view), slice);
+    m_controller->RequestSetSlice(view, slice);
 }

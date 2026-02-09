@@ -21,6 +21,12 @@
       <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
       <Extensions>ts</Extensions>
     </Filter>
+    <Filter Include="Controller">
+      <UniqueIdentifier>{605328ea-621f-4134-8809-9fda8c03be87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface">
+      <UniqueIdentifier>{f63cd2ee-2212-4952-8ebc-9031ac3d7d0d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="DicomImageStudy.qrc">
@@ -55,13 +61,19 @@
     <ClCompile Include="VtkViewRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ThreeViewController.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="WindowLevelStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NormalStrategy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreeViewController.cpp">
+      <Filter>Controller</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleCrosshairManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleWindowLevelManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -72,19 +84,7 @@
     <ClInclude Include="MyInteractorStyle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ImageOrientationResampler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IViewRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="VtkViewRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="InteractionMode.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IInteractionStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SliceStrategy.h">
@@ -99,10 +99,40 @@
     <ClInclude Include="WindowLevelStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IInteractionContext.h">
+    <ClInclude Include="ICrosshairManager.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleCrosshairManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IInteractionContext.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="IInteractionStrategy.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageOrientationResampler.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="InteractionMode.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="IRenderManager.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
     <ClInclude Include="IViewController.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="IViewRenderer.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="ViewTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IWindowLevelManager.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleWindowLevelManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -111,7 +141,7 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="ThreeViewController.h">
-      <Filter>Header Files</Filter>
+      <Filter>Controller</Filter>
     </QtMoc>
   </ItemGroup>
 </Project>

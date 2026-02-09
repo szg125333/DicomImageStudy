@@ -6,7 +6,9 @@
 #include "InteractionMode.h"
 #include "IViewRenderer.h"
 #include "IInteractionStrategy.h"
-
+#include "ICrosshairManager.h"
+#include "IWindowLevelManager.h"
+#include "ViewTypes.h"
 class vtkImageData;
 class vtkTextActor;
 class vtkActor2D;
@@ -16,8 +18,8 @@ class vtkLineSource;
 class ThreeViewController : public QObject, public IViewController {
     Q_OBJECT
 public:
-    enum ViewType { Axial = 0, Sagittal = 1, Coronal = 2 };
     explicit ThreeViewController(QObject* parent = nullptr);
+    ~ThreeViewController() override; // 确保声明了析构函数
 
     void SetRenderers(std::array<IViewRenderer*, 3> renderers);
     void SetImageData(vtkImageData* image);
@@ -34,7 +36,7 @@ public:
     void syncCameras();
 
     // 更新交叉点到所有视图 
-    void UpdateCrosshairInAllViews();
+    void UpdateCrosshairInAllViews(std::array<double, 3> worldPoint);
     void SetWindowLevel(double ww, double wl)override;
     void SetWindowWidth(double ww) { m_windowWidth = ww; } 
     void SetWindowLevel(double wl) { m_windowLevel = wl; } 
@@ -45,9 +47,7 @@ signals:
 
 private:
     void updateSliceInternal(ViewType view, int slice);
-    void syncFrom(ViewType srcView, int srcSlice);
     void computeSliceRanges();
-
     void registerEvents();   // 注册当前模式的事件
     void unregisterEvents(); // 移除旧模式的事件
 
@@ -61,23 +61,10 @@ private:
     InteractionMode m_mode = InteractionMode::None;
     std::unique_ptr<IInteractionStrategy> m_strategy;
 
-    double m_crossPoint[4] = { 0,0,0,0 }; // x, y, z 三个方向的交叉点坐标
-
-    std::array<vtkSmartPointer<vtkTextActor>, 3> m_textActors;
-
-    std::array<double, 2> m_scalarRange{ 0.0, 0.0 }; // 保存图像灰度范围
-    double m_windowWidth = 400; // 默认初始值
-    double m_windowLevel = 40; // 默认初始值
+    double m_windowWidth; // 默认初始值
+    double m_windowLevel; // 默认初始值
 
 private:
-    std::array<vtkSmartPointer<vtkActor2D>, 3> m_crossActorsH; // 水平线
-    std::array<vtkSmartPointer<vtkActor2D>, 3> m_crossActorsV; // 垂直线
-    std::array<vtkSmartPointer<vtkLineSource>, 3> m_crossLinesH; // 水平线源
-    std::array<vtkSmartPointer<vtkLineSource>, 3> m_crossLinesV; // 垂直线源
-
-    // 新增：3D 十字线用的 actor / line source / mapper
-    std::array<vtkSmartPointer<vtkActor>, 3> m_crossActorsH3D;
-    std::array<vtkSmartPointer<vtkActor>, 3> m_crossActorsV3D;
-    std::array<vtkSmartPointer<vtkLineSource>, 3> m_crossLinesH3D;
-    std::array<vtkSmartPointer<vtkLineSource>, 3> m_crossLinesV3D;
+    std::array<std::unique_ptr<ICrosshairManager>, 3> m_crosshairManagers;
+    std::array<std::unique_ptr<IWindowLevelManager>, 3> m_windowLevelManagers;
 };
