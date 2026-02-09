@@ -140,6 +140,10 @@
     <ClCompile Include="Utils\ImageOrientationResampler.cpp" />
     <ClCompile Include="Utils\MyInteractorStyle.cpp" />
     <ClCompile Include="Viewer\CTViewer.cpp" />
+	<QtMoc Include="UI\DicomImageStudy.h" />
+    <QtMoc Include="UI\ThreeViewWidget.h" />
+    <QtMoc Include="Controller\ThreeViewController.h" />
+    <QtMoc Include="Renderer\VtkViewRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\InteractionMode.h" />
@@ -154,7 +158,6 @@
     <ClInclude Include="Controller\Strategy\NormalStrategy.h" />
     <ClInclude Include="Controller\Strategy\RegistrationROIStrategy.h" />
     <ClInclude Include="Controller\Strategy\WindowLevelStrategy.h" />
-    <ClInclude Include="Controller\ThreeViewController.h" />
     <ClInclude Include="Interface\IViewController.h" />
     <ClInclude Include="Interface\IViewRenderer.h" />
     <ClInclude Include="Renderer\OverlayManager\AngleMeasureManager\IAngleMeasureManager.h" />
@@ -175,9 +178,6 @@
     <ClInclude Include="Renderer\OverlayManager\SimpleOverlayManager.h" />
     <ClInclude Include="Renderer\OverlayManager\WindowLevelManager\IWindowLevelManager.h" />
     <ClInclude Include="Renderer\OverlayManager\WindowLevelManager\SimpleWindowLevelManager.h" />
-    <ClInclude Include="Renderer\VtkViewRenderer.h" />
-    <ClInclude Include="UI\DicomImageStudy.h" />
-    <ClInclude Include="UI\ThreeViewWidget.h" />
     <ClInclude Include="Utils\ImageOrientationResampler.h" />
     <ClInclude Include="Utils\MyInteractorStyle.h" />
     <ClInclude Include="Viewer\CTViewer.h" />
