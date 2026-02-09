@@ -1,5 +1,6 @@
 #include "ThreeViewController.h"
 #include "NormalStrategy.h"
+#include "IOverlayManager.h"
 #include "SliceStrategy.h"
 #include "ZoomStrategy.h"
 #include "VtkViewRenderer.h"
@@ -56,55 +57,55 @@ static void ShutdownCrosshairsImpl(std::array<std::unique_ptr<IWindowLevelManage
 }
 
 ThreeViewController::~ThreeViewController() {
-    // 如果当前线程就是主线程（Qt GUI 线程），直接清理
-    QThread* guiThread = QCoreApplication::instance() ? QCoreApplication::instance()->thread() : nullptr;
-    if (QThread::currentThread() == guiThread) {
-        ShutdownCrosshairsImpl(m_crosshairManagers);
-        ShutdownCrosshairsImpl(m_windowLevelManagers);
-        return;
-    }
+    //// 如果当前线程就是主线程（Qt GUI 线程），直接清理
+    //QThread* guiThread = QCoreApplication::instance() ? QCoreApplication::instance()->thread() : nullptr;
+    //if (QThread::currentThread() == guiThread) {
+    //    ShutdownCrosshairsImpl(m_crosshairManagers);
+    //    ShutdownCrosshairsImpl(m_windowLevelManagers);
+    //    return;
+    //}
 
-    // 否则，调度到主线程同步执行清理，确保在析构返回前完成
-    // 使用 QMetaObject::invokeMethod + BlockingQueuedConnection 保证同步执行
-    bool invoked = QMetaObject::invokeMethod(
-        QCoreApplication::instance(),
-        // functor 支持 Qt5.10+；如果你的 Qt 版本较旧，请改为使用槽函数或信号/槽桥接
-        [this]() {
-            ShutdownCrosshairsImpl(m_crosshairManagers);
-            ShutdownCrosshairsImpl(m_windowLevelManagers);
-        },
-        Qt::BlockingQueuedConnection
-    );
+    //// 否则，调度到主线程同步执行清理，确保在析构返回前完成
+    //// 使用 QMetaObject::invokeMethod + BlockingQueuedConnection 保证同步执行
+    //bool invoked = QMetaObject::invokeMethod(
+    //    QCoreApplication::instance(),
+    //    // functor 支持 Qt5.10+；如果你的 Qt 版本较旧，请改为使用槽函数或信号/槽桥接
+    //    [this]() {
+    //        ShutdownCrosshairsImpl(m_crosshairManagers);
+    //        ShutdownCrosshairsImpl(m_windowLevelManagers);
+    //    },
+    //    Qt::BlockingQueuedConnection
+    //);
 
-    if (!invoked) {
-        // 如果调度失败（极少见），作为兜底在当前线程尝试清理（谨慎）
-        ShutdownCrosshairsImpl(m_crosshairManagers);
-        ShutdownCrosshairsImpl(m_windowLevelManagers);
-    }
+    //if (!invoked) {
+    //    // 如果调度失败（极少见），作为兜底在当前线程尝试清理（谨慎）
+    //    ShutdownCrosshairsImpl(m_crosshairManagers);
+    //    ShutdownCrosshairsImpl(m_windowLevelManagers);
+    //}
 }
 
 void ThreeViewController::SetRenderers(std::array<IViewRenderer*, 3> renderers) {
     m_renderers = renderers;
     registerEvents(); // 初始注册
 
-    // 初始化 crosshair managers（如果尚未）
-    for (int i = 0; i < 3; ++i) {
-        if (!m_renderers[i]) continue;
-        if (!m_crosshairManagers[i]) {
-            m_crosshairManagers[i] = std::make_unique<SimpleCrosshairManager>();
-            // 使用 overlay renderer（你已有的 GetOverlayRenderer）
-            auto overlayRen = dynamic_cast<VtkViewRenderer*>(m_renderers[i])->GetOverlayRenderer();
-            if (overlayRen) {
-                m_crosshairManagers[i]->Initialize(overlayRen);
-            }
-        }
+    //// 初始化 crosshair managers（如果尚未）
+    //for (int i = 0; i < 3; ++i) {
+    //    if (!m_renderers[i]) continue;
+    //    if (!m_crosshairManagers[i]) {
+    //        m_crosshairManagers[i] = std::make_unique<SimpleCrosshairManager>();
+    //        // 使用 overlay renderer（你已有的 GetOverlayRenderer）
+    //        auto overlayRen = dynamic_cast<VtkViewRenderer*>(m_renderers[i])->GetOverlayRenderer();
+    //        if (overlayRen) {
+    //            m_crosshairManagers[i]->Initialize(overlayRen);
+    //        }
+    //    }
 
-        if (!m_windowLevelManagers[i]) {
-            m_windowLevelManagers[i] = std::make_unique<SimpleWindowLevelManager>();
-            auto overlayRen = dynamic_cast<VtkViewRenderer*>(m_renderers[i])->GetOverlayRenderer();
-            if (overlayRen) m_windowLevelManagers[i]->Initialize(overlayRen, m_renderers[i]->GetViewer());
-        }
-    }
+    //    if (!m_windowLevelManagers[i]) {
+    //        m_windowLevelManagers[i] = std::make_unique<SimpleWindowLevelManager>();
+    //        auto overlayRen = dynamic_cast<VtkViewRenderer*>(m_renderers[i])->GetOverlayRenderer();
+    //        if (overlayRen) m_windowLevelManagers[i]->Initialize(overlayRen, m_renderers[i]->GetViewer());
+    //    }
+    //}
 
 
 }
@@ -250,7 +251,7 @@ void ThreeViewController::updateSliceInternal(ViewType view, int slice) {
     int idx = static_cast<int>(view);
     if (m_renderers[idx]) {
         m_renderers[idx]->SetSlice(slice);
-        m_renderers[idx]->Render();
+        m_renderers[idx]->RequestRender();
     }
 }
 
@@ -315,7 +316,7 @@ void ThreeViewController::UpdateCrosshairInAllViews(std::array<double, 3> worldP
     m_image->GetSpacing(spacing);
     m_image->GetOrigin(origin);
 
-    double worldMin[3], worldMax[3];
+    std::array<double, 3> worldMin, worldMax;
     for (int j = 0; j < 3; ++j) {
         worldMin[j] = origin[j];
         worldMax[j] = origin[j] + (dims[j] - 1) * spacing[j];
@@ -323,20 +324,25 @@ void ThreeViewController::UpdateCrosshairInAllViews(std::array<double, 3> worldP
 
     //double worldPoint[3] = { picked[0], picked[1], picked[2] };
 
+    //std::array<double, 3> worldMin
     for (int i = 0; i < 3; ++i) {
         if (!m_renderers[i]) continue;
 
-        // 直接交给 manager 计算端点并更新
-        if (m_crosshairManagers[i]) {
-            m_crosshairManagers[i]->UpdateCrosshair(worldPoint,
-                static_cast<ViewType>(i),
-                worldMin,
-                worldMax);
-        }
+        m_renderers[i]->GetOverlayManager()->UpdateCrosshair(worldPoint,
+            static_cast<ViewType>(i),
+            worldMin,
+            worldMax);
+        //// 直接交给 manager 计算端点并更新
+        //if (m_crosshairManagers[i]) {
+        //    m_crosshairManagers[i]->UpdateCrosshair(worldPoint,
+        //        static_cast<ViewType>(i),
+        //        worldMin,
+        //        worldMax);
+        //}
 
         // 渲染：建议改为 RequestRender，由 RenderWindowManager 合并；这里保留兼容调用
-        auto viewer = m_renderers[i]->GetViewer();
-        if (viewer) viewer->Render();
+        m_renderers[i]->RequestRender();
+        //if (viewer) viewer->Render();
     }
 }
 
@@ -344,12 +350,11 @@ void ThreeViewController::SetWindowLevel(double ww, double wl) {
     m_windowWidth = ww;
     m_windowLevel = wl;
     for (int i = 0; i < 3; ++i) {
-        if (m_windowLevelManagers[i]) {
-            m_windowLevelManagers[i]->SetWindowLevel(ww, wl);
-        }
-        // 不直接 Render，建议 RequestRender
-        if (m_renderers[i]) m_renderers[i]->Render();
+        m_renderers[i]->GetOverlayManager()->SetWindowLevel(ww, wl);
+        auto viewer = m_renderers[i]->GetViewer();
+        if (viewer) viewer->Render();
     }
+    //vtkRenderer->RequestRender();
 }
 
 void ThreeViewController::syncCameras() {

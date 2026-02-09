@@ -3,6 +3,8 @@
 #include <vtkSmartPointer.h> 
 #include <vtkImageViewer2.h>
 
+class IOverlayManager;
+
 enum class SliceOrientation { XY = 0, YZ = 1, XZ = 2 };
 
 enum class EventType {
@@ -22,8 +24,9 @@ public:
     virtual void SetOrientation(SliceOrientation o) = 0;
     virtual void SetSlice(int slice) = 0;
     virtual int GetSlice() const = 0;
-    virtual void Render() = 0;
+    virtual void RequestRender() = 0;
     virtual void OnEvent(EventType type, std::function<void(void*)> cb) = 0;
 
     virtual vtkSmartPointer<vtkImageViewer2> GetViewer() = 0;
+    virtual IOverlayManager* GetOverlayManager()=0;
 };

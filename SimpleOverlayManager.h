@@ -33,6 +33,8 @@ public:
     void SetCrosshairManager(std::unique_ptr<ICrosshairManager> mgr);
     void SetWindowLevelManager(std::unique_ptr<IWindowLevelManager> mgr);
 
+    void UpdateCrosshair(std::array<double, 3> worldPoint, ViewType view, const double worldMin[3], const double worldMax[3]);
+
 private:
     void EnsureDefaults(); // 创建默认子 manager（如果未注入）
 

@@ -1,4 +1,4 @@
-#include "VtkViewRenderer.h"
+﻿#include "VtkViewRenderer.h"
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkImageViewer2.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -8,6 +8,7 @@
 #include <vtkImageData.h>
 #include <vtkRenderer.h>
 #include <QDebug>
+#include "SimpleOverlayManager.h"  // 添加头文件
 
 VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
     : m_widget(widget)
@@ -47,6 +48,14 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
     m_overlayRenderer->SetActiveCamera(m_viewer->GetRenderer()->GetActiveCamera());
     m_overlayRenderer->ResetCameraClippingRange();
 
+    // ===== 新增：创建 OverlayManager =====
+    m_overlayManager = std::make_unique<SimpleOverlayManager>();
+    m_overlayManager->Initialize(m_overlayRenderer, m_viewer.Get());
+
+    // 🔴 设置 QTimer
+    m_renderTimer.setSingleShot(true);  // 单次触发
+    m_renderTimer.setInterval(0);       // 0ms 后触发（下一个事件循环）
+    connect(&m_renderTimer, &QTimer::timeout, this, &VtkViewRenderer::PerformRender);
 }
 
 VtkViewRenderer::~VtkViewRenderer() {
@@ -72,7 +81,7 @@ void VtkViewRenderer::SetOrientation(SliceOrientation o) {
 }
 void VtkViewRenderer::SetSlice(int slice) { m_viewer->SetSlice(slice); }
 int VtkViewRenderer::GetSlice() const { return m_viewer->GetSlice(); }
-void VtkViewRenderer::Render() { m_viewer->Render(); }
+//void VtkViewRenderer::Render() { m_viewer->Render(); }
 
 void VtkViewRenderer::OnEvent(EventType type, std::function<void(void*)> cb) {
     m_callbacks[type] = std::move(cb);
@@ -96,19 +105,12 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid, v
         break;
     case vtkCommand::LeftButtonPressEvent:
         type = EventType::LeftPress;
-        self->m_dragging = true;
         break;
     case vtkCommand::MouseMoveEvent:
-        if (self->m_dragging) {
             type = EventType::LeftMove;
-        }
-        else {
-            return;
-        }
         break;
     case vtkCommand::LeftButtonReleaseEvent:
         type = EventType::LeftRelease;
-        self->m_dragging = false;
         break;
     case vtkCommand::RightButtonPressEvent:
         type = EventType::RightClick;
@@ -119,7 +121,7 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid, v
 
     auto it = self->m_callbacks.find(type);
     if (it != self->m_callbacks.end() && it->second) {
-        // ע�⣺pos�Ǿֲ����飬��ô���һ������
+        // 注意：pos是局部数组，最好传递一个拷贝
         auto posCopy = std::make_shared<std::array<int, 2>>(std::array<int, 2>{pos[0], pos[1]});
         it->second(posCopy.get());
 
@@ -128,5 +130,15 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid, v
     }
 }
 
+void VtkViewRenderer::RequestRender() {
+    if (!m_renderTimer.isActive()) {
+        m_renderTimer.start();  // 启动定时器
+    }
+}
 
-
+void VtkViewRenderer::PerformRender() {
+    m_renderPending = false;
+    if (m_viewer) {
+        m_viewer->Render();
+    }
+}

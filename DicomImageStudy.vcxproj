@@ -128,6 +128,7 @@
     <QtMoc Include="DicomImageStudy.h" />
     <QtMoc Include="ThreeViewWidget.h" />
     <QtMoc Include="ThreeViewController.h" />
+    <QtMoc Include="VtkViewRenderer.h" />
     <ClCompile Include="CTViewer.cpp" />
     <ClCompile Include="DicomImageStudy.cpp" />
     <ClCompile Include="ThreeViewWidget.cpp" />
@@ -152,7 +153,6 @@
     <ClInclude Include="SimpleWindowLevelManager.h" />
     <ClInclude Include="SliceStrategy.h" />
     <ClInclude Include="ViewTypes.h" />
-    <ClInclude Include="VtkViewRenderer.h" />
     <ClInclude Include="WindowLevelStrategy.h" />
     <ClInclude Include="ZoomStrategy.h" />
   </ItemGroup>

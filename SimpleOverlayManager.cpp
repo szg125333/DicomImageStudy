@@ -74,11 +74,11 @@ void SimpleOverlayManager::SetWindowLevel(double ww, double wl) {
     if (m_windowLevelManager) {
         m_windowLevelManager->SetWindowLevel(ww, wl);
     }
-    // 同步到 viewer（若需要）
-    if (m_viewer) {
-        m_viewer->SetColorWindow(ww);
-        m_viewer->SetColorLevel(wl);
-    }
+    //// 同步到 viewer（若需要）
+    //if (m_viewer) {
+    //    m_viewer->SetColorWindow(ww);
+    //    m_viewer->SetColorLevel(wl);
+    //}
 }
 
 void SimpleOverlayManager::SetVisible(bool visible) {

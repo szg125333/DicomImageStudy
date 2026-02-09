@@ -63,8 +63,4 @@ private:
 
     double m_windowWidth; // 默认初始值
     double m_windowLevel; // 默认初始值
-
-private:
-    std::array<std::unique_ptr<ICrosshairManager>, 3> m_crosshairManagers;
-    std::array<std::unique_ptr<IWindowLevelManager>, 3> m_windowLevelManagers;
 };

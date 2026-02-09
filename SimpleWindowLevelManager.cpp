@@ -33,7 +33,6 @@ void SimpleWindowLevelManager::SetWindowLevel(double ww, double wl) {
     m_textActor->SetVisibility(m_visible ? 1 : 0);
     m_viewer->SetColorWindow(ww);
     m_viewer->SetColorLevel(wl);
-    // 不直接 Render，交给上层合并渲染
 }
 
 void SimpleWindowLevelManager::SetVisible(bool visible) {
