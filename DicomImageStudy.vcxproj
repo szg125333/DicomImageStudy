@@ -114,15 +114,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AngleMeasureStrategy.cpp" />
+    <ClCompile Include="CheckboardStrategy.cpp" />
+    <ClCompile Include="ContourMeasureStrategy.cpp" />
+    <ClCompile Include="DistanceMeasureStrategy.cpp" />
+    <ClCompile Include="HandIrregularContourStrategy.cpp" />
     <ClCompile Include="ImageOrientationResampler.cpp" />
+    <ClCompile Include="ManualMoveStrategy.cpp" />
     <ClCompile Include="MyInteractorStyle.cpp" />
     <ClCompile Include="NormalStrategy.cpp" />
+    <ClCompile Include="RegistrationROIStrategy.cpp" />
+    <ClCompile Include="SimpleAngleMeasureManager.cpp" />
+    <ClCompile Include="SimpleCheckerboardManager.cpp" />
+    <ClCompile Include="SimpleContourMeasureManager.cpp" />
     <ClCompile Include="SimpleCrosshairManager.cpp" />
+    <ClCompile Include="SimpleDistanceMeasureManager.cpp" />
+    <ClCompile Include="SimpleHandIrregularContourManager.cpp" />
     <ClCompile Include="SimpleOverlayManager.cpp" />
+    <ClCompile Include="SimpleRegistrationROIManager.cpp" />
     <ClCompile Include="SimpleWindowLevelManager.cpp" />
     <ClCompile Include="ThreeViewController.cpp" />
     <ClCompile Include="VtkViewRenderer.cpp" />
-    <ClCompile Include="WindowLevelStrategy.cpp" />
     <QtRcc Include="DicomImageStudy.qrc" />
     <QtUic Include="DicomImageStudy.ui" />
     <QtMoc Include="DicomImageStudy.h" />
@@ -135,26 +147,40 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AngleMeasureStrategy.h" />
+    <ClInclude Include="CheckboardStrategy.h" />
+    <ClInclude Include="ContourMeasureStrategy.h" />
     <ClInclude Include="CTViewer.h" />
+    <ClInclude Include="DistanceMeasureStrategy.h" />
+    <ClInclude Include="HandIrregularContourStrategy.h" />
+    <ClInclude Include="IAngleMeasureManager.h" />
+    <ClInclude Include="ICheckerboardManager.h" />
+    <ClInclude Include="IContourMeasureManager.h" />
     <ClInclude Include="ICrosshairManager.h" />
-    <ClInclude Include="IInteractionContext.h" />
+    <ClInclude Include="IDistanceMeasureManager.h" />
+    <ClInclude Include="IHandIrregularContourManager.h" />
     <ClInclude Include="IInteractionStrategy.h" />
     <ClInclude Include="ImageOrientationResampler.h" />
     <ClInclude Include="InteractionMode.h" />
     <ClInclude Include="IOverlayManager.h" />
-    <ClInclude Include="IRenderManager.h" />
+    <ClInclude Include="IRegistrationROIManager.h" />
     <ClInclude Include="IViewController.h" />
     <ClInclude Include="IViewRenderer.h" />
     <ClInclude Include="IWindowLevelManager.h" />
+    <ClInclude Include="ManualMoveStrategy.h" />
     <ClInclude Include="MyInteractorStyle.h" />
     <ClInclude Include="NormalStrategy.h" />
+    <ClInclude Include="RegistrationROIStrategy.h" />
+    <ClInclude Include="SimpleAngleMeasureManager.h" />
+    <ClInclude Include="SimpleCheckerboardManager.h" />
+    <ClInclude Include="SimpleContourMeasureManager.h" />
     <ClInclude Include="SimpleCrosshairManager.h" />
+    <ClInclude Include="SimpleDistanceMeasureManager.h" />
+    <ClInclude Include="SimpleHandIrregularContourManager.h" />
     <ClInclude Include="SimpleOverlayManager.h" />
+    <ClInclude Include="SimpleRegistrationROIManager.h" />
     <ClInclude Include="SimpleWindowLevelManager.h" />
-    <ClInclude Include="SliceStrategy.h" />
     <ClInclude Include="ViewTypes.h" />
-    <ClInclude Include="WindowLevelStrategy.h" />
-    <ClInclude Include="ZoomStrategy.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

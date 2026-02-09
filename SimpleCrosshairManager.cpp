@@ -78,6 +78,8 @@ void SimpleCrosshairManager::UpdateCrosshair(std::array<double, 3> worldPoint,
     m_vLine->Modified();
 }
 
+
+
 void SimpleCrosshairManager::SetVisible(bool visible) {
     m_visible = visible;
     if (!m_initialized) return;

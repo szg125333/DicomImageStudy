@@ -8,7 +8,6 @@
 
 class vtkRenderer;
 class vtkImageViewer2;
-class vtkImageData;
 
 // SimpleOverlayManager 将内部组合多个子 manager。
 // 子 manager 通过接口注入或由 SimpleOverlayManager 创建默认实现。
@@ -19,7 +18,6 @@ public:
 
     // IOverlayManager
     void Initialize(vtkRenderer* overlayRenderer, vtkImageViewer2* viewer) override;
-    void SetImageData(vtkImageData* image) override;
     void UpdateCrosshair(const std::array<double, 3>& worldPoint,
         ViewType view,
         const std::array<double, 3>& worldMin,
@@ -34,14 +32,15 @@ public:
     void SetWindowLevelManager(std::unique_ptr<IWindowLevelManager> mgr);
 
     void UpdateCrosshair(std::array<double, 3> worldPoint, ViewType view, const double worldMin[3], const double worldMax[3]);
-
+    void UpdateCrosshairInAllViews(const std::array<double, 3>& worldPoint,
+        const std::array<double, 3>& worldMin,
+        const std::array<double, 3>& worldMax);
 private:
     void EnsureDefaults(); // 创建默认子 manager（如果未注入）
 
 private:
     vtkSmartPointer<vtkRenderer> m_overlayRenderer;
     vtkImageViewer2* m_viewer = nullptr; // 非拥有
-    vtkSmartPointer<vtkImageData> m_image; // 可选缓存
 
     std::unique_ptr<ICrosshairManager> m_crosshairManager;
     std::unique_ptr<IWindowLevelManager> m_windowLevelManager;

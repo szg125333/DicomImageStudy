@@ -2,7 +2,7 @@
 #include "IViewRenderer.h"
 #include "InteractionMode.h"
 
-class ThreeViewController;
+class IViewController;
 
 class IInteractionStrategy {
 public:

@@ -1,4 +1,5 @@
 ﻿#include "VtkViewRenderer.h"
+#include "SimpleOverlayManager.h"
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkImageViewer2.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -7,17 +8,20 @@
 #include <vtkCallbackCommand.h>
 #include <vtkImageData.h>
 #include <vtkRenderer.h>
-#include <QDebug>
-#include "SimpleOverlayManager.h"  // 添加头文件
+
+// ==================== 构造与析构 ====================
 
 VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
-    : m_widget(widget)
+    : QObject(nullptr), m_widget(widget)
 {
+    // ===== VTK 图像查看器初始化 =====
     m_viewer = vtkSmartPointer<vtkImageViewer2>::New();
     m_renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+
     if (m_widget) {
         m_widget->setRenderWindow(m_renderWindow);
         m_viewer->SetRenderWindow(m_renderWindow);
+
         auto interactor = m_widget->renderWindow()->GetInteractor();
         if (interactor) {
             auto style = vtkSmartPointer<vtkInteractorStyleImage>::New();
@@ -25,6 +29,7 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
         }
     }
 
+    // ===== VTK 事件回调设置 =====
     m_vtkCmd = vtkSmartPointer<vtkCallbackCommand>::New();
     m_vtkCmd->SetCallback(VtkGenericCallback);
     m_vtkCmd->SetClientData(this);
@@ -39,6 +44,7 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
         interactor->AddObserver(vtkCommand::RightButtonPressEvent, m_vtkCmd, 1.0f);
     }
 
+    // ===== Overlay 渲染器初始化 =====
     m_renderWindow->SetNumberOfLayers(2);
 
     m_overlayRenderer = vtkSmartPointer<vtkRenderer>::New();
@@ -48,17 +54,18 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
     m_overlayRenderer->SetActiveCamera(m_viewer->GetRenderer()->GetActiveCamera());
     m_overlayRenderer->ResetCameraClippingRange();
 
-    // ===== 新增：创建 OverlayManager =====
+    // ===== Overlay 管理器初始化 =====
     m_overlayManager = std::make_unique<SimpleOverlayManager>();
     m_overlayManager->Initialize(m_overlayRenderer, m_viewer.Get());
 
-    // 🔴 设置 QTimer
-    m_renderTimer.setSingleShot(true);  // 单次触发
-    m_renderTimer.setInterval(0);       // 0ms 后触发（下一个事件循环）
+    // ===== 延迟渲染计时器设置 =====
+    m_renderTimer.setSingleShot(true);
+    m_renderTimer.setInterval(0);
     connect(&m_renderTimer, &QTimer::timeout, this, &VtkViewRenderer::PerformRender);
 }
 
 VtkViewRenderer::~VtkViewRenderer() {
+    // ===== 清理 VTK 事件观察器 =====
     if (m_widget && m_widget->renderWindow() && m_widget->renderWindow()->GetInteractor()) {
         auto interactor = m_widget->renderWindow()->GetInteractor();
         interactor->RemoveObservers(vtkCommand::MouseWheelForwardEvent);
@@ -69,25 +76,69 @@ VtkViewRenderer::~VtkViewRenderer() {
         interactor->RemoveObservers(vtkCommand::RightButtonPressEvent);
     }
 
-    m_viewer->GetRenderer()->RemoveAllViewProps();
-    m_viewer->GetRenderWindow()->Finalize();
+    // ===== 清理 VTK 资源 =====
+    if (m_viewer) {
+        m_viewer->GetRenderer()->RemoveAllViewProps();
+        m_viewer->GetRenderWindow()->Finalize();
+    }
 }
 
-void VtkViewRenderer::SetInputData(vtkImageData* img) { m_viewer->SetInputData(img); }
-void VtkViewRenderer::SetOrientation(SliceOrientation o) {
-    if (o == SliceOrientation::XY) m_viewer->SetSliceOrientationToXY();
-    else if (o == SliceOrientation::YZ) m_viewer->SetSliceOrientationToYZ();
-    else m_viewer->SetSliceOrientationToXZ();
+// ==================== 公开方法 ====================
+
+void VtkViewRenderer::SetInputData(vtkImageData* img) {
+    if (m_viewer) {
+        m_viewer->SetInputData(img);
+    }
 }
-void VtkViewRenderer::SetSlice(int slice) { m_viewer->SetSlice(slice); }
-int VtkViewRenderer::GetSlice() const { return m_viewer->GetSlice(); }
-//void VtkViewRenderer::Render() { m_viewer->Render(); }
+
+void VtkViewRenderer::SetOrientation(SliceOrientation o) {
+    if (m_viewer) {
+        if (o == SliceOrientation::XY) {
+            m_viewer->SetSliceOrientationToXY();
+        }
+        else if (o == SliceOrientation::YZ) {
+            m_viewer->SetSliceOrientationToYZ();
+        }
+        else {
+            m_viewer->SetSliceOrientationToXZ();
+        }
+    }
+}
+
+void VtkViewRenderer::SetSlice(int slice) {
+    if (m_viewer) {
+        m_viewer->SetSlice(slice);
+    }
+}
+
+int VtkViewRenderer::GetSlice() const {
+    if (m_viewer) {
+        return m_viewer->GetSlice();
+    }
+    return 0;
+}
 
 void VtkViewRenderer::OnEvent(EventType type, std::function<void(void*)> cb) {
     m_callbacks[type] = std::move(cb);
 }
 
-void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid, void* clientdata, void* calldata) {
+void VtkViewRenderer::RequestRender() {
+    if (!m_renderTimer.isActive()) {
+        m_renderTimer.start();
+    }
+}
+
+// ==================== 私有方法 ====================
+
+void VtkViewRenderer::PerformRender() {
+    if (m_viewer) {
+        m_viewer->Render();
+    }
+}
+
+void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid,
+    void* clientdata, void* calldata) {
+    // ===== 参数转换 =====
     auto self = static_cast<VtkViewRenderer*>(clientdata);
     if (!self) return;
 
@@ -95,6 +146,7 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid, v
     int pos[2];
     interactor->GetEventPosition(pos);
 
+    // ===== VTK 事件转换为应用层事件 =====
     EventType type;
     switch (eid) {
     case vtkCommand::MouseWheelForwardEvent:
@@ -107,7 +159,7 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid, v
         type = EventType::LeftPress;
         break;
     case vtkCommand::MouseMoveEvent:
-            type = EventType::LeftMove;
+        type = EventType::LeftMove;
         break;
     case vtkCommand::LeftButtonReleaseEvent:
         type = EventType::LeftRelease;
@@ -119,26 +171,15 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid, v
         return;
     }
 
+    // ===== 调用已注册的回调函数 =====
     auto it = self->m_callbacks.find(type);
     if (it != self->m_callbacks.end() && it->second) {
-        // 注意：pos是局部数组，最好传递一个拷贝
-        auto posCopy = std::make_shared<std::array<int, 2>>(std::array<int, 2>{pos[0], pos[1]});
+        auto posCopy = std::make_shared<std::array<int, 2>>(
+            std::array<int, 2>{pos[0], pos[1]}
+        );
         it->second(posCopy.get());
 
-        vtkCallbackCommand* cb = static_cast<vtkCallbackCommand*>(self->m_vtkCmd);
-        cb->SetAbortFlag(1);
-    }
-}
-
-void VtkViewRenderer::RequestRender() {
-    if (!m_renderTimer.isActive()) {
-        m_renderTimer.start();  // 启动定时器
-    }
-}
-
-void VtkViewRenderer::PerformRender() {
-    m_renderPending = false;
-    if (m_viewer) {
-        m_viewer->Render();
+        vtkCallbackCommand* cmd = static_cast<vtkCallbackCommand*>(self->m_vtkCmd);
+        cmd->SetAbortFlag(1);
     }
 }

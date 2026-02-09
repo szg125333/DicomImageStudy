@@ -5,23 +5,15 @@
 #include <string>
 #include <stdexcept>
 
-/// 交互/编辑模式的集中定义头文件
-/// 该文件应保持精简、无外部依赖，便于在 UI、渲染器和控制器间共享。
-
 /// 定义所有交互模式
-enum class InteractionMode {
+enum class InteractionMode :int{
     Normal = 0,           // 普通浏览 / 拾取
-    Slice,                // 切片翻页（滚轮翻页）
-    Zoom,                 // 缩放（相机缩放）
-    Pan,                  // 平移（视图平移）
-    WindowLevel,          // 窗宽窗位调整
     Checkboard,           // 棋盘格对比模式
     ManualMove,           // 手动平移/旋转（移动对象）
     DistanceMeasure,      // 距离测量工具
     AngleMeasure,         // 角度测量工具
     ContourMeasure,       // 轮廓测量 / 手绘轮廓
     RegistrationROI,      // 配准 ROI（盒子）模式
-    HuRange,              // HU 值范围 / 特殊窗位模式
     HandIrregularContour, // 手工不规则轮廓
     None                  // 无交互（占位，用于计数或禁用）
 };
@@ -33,17 +25,12 @@ constexpr int InteractionModeCount = static_cast<int>(InteractionMode::None);
 inline std::string ToString(InteractionMode m) {
     switch (m) {
     case InteractionMode::Normal: return "Normal";
-    case InteractionMode::Slice: return "Slice";
-    case InteractionMode::Zoom: return "Zoom";
-    case InteractionMode::Pan: return "Pan";
-    case InteractionMode::WindowLevel: return "WindowLevel";
     case InteractionMode::Checkboard: return "Checkboard";
     case InteractionMode::ManualMove: return "ManualMove";
     case InteractionMode::DistanceMeasure: return "DistanceMeasure";
     case InteractionMode::AngleMeasure: return "AngleMeasure";
     case InteractionMode::ContourMeasure: return "ContourMeasure";
     case InteractionMode::RegistrationROI: return "RegistrationROI";
-    case InteractionMode::HuRange: return "HuRange";
     case InteractionMode::HandIrregularContour: return "HandIrregularContour";
     case InteractionMode::None: return "None";
     default: return "Unknown";

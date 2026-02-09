@@ -2,7 +2,7 @@
 #include "IInteractionStrategy.h"
 #include <QDebug>
 
-#include "IViewController.h" 
+class IViewController;
 
 class NormalStrategy : public IInteractionStrategy {
 public:

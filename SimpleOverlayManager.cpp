@@ -1,4 +1,4 @@
-#include "SimpleOverlayManager.h"
+ï»¿#include "SimpleOverlayManager.h"
 #include "SimpleCrosshairManager.h"
 #include "SimpleWindowLevelManager.h"
 #include <vtkRenderer.h>
@@ -30,30 +30,15 @@ void SimpleOverlayManager::Initialize(vtkRenderer* overlayRenderer, vtkImageView
 
     EnsureDefaults();
 
-    // ³õÊ¼»¯×ÓÄ£¿é£¨×ÓÄ£¿éÄÚ²¿»á°Ñ actor Ìí¼Óµ½ overlayRenderer£©
+    // åˆå§‹åŒ–å­æ¨¡å—ï¼ˆå­æ¨¡å—å†…éƒ¨ä¼šæŠŠ actor æ·»åŠ åˆ° overlayRendererï¼‰
     if (m_crosshairManager) m_crosshairManager->Initialize(overlayRenderer);
     if (m_windowLevelManager) m_windowLevelManager->Initialize(overlayRenderer, viewer);
 
-    //// Èç¹ûÒÑ¾­ÓÐ image£¬´«¸ø×ÓÄ£¿é
-    //if (m_image) {
-    //    if (m_windowLevelManager) m_windowLevelManager->SetImageData(m_image);
-    //}
-
-    // Ó¦ÓÃ³õÊ¼ÑùÊ½/¿É¼ûÐÔ
+    // åº”ç”¨åˆå§‹æ ·å¼/å¯è§æ€§
     SetVisible(m_visible);
     SetColor(m_color[0], m_color[1], m_color[2]);
 
     m_initialized = true;
-}
-
-void SimpleOverlayManager::SetImageData(vtkImageData* image) {
-    if (!image) {
-        m_image = nullptr;
-    }
-    else {
-        m_image = image; // vtkSmartPointer ½ÓÊÕÒýÓÃ¼ÆÊý
-    }
-    //if (m_windowLevelManager) m_windowLevelManager->SetImageData(m_image);
 }
 
 void SimpleOverlayManager::UpdateCrosshair(const std::array<double, 3>& worldPoint,
@@ -61,12 +46,29 @@ void SimpleOverlayManager::UpdateCrosshair(const std::array<double, 3>& worldPoi
     const std::array<double, 3>& worldMin,
     const std::array<double, 3>& worldMax) {
     if (!m_initialized) {
-        // ÔÊÐíÔÚÎ´³õÊ¼»¯Ê±»º´æ»òºöÂÔ£»ÕâÀïÖ±½ÓºöÂÔÒÔ¼ò»¯Âß¼­
+        // å…è®¸åœ¨æœªåˆå§‹åŒ–æ—¶ç¼“å­˜æˆ–å¿½ç•¥ï¼›è¿™é‡Œç›´æŽ¥å¿½ç•¥ä»¥ç®€åŒ–é€»è¾‘
         return;
     }
     if (m_crosshairManager) {
-        // ×Ó manager ½Ó¿Ú¿ÉÄÜ½ÓÊÜ std::array »ò C Êý×é£¬ÊÊÅäµ÷ÓÃ
+        // å­ manager æŽ¥å£å¯èƒ½æŽ¥å— std::array æˆ– C æ•°ç»„ï¼Œé€‚é…è°ƒç”¨
         m_crosshairManager->UpdateCrosshair(worldPoint, view, worldMin.data(), worldMax.data());
+    }
+}
+
+// ðŸ”´ æ–°å¢žæ–¹æ³•ï¼šæ›´æ–°æ‰€æœ‰è§†å›¾çš„ crosshair
+void SimpleOverlayManager::UpdateCrosshairInAllViews(const std::array<double, 3>& worldPoint,
+    const std::array<double, 3>& worldMin,
+    const std::array<double, 3>& worldMax) {
+    if (!m_initialized) return;
+
+    // æ›´æ–°ä¸‰ä¸ªè§†å›¾çš„ crosshair
+    for (int i = 0; i < 3; ++i) {
+        if (m_crosshairManager) {
+            m_crosshairManager->UpdateCrosshair(worldPoint,
+                static_cast<ViewType>(i),
+                worldMin.data(),
+                worldMax.data());
+        }
     }
 }
 
@@ -74,11 +76,6 @@ void SimpleOverlayManager::SetWindowLevel(double ww, double wl) {
     if (m_windowLevelManager) {
         m_windowLevelManager->SetWindowLevel(ww, wl);
     }
-    //// Í¬²½µ½ viewer£¨ÈôÐèÒª£©
-    //if (m_viewer) {
-    //    m_viewer->SetColorWindow(ww);
-    //    m_viewer->SetColorLevel(wl);
-    //}
 }
 
 void SimpleOverlayManager::SetVisible(bool visible) {
@@ -93,14 +90,14 @@ void SimpleOverlayManager::SetColor(double r, double g, double b) {
     if (!m_initialized) return;
     if (m_crosshairManager) m_crosshairManager->SetColor(r, g, b);
     if (m_windowLevelManager) {
-        // window level manager ¿ÉÄÜ²»Ê¹ÓÃÑÕÉ«£¬µ«Èç¹ûÐèÒª¿ÉÒÔÌá¹©½Ó¿Ú
+        // window level manager å¯èƒ½ä¸ä½¿ç”¨é¢œè‰²ï¼Œä½†å¦‚æžœéœ€è¦å¯ä»¥æä¾›æŽ¥å£
     }
 }
 
 void SimpleOverlayManager::Shutdown() {
     if (!m_initialized) return;
 
-    // ×ÓÄ£¿é Shutdown£¨ÔÚäÖÈ¾Ïß³Ì/Ö÷Ïß³Ìµ÷ÓÃ£©
+    // å­æ¨¡å— Shutdownï¼ˆåœ¨æ¸²æŸ“çº¿ç¨‹/ä¸»çº¿ç¨‹è°ƒç”¨ï¼‰
     if (m_crosshairManager) {
         m_crosshairManager->Shutdown();
         m_crosshairManager.reset();
@@ -110,7 +107,6 @@ void SimpleOverlayManager::Shutdown() {
         m_windowLevelManager.reset();
     }
 
-    m_image = nullptr;
     m_viewer = nullptr;
     m_overlayRenderer = nullptr;
     m_initialized = false;
