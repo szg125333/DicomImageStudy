@@ -1,4 +1,4 @@
-基于 Qt + VTK 的医学图像（DICOM/NIfTI 等）三视图（轴位/矢状/冠状）同步可视化系统，支持窗宽窗位调整、十字线定位、切片联动，并采用接口抽象与策略模式，便于扩展交互功能（如测量、标注等）。
+<img width="3578" height="1506" alt="tongyi-mermaid-2026-02-10-004520" src="https://github.com/user-attachments/assets/3efded1a-f3f0-47d2-a759-060c6ec9332c" />基于 Qt + VTK 的医学图像（DICOM/NIfTI 等）三视图（轴位/矢状/冠状）同步可视化系统，支持窗宽窗位调整、十字线定位、切片联动，并采用接口抽象与策略模式，便于扩展交互功能（如测量、标注等）。
 
 🧠 1. 项目简介
 
@@ -15,3 +15,4 @@
 - <img width="701" height="598" alt="image" src="https://github.com/user-attachments/assets/44dcb475-5d32-4d4c-9e75-699cb872964b" />
 
 🔗 3. 模块依赖关系图（Mermaid）
+<img width="1674" height="710" alt="image" src="https://github.com/user-attachments/assets/58c8dad8-6561-4f56-904e-d41d440c37f9" />
