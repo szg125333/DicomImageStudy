@@ -1,5 +1,5 @@
 ﻿#include "VtkViewRenderer.h"
-#include "SimpleOverlayManager.h"
+#include "Renderer/OverlayManager/SimpleOverlayManager.h"
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkImageViewer2.h>
 #include <vtkGenericOpenGLRenderWindow.h>

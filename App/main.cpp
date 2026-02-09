@@ -1,9 +1,10 @@
-#include "DicomImageStudy.h"
 #include <QtWidgets/QApplication>
 #include "vld.h"
 #include "itkImageToVTKImageFilter.h"
-#include "ThreeViewWidget.h"
-#include "ImageOrientationResampler.h"
+
+#include "UI/DicomImageStudy.h"
+#include "UI/ThreeViewWidget.h"
+#include "Utils/ImageOrientationResampler.h"
 
 int main(int argc, char* argv[])
 {

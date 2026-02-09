@@ -1,7 +1,7 @@
 #pragma once
 #include "IOverlayManager.h"
-#include "ICrosshairManager.h"
-#include "IWindowLevelManager.h"
+#include "Renderer/OverlayManager/CrosshairManager/ICrosshairManager.h"
+#include "Renderer/OverlayManager/WindowLevelManager/IWindowLevelManager.h"
 #include <vtkSmartPointer.h>
 #include <array>
 #include <memory>

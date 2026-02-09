@@ -1,6 +1,6 @@
 #pragma once
-#include "IViewRenderer.h"
-#include "InteractionMode.h"
+#include "Interface/IViewRenderer.h"
+#include "Common/InteractionMode.h"
 
 class IViewController;
 

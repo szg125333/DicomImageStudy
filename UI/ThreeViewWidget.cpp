@@ -7,9 +7,9 @@
 #include <QSizePolicy>
 #include <QSplitter>
 
-#include "VtkViewRenderer.h"        // 你的 VTK 后端实现
-#include "ThreeViewController.h"    // 控制器实现
-#include "IViewRenderer.h"
+#include "Renderer/VtkViewRenderer.h"        // 你的 VTK 后端实现
+#include "Controller/ThreeViewController.h"    // 控制器实现
+#include "Interface/IViewRenderer.h"
 
 #include <vtkImageData.h>
 

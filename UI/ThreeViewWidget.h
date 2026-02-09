@@ -5,7 +5,7 @@
 #include <array>
 #include <memory>
 #include <vtkImageData.h>
-#include "ViewTypes.h"
+#include "Common/ViewTypes.h"
 
 class QVTKOpenGLNativeWidget;
 class VtkViewRenderer;

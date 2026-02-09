@@ -1,6 +1,6 @@
-﻿#include "SimpleOverlayManager.h"
-#include "SimpleCrosshairManager.h"
-#include "SimpleWindowLevelManager.h"
+﻿#include "Renderer/OverlayManager/SimpleOverlayManager.h"
+#include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
+#include "Renderer/OverlayManager/WindowLevelManager/SimpleWindowLevelManager.h"
 #include <vtkRenderer.h>
 #include <vtkImageViewer2.h>
 #include <vtkImageData.h>

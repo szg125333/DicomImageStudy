@@ -1,5 +1,5 @@
 #pragma once
-#include "ViewTypes.h"
+#include "Common/ViewTypes.h"
 #include <array>
 
 class vtkRenderer;

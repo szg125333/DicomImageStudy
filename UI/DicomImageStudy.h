@@ -5,7 +5,7 @@
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkSmartPointer.h>
 #include <vtkImageViewer2.h>
-#include "MyInteractorStyle.h"
+#include "Utils/MyInteractorStyle.h"
 
 namespace Ui {
 class DicomImageStudyClass;

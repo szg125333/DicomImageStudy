@@ -1,6 +1,6 @@
 #include "WindowLevelStrategy.h"
-#include "ThreeViewController.h"
-#include "IViewRenderer.h"
+#include "Controller/ThreeViewController.h"
+#include "Interface/IViewRenderer.h"
 #include <vtkImageViewer2.h>
 #include <vtkRenderer.h>
 #include <vtkTextActor.h>

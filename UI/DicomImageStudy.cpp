@@ -1,6 +1,6 @@
 #include "DicomImageStudy.h"
 #include "ui_DicomImageStudy.h"
-#include "CTViewer.h"
+#include "Viewer/CTViewer.h"
 
 #include <QVBoxLayout>
 #include <vtkRenderer.h>

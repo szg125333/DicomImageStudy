@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "IViewRenderer.h"
+#include "Interface/IViewRenderer.h"
 #include <QObject>
 #include <QPointer>
 #include <QTimer>

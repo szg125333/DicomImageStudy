@@ -1,10 +1,9 @@
 #include "ThreeViewController.h"
-#include "NormalStrategy.h"
-#include "SliceStrategy.h"
-#include "ZoomStrategy.h"
-#include "WindowLevelStrategy.h"
-#include "IOverlayManager.h"
-#include "VtkViewRenderer.h"
+#include "Controller/Strategy/NormalStrategy.h"
+#include "Controller/Strategy/WindowLevelStrategy.h"
+#include "Renderer/OverlayManager/IOverlayManager.h"
+#include "Renderer/VtkViewRenderer.h"
+
 #include <vtkImageData.h>
 #include <vtkRenderer.h>
 #include <vtkCellPicker.h>

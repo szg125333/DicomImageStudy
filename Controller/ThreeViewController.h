@@ -2,11 +2,11 @@
 #include <QObject>
 #include <array>
 #include <memory>
-#include "IViewController.h"
-#include "InteractionMode.h"
-#include "IViewRenderer.h"
-#include "IInteractionStrategy.h"
-#include "ViewTypes.h"
+#include "Interface/IViewController.h"
+#include "Common/InteractionMode.h"
+#include "Interface/IViewRenderer.h"
+#include "Controller/Strategy/IInteractionStrategy.h"
+#include "Common/ViewTypes.h"
 
 class vtkImageData;
 
