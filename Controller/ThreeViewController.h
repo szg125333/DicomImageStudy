@@ -88,11 +88,6 @@ public:
     /// @return 窗位值
     double GetWindowLevel() const override { return m_windowLevel; }
 
-    void OnDistanceMeasurementStart(int viewIndex, int pos[2]) override;
-    void OnDistanceMeasurementComplete(int startView, int startPos[2], int endView, int endPos[2]) override;
-    void OnDistanceMeasurementCancel() override;
-    void OnDistancePreview(int viewIndex, int startPos[2], int currentViewIndex, int currentPos[2]) override;
-
 signals:
     /// @brief 切片改变信号
     /// @param viewIndex 改变的视图索引

@@ -29,7 +29,7 @@ public:
     virtual int GetSlice() const = 0;
     virtual void RequestRender() = 0;
     virtual void OnEvent(EventType type, std::function<void(void*)> cb) = 0;
-    virtual void RegisterOverlayFeature(std::unique_ptr<IOverlayFeature> feature) = 0;
+    virtual std::array<double, 3> PickWorldPosition(int screenX, int screenY) = 0;
 
     virtual vtkSmartPointer<vtkImageViewer2> GetViewer() = 0;
     virtual IOverlayManager* GetOverlayManager()=0;

@@ -73,8 +73,7 @@ public:
     IOverlayManager* GetOverlayManager() override { return m_overlayManager.get(); }
     void SetOverlayManager(std::unique_ptr<IOverlayManager> manager) override;
 
-    void RegisterOverlayFeature(std::unique_ptr<IOverlayFeature> feature) override;
-
+    std::array<double, 3> PickWorldPosition(int screenX, int screenY)override;
 
 private slots:
     /// @brief 执行渲染操作（内部使用）

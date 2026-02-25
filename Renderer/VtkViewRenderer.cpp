@@ -8,6 +8,7 @@
 #include <vtkCallbackCommand.h>
 #include <vtkImageData.h>
 #include <vtkRenderer.h>
+#include <vtkCellPicker.h>
 
 // ==================== 构造与析构 ====================
 
@@ -53,10 +54,6 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
     m_renderWindow->AddRenderer(m_overlayRenderer);
     m_overlayRenderer->SetActiveCamera(m_viewer->GetRenderer()->GetActiveCamera());
     m_overlayRenderer->ResetCameraClippingRange();
-
-    // ===== Overlay 管理器初始化 =====
-    //m_overlayManager = std::make_unique<SimpleOverlayManager>();
-    //m_overlayManager->Initialize(m_overlayRenderer, m_viewer.Get());
 
     // ===== 延迟渲染计时器设置 =====
     m_renderTimer.setSingleShot(true);
@@ -127,13 +124,20 @@ void VtkViewRenderer::SetOverlayManager(std::unique_ptr<IOverlayManager> manager
     m_overlayManager = std::move(manager);
 }
 
-void VtkViewRenderer::RegisterOverlayFeature(std::unique_ptr<IOverlayFeature> feature)
+std::array<double, 3> VtkViewRenderer::PickWorldPosition(int screenX, int screenY)
 {
-    //if (!m_overlayManager) {
-    //    m_overlayManager = std::make_unique<SimpleOverlayManager>();
-    //}
-    //m_overlayManager->RegisterFeature(std::move(feature));
+    vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
+    picker->SetTolerance(0.001);
+
+    if (picker->Pick(screenX, screenY, 0, m_viewer->GetRenderer())) {
+        double picked[3];
+        picker->GetPickPosition(picked);
+        return std::array<double, 3>{picked[0], picked[1], picked[2]};
+    }
+
+    return std::array<double, 3>{0.0, 0.0, 0.0};
 }
+
 
 void VtkViewRenderer::RequestRender() {
     if (!m_renderTimer.isActive()) {

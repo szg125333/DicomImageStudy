@@ -1,5 +1,6 @@
 #pragma once
 #include "IInteractionStrategy.h"
+#include <array>
 
 class IViewController;
 
@@ -10,7 +11,9 @@ public:
 
 private:
     IViewController* m_controller = nullptr;
+
+    // 存储起始点的世界坐标（不是屏幕坐标！）
     bool m_hasFirstPoint = false;
-    int m_firstPoint[2] = { 0, 0 };
-    int m_firstViewIndex = -1;
+    std::array<double, 3> m_startWorldPos;
+    int m_startViewIndex = -1;
 };

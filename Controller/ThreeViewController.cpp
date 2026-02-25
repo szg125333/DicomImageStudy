@@ -9,6 +9,7 @@
 #include <vtkRenderer.h>
 #include <vtkCellPicker.h>
 #include <vtkCamera.h>
+
 #include "Renderer/OverlayManager/OverlayFactory.h"           // ← 轻量工厂头文件
 #include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
 #include "Renderer/OverlayManager/DistanceMeasureManager/SimpleDistanceMeasureManager.h"
@@ -305,71 +306,71 @@ std::array<double, 3> ThreeViewController::PickWorldPosition(
 	return std::array<double, 3>{0.0, 0.0, 0.0}; 
 }
 
-void ThreeViewController::OnDistanceMeasurementStart(int viewIndex, int pos[2]) {
-    qDebug() << "Start measuring in view" << viewIndex << "at" << pos[0] << pos[1];
+//void ThreeViewController::OnDistanceMeasurementStart(int viewIndex, int pos[2]) {
+//    qDebug() << "Start measuring in view" << viewIndex << "at" << pos[0] << pos[1];
+//
+//    auto viewer = m_renderers[viewIndex]->GetViewer();
+//    if (!viewer || !m_image) return;
+//
+//    vtkRenderer* ren = viewer->GetRenderer();
+//    if (!ren) return;
+//
+//    vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
+//    picker->SetTolerance(0.001);
+//    double picked[3];
+//    if (picker->Pick(pos[0], pos[1], 0, ren)) {
+//        picker->GetPickPosition(picked);
+//    }
+//    else {
+//        return;
+//    }
+//    std::array<double, 3> worldPoint = { picked[0], picked[1], picked[2] };
+//
+//    if (viewIndex >= 0 && viewIndex < m_renderers.size()) {
+//        // 使用相应的渲染器绘制起点标记
+//        m_renderers[viewIndex]->GetOverlayManager()->GetFeature<SimpleDistanceMeasureManager>()->DrawStartPoint(worldPoint);
+//        m_renderers[viewIndex]->RequestRender();
+//    }
+//}
 
-    auto viewer = m_renderers[viewIndex]->GetViewer();
-    if (!viewer || !m_image) return;
-
-    vtkRenderer* ren = viewer->GetRenderer();
-    if (!ren) return;
-
-    vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
-    picker->SetTolerance(0.001);
-    double picked[3];
-    if (picker->Pick(pos[0], pos[1], 0, ren)) {
-        picker->GetPickPosition(picked);
-    }
-    else {
-        return;
-    }
-    std::array<double, 3> worldPoint = { picked[0], picked[1], picked[2] };
-
-    if (viewIndex >= 0 && viewIndex < m_renderers.size()) {
-        // 使用相应的渲染器绘制起点标记
-        m_renderers[viewIndex]->GetOverlayManager()->GetFeature<SimpleDistanceMeasureManager>()->DrawStartPoint(worldPoint);
-        m_renderers[viewIndex]->RequestRender();
-    }
-}
-
-void ThreeViewController::OnDistanceMeasurementComplete(
-    int startView, int startPos[2],
-    int endView, int endPos[2]
-) {
-    auto viewer = m_renderers[startView]->GetViewer();
-    if (!viewer || !m_image) return;
-
-    vtkRenderer* ren = viewer->GetRenderer();
-    if (!ren) return;
-
-    auto startPoint = PickWorldPosition(ren, startPos[0], startPos[1]);
-    auto currentPoint = PickWorldPosition(ren, endPos[0], endPos[1]);
-
-    // 调用相应的渲染器进行最终的测量线绘制
-    if (startView >= 0 && startView < m_renderers.size()) {
-        m_renderers[startView]->GetOverlayManager()->GetFeature<SimpleDistanceMeasureManager>()->DrawFinalMeasurementLine(startPoint, currentPoint);
-        m_renderers[startView]->RequestRender();
-    }
-}
-
-void ThreeViewController::OnDistanceMeasurementCancel() {
-
-
-}
-
-void ThreeViewController::OnDistancePreview(int viewIndex, int startPos[2], int currentViewIndex, int currentPos[2])
-{
-    auto viewer = m_renderers[viewIndex]->GetViewer();
-    if (!viewer || !m_image) return;
-
-    vtkRenderer* ren = viewer->GetRenderer();
-    if (!ren) return;
-
-    auto startPoint = PickWorldPosition(ren, startPos[0], startPos[1]);
-    auto currentPoint = PickWorldPosition(ren, currentPos[0], currentPos[1]);
-
-    if (currentViewIndex >= 0 && currentViewIndex < m_renderers.size()) {
-        m_renderers[currentViewIndex]->GetOverlayManager()->GetFeature<SimpleDistanceMeasureManager>()->PreviewMeasurementLine(startPoint, currentPoint);
-        m_renderers[viewIndex]->RequestRender();
-    }
-}
+//void ThreeViewController::OnDistanceMeasurementComplete(
+//    int startView, int startPos[2],
+//    int endView, int endPos[2]
+//) {
+//    auto viewer = m_renderers[startView]->GetViewer();
+//    if (!viewer || !m_image) return;
+//
+//    vtkRenderer* ren = viewer->GetRenderer();
+//    if (!ren) return;
+//
+//    auto startPoint = PickWorldPosition(ren, startPos[0], startPos[1]);
+//    auto currentPoint = PickWorldPosition(ren, endPos[0], endPos[1]);
+//
+//    // 调用相应的渲染器进行最终的测量线绘制
+//    if (startView >= 0 && startView < m_renderers.size()) {
+//        m_renderers[startView]->GetOverlayManager()->GetFeature<SimpleDistanceMeasureManager>()->DrawFinalMeasurementLine(startPoint, currentPoint);
+//        m_renderers[startView]->RequestRender();
+//    }
+//}
+//
+//void ThreeViewController::OnDistanceMeasurementCancel() {
+//
+//
+//}
+//
+//void ThreeViewController::OnDistancePreview(int viewIndex, int startPos[2], int currentViewIndex, int currentPos[2])
+//{
+//    auto viewer = m_renderers[viewIndex]->GetViewer();
+//    if (!viewer || !m_image) return;
+//
+//    vtkRenderer* ren = viewer->GetRenderer();
+//    if (!ren) return;
+//
+//    auto startPoint = PickWorldPosition(ren, startPos[0], startPos[1]);
+//    auto currentPoint = PickWorldPosition(ren, currentPos[0], currentPos[1]);
+//
+//    if (currentViewIndex >= 0 && currentViewIndex < m_renderers.size()) {
+//        m_renderers[currentViewIndex]->GetOverlayManager()->GetFeature<SimpleDistanceMeasureManager>()->PreviewMeasurementLine(startPoint, currentPoint);
+//        m_renderers[viewIndex]->RequestRender();
+//    }
+//}
