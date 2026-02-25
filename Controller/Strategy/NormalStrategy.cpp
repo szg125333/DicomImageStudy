@@ -2,7 +2,7 @@
 #include "Interface/IViewController.h"
 #include "Interface/IViewRenderer.h"
 #include <cmath>
-#include <QDebug>  // 添加调试
+#include <QDebug>
 
 void NormalStrategy::HandleEvent(EventType type, int idx, void* data) {
     auto pos = static_cast<int*>(data);
@@ -21,6 +21,8 @@ void NormalStrategy::HandleEvent(EventType type, int idx, void* data) {
         m_dragging = true;
         m_window = m_ctrl->GetWindowWidth();
         m_level = m_ctrl->GetWindowLevel();
+
+        m_ctrl->LocatePoint(idx, pos);
     }
     else if (type == EventType::LeftMove) {
         if (!m_dragging) {
@@ -58,13 +60,6 @@ void NormalStrategy::HandleEvent(EventType type, int idx, void* data) {
         int dx = pos[0] - m_lastPos[0];
         int dy = pos[1] - m_lastPos[1];
         int clickThreshold = 2;
-
-        qDebug() << "  -> Final dx=" << dx << "dy=" << dy;
-
-        if (std::abs(dx) < clickThreshold && std::abs(dy) < clickThreshold) {
-            qDebug() << "  -> This is a click, locating point";
-            m_ctrl->LocatePoint(idx, pos);
-        }
     }
 }
 

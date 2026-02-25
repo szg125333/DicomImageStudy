@@ -109,13 +109,6 @@ private:
     /// @brief 移除旧交互模式的事件回调
     void unregisterEvents();
 
-    // 工具函数：从屏幕坐标拾取世界坐标
-    std::array<double, 3> PickWorldPosition(
-        vtkRenderer* renderer,
-        int screenX,
-        int screenY
-    );
-
 private:
     // ==================== 图像数据 ====================
     /// 要显示的医学图像数据
