@@ -1,6 +1,7 @@
-#include "ThreeViewController.h"
+﻿#include "ThreeViewController.h"
 #include "Controller/Strategy/NormalStrategy.h"
 #include "Controller/Strategy/WindowLevelStrategy.h"
+#include "Controller/Strategy/DistanceMeasureStrategy.h"
 #include "Renderer/OverlayManager/IOverlayManager.h"
 #include "Renderer/VtkViewRenderer.h"
 
@@ -8,6 +9,9 @@
 #include <vtkRenderer.h>
 #include <vtkCellPicker.h>
 #include <vtkCamera.h>
+#include "Renderer/OverlayManager/OverlayFactory.h"           // ← 轻量工厂头文件
+#include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
+#include "Renderer/OverlayManager/DistanceMeasureManager/SimpleDistanceMeasureManager.h"
 
 ThreeViewController::ThreeViewController(QObject* parent) : QObject(parent) {
     m_renderers.fill(nullptr);
@@ -18,7 +22,6 @@ ThreeViewController::ThreeViewController(QObject* parent) : QObject(parent) {
 
     SetInteractionMode(InteractionMode::Normal);
 }
-
 ThreeViewController::~ThreeViewController() {
 }
 
@@ -38,31 +41,31 @@ void ThreeViewController::SetInteractionMode(InteractionMode mode) {
         m_strategy = std::make_unique<NormalStrategy>(this);
         break;
     case InteractionMode::Checkboard:
-        // TODO: ʵ�����̸�Ա�ģʽ
+        // TODO: 实现棋盘格对比模式
         m_strategy.reset();
         break;
     case InteractionMode::ManualMove:
-        // TODO: ʵ���ֶ�ƽ��/��תģʽ
+        // TODO: 实现手动平移/旋转模式
         m_strategy.reset();
         break;
     case InteractionMode::DistanceMeasure:
-        // TODO: ʵ�־����������
-        m_strategy.reset();
+        // TODO: 实现距离测量工具
+        m_strategy = std::make_unique<DistanceMeasureStrategy>(this);
         break;
     case InteractionMode::AngleMeasure:
-        // TODO: ʵ�ֽǶȲ�������
+        // TODO: 实现角度测量工具
         m_strategy.reset();
         break;
     case InteractionMode::ContourMeasure:
-        // TODO: ʵ����������ģʽ
+        // TODO: 实现轮廓测量模式
         m_strategy.reset();
         break;
     case InteractionMode::RegistrationROI:
-        // TODO: ʵ����׼ ROI ģʽ
+        // TODO: 实现配准 ROI 模式
         m_strategy.reset();
         break;
     case InteractionMode::HandIrregularContour:
-        // TODO: ʵ���ֹ�����������ģʽ
+        // TODO: 实现手工不规则轮廓模式
         m_strategy.reset();
         break;
     case InteractionMode::None:
@@ -73,6 +76,7 @@ void ThreeViewController::SetInteractionMode(InteractionMode mode) {
 
     registerEvents();
 }
+
 void ThreeViewController::SetImageData(vtkImageData* image) {
     if (!image) return;
     m_image = image;
@@ -167,8 +171,8 @@ void ThreeViewController::LocatePoint(int viewIndex, int* pos) {
     else {
         return;
     }
-
     std::array<double, 3> worldPoint = { picked[0], picked[1], picked[2] };
+
     UpdateCrosshairInAllViews(worldPoint);
 
     double ijk[3];
@@ -199,10 +203,10 @@ void ThreeViewController::UpdateCrosshairInAllViews(std::array<double, 3> worldP
 
         auto overlayManager = m_renderers[i]->GetOverlayManager();
         if (overlayManager) {
-            overlayManager->UpdateCrosshair(worldPoint,
+            overlayManager->GetFeature<SimpleCrosshairManager>()->UpdateCrosshair(worldPoint,
                 static_cast<ViewType>(i),
-                worldMin,
-                worldMax);
+                worldMin.data(),
+                worldMax.data());
         }
 
         m_renderers[i]->RequestRender();
@@ -215,12 +219,11 @@ void ThreeViewController::SetWindowLevel(double ww, double wl) {
 
     for (int i = 0; i < 3; ++i) {
         if (!m_renderers[i]) continue;
-
-        auto overlayManager = m_renderers[i]->GetOverlayManager();
-        if (overlayManager) {
-            overlayManager->SetWindowLevel(ww, wl);
+        auto viewer = m_renderers[i]->GetViewer();
+        if (viewer) {
+            viewer->SetColorWindow(m_windowWidth);
+            viewer->SetColorLevel(m_windowLevel);
         }
-
         m_renderers[i]->RequestRender();
     }
 }
@@ -243,6 +246,7 @@ void ThreeViewController::computeSliceRanges() {
 }
 
 void ThreeViewController::registerEvents() {
+
     for (int i = 0; i < 3; ++i) {
         if (!m_renderers[i]) continue;
         int idx = i;
@@ -262,9 +266,13 @@ void ThreeViewController::registerEvents() {
         m_renderers[i]->OnEvent(EventType::LeftRelease, [this, idx](void* data) {
             if (m_strategy) m_strategy->HandleEvent(EventType::LeftRelease, idx, data);
             });
-        m_renderers[i]->OnEvent(EventType::RightClick, [this, idx](void* data) {
-            if (m_strategy) m_strategy->HandleEvent(EventType::RightClick, idx, data);
+        m_renderers[i]->OnEvent(EventType::RightPress, [this, idx](void* data) {
+            if (m_strategy) m_strategy->HandleEvent(EventType::RightPress, idx, data);
             });
+
+        auto overlayMgr = CreateDefaultOverlayManager();
+        m_renderers[i]->SetOverlayManager(std::move(overlayMgr));
+        m_renderers[i]->GetOverlayManager()->Initialize(m_renderers[i]->GetOverlayRenderer(), m_renderers[i]->GetViewer());
     }
 }
 
@@ -276,6 +284,92 @@ void ThreeViewController::unregisterEvents() {
         m_renderers[i]->OnEvent(EventType::LeftPress, nullptr);
         m_renderers[i]->OnEvent(EventType::LeftMove, nullptr);
         m_renderers[i]->OnEvent(EventType::LeftRelease, nullptr);
-        m_renderers[i]->OnEvent(EventType::RightClick, nullptr);
+        m_renderers[i]->OnEvent(EventType::RightPress, nullptr);
+    }
+}
+
+std::array<double, 3> ThreeViewController::PickWorldPosition(
+    vtkRenderer* renderer,
+    int screenX,
+    int screenY
+) {
+    vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
+    picker->SetTolerance(0.001);
+
+    if (picker->Pick(screenX, screenY, 0, renderer)) {
+        double picked[3];
+        picker->GetPickPosition(picked);
+        return std::array<double, 3>{picked[0], picked[1], picked[2]};
+    }
+
+	return std::array<double, 3>{0.0, 0.0, 0.0}; 
+}
+
+void ThreeViewController::OnDistanceMeasurementStart(int viewIndex, int pos[2]) {
+    qDebug() << "Start measuring in view" << viewIndex << "at" << pos[0] << pos[1];
+
+    auto viewer = m_renderers[viewIndex]->GetViewer();
+    if (!viewer || !m_image) return;
+
+    vtkRenderer* ren = viewer->GetRenderer();
+    if (!ren) return;
+
+    vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
+    picker->SetTolerance(0.001);
+    double picked[3];
+    if (picker->Pick(pos[0], pos[1], 0, ren)) {
+        picker->GetPickPosition(picked);
+    }
+    else {
+        return;
+    }
+    std::array<double, 3> worldPoint = { picked[0], picked[1], picked[2] };
+
+    if (viewIndex >= 0 && viewIndex < m_renderers.size()) {
+        // 使用相应的渲染器绘制起点标记
+        m_renderers[viewIndex]->GetOverlayManager()->GetFeature<SimpleDistanceMeasureManager>()->DrawStartPoint(worldPoint);
+        m_renderers[viewIndex]->RequestRender();
+    }
+}
+
+void ThreeViewController::OnDistanceMeasurementComplete(
+    int startView, int startPos[2],
+    int endView, int endPos[2]
+) {
+    auto viewer = m_renderers[startView]->GetViewer();
+    if (!viewer || !m_image) return;
+
+    vtkRenderer* ren = viewer->GetRenderer();
+    if (!ren) return;
+
+    auto startPoint = PickWorldPosition(ren, startPos[0], startPos[1]);
+    auto currentPoint = PickWorldPosition(ren, endPos[0], endPos[1]);
+
+    // 调用相应的渲染器进行最终的测量线绘制
+    if (startView >= 0 && startView < m_renderers.size()) {
+        m_renderers[startView]->GetOverlayManager()->GetFeature<SimpleDistanceMeasureManager>()->DrawFinalMeasurementLine(startPoint, currentPoint);
+        m_renderers[startView]->RequestRender();
+    }
+}
+
+void ThreeViewController::OnDistanceMeasurementCancel() {
+
+
+}
+
+void ThreeViewController::OnDistancePreview(int viewIndex, int startPos[2], int currentViewIndex, int currentPos[2])
+{
+    auto viewer = m_renderers[viewIndex]->GetViewer();
+    if (!viewer || !m_image) return;
+
+    vtkRenderer* ren = viewer->GetRenderer();
+    if (!ren) return;
+
+    auto startPoint = PickWorldPosition(ren, startPos[0], startPos[1]);
+    auto currentPoint = PickWorldPosition(ren, currentPos[0], currentPos[1]);
+
+    if (currentViewIndex >= 0 && currentViewIndex < m_renderers.size()) {
+        m_renderers[currentViewIndex]->GetOverlayManager()->GetFeature<SimpleDistanceMeasureManager>()->PreviewMeasurementLine(startPoint, currentPoint);
+        m_renderers[viewIndex]->RequestRender();
     }
 }

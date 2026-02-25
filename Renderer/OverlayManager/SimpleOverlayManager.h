@@ -2,7 +2,9 @@
 #include "IOverlayManager.h"
 #include "Renderer/OverlayManager/CrosshairManager/ICrosshairManager.h"
 #include "Renderer/OverlayManager/WindowLevelManager/IWindowLevelManager.h"
+#include "Renderer/OverlayManager/DistanceMeasureManager/IDistanceMeasureManager.h"
 #include <vtkSmartPointer.h>
+#include <vtkActor.h>
 #include <array>
 #include <memory>
 
@@ -18,32 +20,28 @@ public:
 
     // IOverlayManager
     void Initialize(vtkRenderer* overlayRenderer, vtkImageViewer2* viewer) override;
-    void UpdateCrosshair(const std::array<double, 3>& worldPoint,
-        ViewType view,
-        const std::array<double, 3>& worldMin,
-        const std::array<double, 3>& worldMax) override;
-    void SetWindowLevel(double ww, double wl) override;
     void SetVisible(bool visible) override;
     void SetColor(double r, double g, double b) override;
     void Shutdown() override;
 
-    // 可选：注入自定义子 manager（在 Initialize 之前调用）
-    void SetCrosshairManager(std::unique_ptr<ICrosshairManager> mgr);
-    void SetWindowLevelManager(std::unique_ptr<IWindowLevelManager> mgr);
+    // 注册 feature（替代 SetXXXManager）
+    void RegisterFeature(std::unique_ptr<IOverlayFeature> feature);
 
-    void UpdateCrosshair(std::array<double, 3> worldPoint, ViewType view, const double worldMin[3], const double worldMax[3]);
-    void UpdateCrosshairInAllViews(const std::array<double, 3>& worldPoint,
-        const std::array<double, 3>& worldMin,
-        const std::array<double, 3>& worldMax);
-private:
-    void EnsureDefaults(); // 创建默认子 manager（如果未注入）
+    // 实现基类的 GetFeatureImpl
+    IOverlayFeature* GetFeatureImpl(const std::type_info& type) override {
+        for (auto& feat : m_features) {
+            if (typeid(*feat) == type) {
+                return feat.get();
+            }
+        }
+        return nullptr;
+    }
 
 private:
     vtkSmartPointer<vtkRenderer> m_overlayRenderer;
     vtkImageViewer2* m_viewer = nullptr; // 非拥有
 
-    std::unique_ptr<ICrosshairManager> m_crosshairManager;
-    std::unique_ptr<IWindowLevelManager> m_windowLevelManager;
+    std::vector<std::unique_ptr<IOverlayFeature>> m_features;
 
     bool m_initialized = false;
     bool m_visible = true;

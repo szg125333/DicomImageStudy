@@ -55,8 +55,8 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
     m_overlayRenderer->ResetCameraClippingRange();
 
     // ===== Overlay 管理器初始化 =====
-    m_overlayManager = std::make_unique<SimpleOverlayManager>();
-    m_overlayManager->Initialize(m_overlayRenderer, m_viewer.Get());
+    //m_overlayManager = std::make_unique<SimpleOverlayManager>();
+    //m_overlayManager->Initialize(m_overlayRenderer, m_viewer.Get());
 
     // ===== 延迟渲染计时器设置 =====
     m_renderTimer.setSingleShot(true);
@@ -122,6 +122,19 @@ void VtkViewRenderer::OnEvent(EventType type, std::function<void(void*)> cb) {
     m_callbacks[type] = std::move(cb);
 }
 
+void VtkViewRenderer::SetOverlayManager(std::unique_ptr<IOverlayManager> manager)
+{
+    m_overlayManager = std::move(manager);
+}
+
+void VtkViewRenderer::RegisterOverlayFeature(std::unique_ptr<IOverlayFeature> feature)
+{
+    //if (!m_overlayManager) {
+    //    m_overlayManager = std::make_unique<SimpleOverlayManager>();
+    //}
+    //m_overlayManager->RegisterFeature(std::move(feature));
+}
+
 void VtkViewRenderer::RequestRender() {
     if (!m_renderTimer.isActive()) {
         m_renderTimer.start();
@@ -165,7 +178,7 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid,
         type = EventType::LeftRelease;
         break;
     case vtkCommand::RightButtonPressEvent:
-        type = EventType::RightClick;
+        type = EventType::RightPress;
         break;
     default:
         return;

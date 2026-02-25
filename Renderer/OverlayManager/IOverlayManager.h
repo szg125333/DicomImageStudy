@@ -1,38 +1,21 @@
-#pragma once
-#include <array>
-#include <memory>
-#include <vector>
-
-class vtkRenderer;
-class vtkImageData;
-class vtkImageViewer2;
-enum class ViewType;
+ï»¿#include "Renderer/OverlayManager/IOverlayFeature.h"
+#include <typeinfo>  
 
 class IOverlayManager {
 public:
     virtual ~IOverlayManager() = default;
 
-    // ³õÊ¼»¯ overlay£¬´«Èë overlay renderer Óë viewer£¨·ÇÓµÓĞ£©
-    virtual void Initialize(vtkRenderer* overlayRenderer, vtkImageViewer2* viewer) = 0;
-
-    // ¸üĞÂÊ®×ÖÏß£¨controller ´«Èë worldPoint ÓëÍ¼Ïñ world ·¶Î§£©
-    virtual void UpdateCrosshair(const std::array<double, 3>& worldPoint,
-        ViewType view,
-        const std::array<double, 3>& worldMin,
-        const std::array<double, 3>& worldMax) = 0;
-
-    // ÉèÖÃ´°¿í´°Î»£¨»áÍ¬Ê±Ó¦ÓÃµ½ viewer Óë overlay ÎÄ±¾£©
-    virtual void SetWindowLevel(double ww, double wl) = 0;
-
-    // ¿ØÖÆ overlay ¿É¼ûĞÔ£¨ÕûÌå£©
+    // é€šç”¨æ§åˆ¶
+    virtual void Initialize(vtkRenderer*, vtkImageViewer2*) = 0;
     virtual void SetVisible(bool visible) = 0;
-
-    // ÉèÖÃ overlay È«¾ÖÑÕÉ«/ÑùÊ½£¨¿ÉÓÉ×ÓÄ£¿éÑ¡ÔñĞÔÊ¹ÓÃ£©
     virtual void SetColor(double r, double g, double b) = 0;
-
-    // ÇåÀí×ÊÔ´£¨±ØĞëÃİµÈ£¬ÇÒÔÚäÖÈ¾Ïß³Ì»òÖ÷Ïß³Ìµ÷ÓÃ£©
     virtual void Shutdown() = 0;
-    virtual void UpdateCrosshairInAllViews(const std::array<double, 3>& worldPoint,
-        const std::array<double, 3>& worldMin,
-        const std::array<double, 3>& worldMax) = 0;
+
+    template<typename T>
+    T* GetFeature() {
+        return dynamic_cast<T*>(GetFeatureImpl(typeid(T)));
+    }
+
+protected:
+    virtual IOverlayFeature* GetFeatureImpl(const std::type_info& type) = 0;
 };

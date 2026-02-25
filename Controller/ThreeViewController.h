@@ -7,6 +7,7 @@
 #include "Interface/IViewRenderer.h"
 #include "Controller/Strategy/IInteractionStrategy.h"
 #include "Common/ViewTypes.h"
+#include <optional>
 
 class vtkImageData;
 
@@ -87,6 +88,11 @@ public:
     /// @return 窗位值
     double GetWindowLevel() const override { return m_windowLevel; }
 
+    void OnDistanceMeasurementStart(int viewIndex, int pos[2]) override;
+    void OnDistanceMeasurementComplete(int startView, int startPos[2], int endView, int endPos[2]) override;
+    void OnDistanceMeasurementCancel() override;
+    void OnDistancePreview(int viewIndex, int startPos[2], int currentViewIndex, int currentPos[2]) override;
+
 signals:
     /// @brief 切片改变信号
     /// @param viewIndex 改变的视图索引
@@ -107,6 +113,13 @@ private:
 
     /// @brief 移除旧交互模式的事件回调
     void unregisterEvents();
+
+    // 工具函数：从屏幕坐标拾取世界坐标
+    std::array<double, 3> PickWorldPosition(
+        vtkRenderer* renderer,
+        int screenX,
+        int screenY
+    );
 
 private:
     // ==================== 图像数据 ====================

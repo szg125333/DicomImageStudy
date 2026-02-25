@@ -1,24 +1,24 @@
 ﻿#include "Renderer/OverlayManager/SimpleOverlayManager.h"
 #include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
 #include "Renderer/OverlayManager/WindowLevelManager/SimpleWindowLevelManager.h"
+#include "Renderer/OverlayManager/DistanceMeasureManager/SimpleDistanceMeasureManager.h"
 #include <vtkRenderer.h>
 #include <vtkImageViewer2.h>
 #include <vtkImageData.h>
+#include <vtkCellPicker.h>
 #include <QString>
+
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderWindow.h>
+#include <vtkProperty.h>
 
 SimpleOverlayManager::SimpleOverlayManager() = default;
 
 SimpleOverlayManager::~SimpleOverlayManager() {
     Shutdown();
-}
-
-void SimpleOverlayManager::EnsureDefaults() {
-    if (!m_crosshairManager) {
-        m_crosshairManager = std::make_unique<SimpleCrosshairManager>();
-    }
-    if (!m_windowLevelManager) {
-        m_windowLevelManager = std::make_unique<SimpleWindowLevelManager>();
-    }
 }
 
 void SimpleOverlayManager::Initialize(vtkRenderer* overlayRenderer, vtkImageViewer2* viewer) {
@@ -28,12 +28,12 @@ void SimpleOverlayManager::Initialize(vtkRenderer* overlayRenderer, vtkImageView
     m_overlayRenderer = overlayRenderer;
     m_viewer = viewer;
 
-    EnsureDefaults();
-
-    // 初始化子模块（子模块内部会把 actor 添加到 overlayRenderer）
-    if (m_crosshairManager) m_crosshairManager->Initialize(overlayRenderer);
-    if (m_windowLevelManager) m_windowLevelManager->Initialize(overlayRenderer, viewer);
-
+    // 👇 对每一个 feature 调用 Initialize
+    for (auto& feature : m_features) {
+        if (feature) {
+            feature->Initialize(m_overlayRenderer); // 或只传 renderer，依接口而定
+        }
+    }
     // 应用初始样式/可见性
     SetVisible(m_visible);
     SetColor(m_color[0], m_color[1], m_color[2]);
@@ -41,81 +41,30 @@ void SimpleOverlayManager::Initialize(vtkRenderer* overlayRenderer, vtkImageView
     m_initialized = true;
 }
 
-void SimpleOverlayManager::UpdateCrosshair(const std::array<double, 3>& worldPoint,
-    ViewType view,
-    const std::array<double, 3>& worldMin,
-    const std::array<double, 3>& worldMax) {
-    if (!m_initialized) {
-        // 允许在未初始化时缓存或忽略；这里直接忽略以简化逻辑
-        return;
-    }
-    if (m_crosshairManager) {
-        // 子 manager 接口可能接受 std::array 或 C 数组，适配调用
-        m_crosshairManager->UpdateCrosshair(worldPoint, view, worldMin.data(), worldMax.data());
-    }
-}
+void SimpleOverlayManager::RegisterFeature(std::unique_ptr<IOverlayFeature> feature) {
+    if (!feature) return;
 
-// 🔴 新增方法：更新所有视图的 crosshair
-void SimpleOverlayManager::UpdateCrosshairInAllViews(const std::array<double, 3>& worldPoint,
-    const std::array<double, 3>& worldMin,
-    const std::array<double, 3>& worldMax) {
-    if (!m_initialized) return;
-
-    // 更新三个视图的 crosshair
-    for (int i = 0; i < 3; ++i) {
-        if (m_crosshairManager) {
-            m_crosshairManager->UpdateCrosshair(worldPoint,
-                static_cast<ViewType>(i),
-                worldMin.data(),
-                worldMax.data());
-        }
+    // 如果已经初始化了，就立即初始化这个新 feature
+    if (m_initialized && m_overlayRenderer) {
+        feature->Initialize(m_overlayRenderer);
     }
-}
-
-void SimpleOverlayManager::SetWindowLevel(double ww, double wl) {
-    if (m_windowLevelManager) {
-        m_windowLevelManager->SetWindowLevel(ww, wl);
-    }
+    m_features.push_back(std::move(feature));
 }
 
 void SimpleOverlayManager::SetVisible(bool visible) {
     m_visible = visible;
     if (!m_initialized) return;
-    if (m_crosshairManager) m_crosshairManager->SetVisible(visible);
-    if (m_windowLevelManager) m_windowLevelManager->SetVisible(visible);
 }
 
 void SimpleOverlayManager::SetColor(double r, double g, double b) {
     m_color[0] = r; m_color[1] = g; m_color[2] = b;
     if (!m_initialized) return;
-    if (m_crosshairManager) m_crosshairManager->SetColor(r, g, b);
-    if (m_windowLevelManager) {
-        // window level manager 可能不使用颜色，但如果需要可以提供接口
-    }
 }
 
 void SimpleOverlayManager::Shutdown() {
     if (!m_initialized) return;
 
-    // 子模块 Shutdown（在渲染线程/主线程调用）
-    if (m_crosshairManager) {
-        m_crosshairManager->Shutdown();
-        m_crosshairManager.reset();
-    }
-    if (m_windowLevelManager) {
-        m_windowLevelManager->Shutdown();
-        m_windowLevelManager.reset();
-    }
-
     m_viewer = nullptr;
     m_overlayRenderer = nullptr;
     m_initialized = false;
-}
-
-void SimpleOverlayManager::SetCrosshairManager(std::unique_ptr<ICrosshairManager> mgr) {
-    m_crosshairManager = std::move(mgr);
-}
-
-void SimpleOverlayManager::SetWindowLevelManager(std::unique_ptr<IWindowLevelManager> mgr) {
-    m_windowLevelManager = std::move(mgr);
 }

@@ -25,6 +25,9 @@ public:
     // 直接请求设置某视图切片（转发到 controller）
     void RequestSetSlice(ViewType view, int slice);
 
+public slots:
+    void setModeToDistanceMeasurement();
+
 signals:
     // 对外暴露切片变化信号（由 controller 转发）
     void sliceChanged(int viewIndex, int slice);

@@ -66,11 +66,15 @@ public:
 
     /// @brief 获取 Overlay 渲染器
     /// @return vtkRenderer 指针
-    vtkSmartPointer<vtkRenderer> GetOverlayRenderer() { return m_overlayRenderer; }
+    vtkSmartPointer<vtkRenderer> GetOverlayRenderer() override { return m_overlayRenderer; }
 
     /// @brief 获取 Overlay 管理器
     /// @return IOverlayManager 指针
     IOverlayManager* GetOverlayManager() override { return m_overlayManager.get(); }
+    void SetOverlayManager(std::unique_ptr<IOverlayManager> manager) override;
+
+    void RegisterOverlayFeature(std::unique_ptr<IOverlayFeature> feature) override;
+
 
 private slots:
     /// @brief 执行渲染操作（内部使用）

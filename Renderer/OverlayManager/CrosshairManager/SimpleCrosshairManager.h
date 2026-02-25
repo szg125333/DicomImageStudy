@@ -1,5 +1,6 @@
 #pragma once
 #include "ICrosshairManager.h"
+#include "../IOverlayFeature.h"
 #include <vtkSmartPointer.h>
 
 class vtkRenderer;
@@ -7,7 +8,7 @@ class vtkLineSource;
 class vtkActor;
 class vtkPolyDataMapper;
 
-class SimpleCrosshairManager : public ICrosshairManager {
+class SimpleCrosshairManager : public ICrosshairManager{
 public:
     SimpleCrosshairManager();
     ~SimpleCrosshairManager() override;

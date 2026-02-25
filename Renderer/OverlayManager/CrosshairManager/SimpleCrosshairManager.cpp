@@ -4,6 +4,7 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
 #include <vtkProperty.h>
+//#include "SimpleOverlayManager.h"
 
 SimpleCrosshairManager::SimpleCrosshairManager() = default;
 SimpleCrosshairManager::~SimpleCrosshairManager() { Shutdown(); }
@@ -77,7 +78,6 @@ void SimpleCrosshairManager::UpdateCrosshair(std::array<double, 3> worldPoint,
     m_vLine->SetPoint2(vP2);
     m_vLine->Modified();
 }
-
 
 
 void SimpleCrosshairManager::SetVisible(bool visible) {
