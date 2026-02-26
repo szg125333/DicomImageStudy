@@ -20,5 +20,6 @@ public:
     virtual void DrawStartPoint(std::array<double, 3> worldPoint) = 0; // 新增方法
     virtual void DrawFinalMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> endPos) = 0;
     virtual void PreviewMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> currentPos) = 0;
-    virtual void ClearMeasurement() = 0;
+    virtual void ClearAllMeasurement() = 0;
+    virtual void ClearCurrentMeasurement() = 0;
 };

@@ -63,7 +63,7 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, void* d
     case EventType::RightRelease: {
         if (m_hasFirstPoint) {
             // 右键取消
-            //distanceFeature->ClearAll(); // 清除所有绘制
+            distanceFeature->ClearCurrentMeasurement(); // 清除所有绘制
             renderer->RequestRender();
             m_hasFirstPoint = false;
         }

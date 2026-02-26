@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "IDistanceMeasureManager.h"
 #include <vtkSmartPointer.h>
 #include <array>
@@ -6,16 +7,16 @@
 #include <vtkLineSource.h>
 #include <vtkPolyDataMapper.h>
 #include "../IOverlayFeature.h"
-
-// 新增包含
 #include <vtkVectorText.h>
 #include <vtkFollower.h>
 #include <vtkProperty.h>
+
 class vtkRenderer;
 class vtkImageViewer2;
 
 /// @brief 距离测量工具管理器实现
-class SimpleDistanceMeasureManager : public IDistanceMeasureManager{
+class SimpleDistanceMeasureManager : public IDistanceMeasureManager
+{
 public:
     SimpleDistanceMeasureManager();
     ~SimpleDistanceMeasureManager() override;
@@ -27,32 +28,58 @@ public:
     void SetVisible(bool visible) override;
     void Shutdown() override;
 
-    void DrawStartPoint(std::array<double, 3> worldPoint) override; // 新增方法
-    void DrawFinalMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> endPos)override;
-    void PreviewMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> currentPos)override;
-    void ClearMeasurement()override;
+    void DrawStartPoint(std::array<double, 3> worldPoint) override;
+    void DrawFinalMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> endPos) override;
+    void PreviewMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> currentPos) override;
+    void ClearAllMeasurement() override;
+    void ClearCurrentMeasurement() override;
+    void ClearPreview();
+
+    // 工厂函数（纯函数，无副作用）
+    vtkSmartPointer<vtkActor> createSphereActor(const std::array<double, 3>& point);
+    vtkSmartPointer<vtkActor> createLineActor(const std::array<double, 3>& startPoint, const std::array<double, 3>& endPoint);
+    vtkSmartPointer<vtkActor> createCrosshairActor(const std::array<double, 3>& center, double length = 10.0);
+    vtkSmartPointer<vtkActor> createTickActor(const std::array<double, 3>& p1, const std::array<double, 3>& p2, double tickLength = 3.0);
+    vtkSmartPointer<vtkFollower> createDistanceLabel(const std::array<double, 3>& p1, const std::array<double, 3>& p2, vtkCamera* camera, double scale = 8.0, double offset = 2.0);
+
 private:
     vtkSmartPointer<vtkRenderer> m_overlayRenderer;
-    vtkImageViewer2* m_viewer = nullptr;
     bool m_initialized = false;
     bool m_visible = true;
 
-    std::vector<vtkSmartPointer<vtkActor>> m_distanceActors; // 用于保存所有actor的容器
+    using MeasurementID = int;
+    struct Measurement {
+        MeasurementID id;
+        std::array<double, 3> startPointWorld;
+        std::array<double, 3> endPointWorld;
 
-    // 👇 新增：用于预览线的专用成员（复用）
+        // 正式测量的 actors（不可更新，EndMeasure 后固定）
+        vtkSmartPointer<vtkActor> startPointActor;
+        vtkSmartPointer<vtkActor> endPointActor;
+        vtkSmartPointer<vtkActor> startCrosshairActor;
+        vtkSmartPointer<vtkActor> endCrosshairActor;
+        vtkSmartPointer<vtkActor> lineActor;
+        vtkSmartPointer<vtkActor> tickActor;
+        vtkSmartPointer<vtkFollower> distanceLabel;
+
+        bool isComplete = false;
+    };
+
+    std::unordered_map<MeasurementID, Measurement> m_measurements;
+    MeasurementID m_nextId = 0;
+    MeasurementID generateNextId() { return ++m_nextId; }
+
+    // === 新增：预览专用可复用组件（不存入 m_measurements）===
     vtkSmartPointer<vtkLineSource> m_previewLineSource;
-    vtkSmartPointer<vtkPolyDataMapper> m_previewMapper;
-    vtkSmartPointer<vtkActor> m_previewLineActor;
+    vtkSmartPointer<vtkActor>      m_previewLineActor;
 
-    // 👇 新增：距离文本
-    vtkSmartPointer<vtkVectorText> m_distanceTextSource;
-    vtkSmartPointer<vtkPolyDataMapper> m_textMapper;
-    vtkSmartPointer<vtkFollower> m_distanceTextActor; // 使用 Follower！
+    vtkSmartPointer<vtkLineSource> m_previewTickSource;
+    vtkSmartPointer<vtkActor>      m_previewTickActor;
 
-    vtkSmartPointer<vtkActor> m_finalLineActor;
-    vtkSmartPointer<vtkActor> m_midTickActor;
-    vtkSmartPointer<vtkFollower> m_distanceLabelActor;
+    vtkSmartPointer<vtkVectorText> m_previewTextSource;
+    vtkSmartPointer<vtkFollower>   m_previewLabelActor;
 
-    vtkSmartPointer<vtkActor> m_previewMidTickActor;      // 👈 新增：预览刻度线
-    vtkSmartPointer<vtkFollower> m_previewDistanceLabel;  // 👈 新增：预览文本
+    // 辅助更新函数
+    void updatePreviewTick(const std::array<double, 3>& p1, const std::array<double, 3>& p2, double tickLength = 3.0);
+    void updatePreviewLabel(const std::array<double, 3>& p1, const std::array<double, 3>& p2, vtkCamera* camera);
 };

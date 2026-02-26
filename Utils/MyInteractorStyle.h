@@ -5,7 +5,7 @@
 #include <vtkImageViewer2.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkTextActor.h>
-#include <vtkImageData.h>      // ×¢Òâ£ºÊ××ÖÄ¸´óĞ´ I
+#include <vtkImageData.h>
 #include <vtkImageActor.h>
 #include <vtkPropPicker.h>
 #include <vtkCellPicker.h>
