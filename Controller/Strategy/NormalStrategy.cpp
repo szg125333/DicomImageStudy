@@ -4,8 +4,12 @@
 #include <cmath>
 #include <QDebug>
 
-void NormalStrategy::HandleEvent(EventType type, int idx, void* data) {
-    auto pos = static_cast<int*>(data);
+void NormalStrategy::HandleEvent(EventType type, int idx, const EventData& data) {
+    //auto pos = static_cast<int*>(data);
+    int pos[2];
+	pos[0] = data.mousePosX;
+	pos[1] = data.mousePosY;
+
     if (!pos) return;
 
     if (type == EventType::WheelForward) {

@@ -152,6 +152,7 @@
     <QtMoc Include="Renderer\VtkViewRenderer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Common\EventData.h" />
     <ClInclude Include="Common\InteractionMode.h" />
     <ClInclude Include="Common\ViewTypes.h" />
     <ClInclude Include="Controller\Strategy\AngleMeasureStrategy.h" />

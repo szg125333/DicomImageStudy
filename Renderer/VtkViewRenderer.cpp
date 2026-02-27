@@ -9,6 +9,8 @@
 #include <vtkImageData.h>
 #include <vtkRenderer.h>
 #include <vtkCellPicker.h>
+#include <vtkPropPicker.h>
+#include <vtkPointPicker.h>
 
 // ==================== 构造与析构 ====================
 
@@ -43,6 +45,8 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
         interactor->AddObserver(vtkCommand::MouseMoveEvent, m_vtkCmd, 1.0f);
         interactor->AddObserver(vtkCommand::LeftButtonReleaseEvent, m_vtkCmd, 1.0f);
         interactor->AddObserver(vtkCommand::RightButtonPressEvent, m_vtkCmd, 1.0f);
+        interactor->AddObserver(vtkCommand::KeyPressEvent, m_vtkCmd, 1.0f);
+        interactor->AddObserver(vtkCommand::KeyReleaseEvent, m_vtkCmd, 1.0f);
     }
 
     // ===== Overlay 渲染器初始化 =====
@@ -71,6 +75,8 @@ VtkViewRenderer::~VtkViewRenderer() {
         interactor->RemoveObservers(vtkCommand::MouseMoveEvent);
         interactor->RemoveObservers(vtkCommand::LeftButtonReleaseEvent);
         interactor->RemoveObservers(vtkCommand::RightButtonPressEvent);
+        interactor->RemoveObservers(vtkCommand::KeyPressEvent);
+        interactor->RemoveObservers(vtkCommand::KeyReleaseEvent);
     }
 
     // ===== 清理 VTK 资源 =====
@@ -115,7 +121,7 @@ int VtkViewRenderer::GetSlice() const {
     return 0;
 }
 
-void VtkViewRenderer::OnEvent(EventType type, std::function<void(void*)> cb) {
+void VtkViewRenderer::OnEvent(EventType type, std::function<void(const EventData&)> cb) {
     m_callbacks[type] = std::move(cb);
 }
 
@@ -126,16 +132,29 @@ void VtkViewRenderer::SetOverlayManager(std::unique_ptr<IOverlayManager> manager
 
 std::array<double, 3> VtkViewRenderer::PickWorldPosition(int screenX, int screenY)
 {
-    vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
-    picker->SetTolerance(0.001);
+    vtkSmartPointer<vtkPropPicker> picker = vtkSmartPointer<vtkPropPicker>::New();
 
-    if (picker->Pick(screenX, screenY, 0, m_viewer->GetRenderer())) {
-        double picked[3];
-        picker->GetPickPosition(picked);
-        return std::array<double, 3>{picked[0], picked[1], picked[2]};
+    // 优先拾取 overlay 中的 actor（如测距端点）
+    if (picker->PickProp(screenX, screenY, m_viewer->GetRenderer())) {
+        double p[3];
+        picker->GetPickPosition(p);
+        return { p[0], p[1], p[2] };
     }
 
-    return std::array<double, 3>{0.0, 0.0, 0.0};
+    // 可选：如果没拾取到 overlay，再尝试拾取背景图像（用 vtkPointPicker）
+    vtkSmartPointer<vtkPointPicker> bgPicker = vtkSmartPointer<vtkPointPicker>::New();
+    if (bgPicker->Pick(screenX, screenY, 0, m_viewer->GetRenderer())) {
+        double p[3];
+        bgPicker->GetPickPosition(p);
+        return { p[0], p[1], p[2] };
+    }
+
+    // 真的没拾取到：返回 NaN（或抛异常 / optional）
+    return {
+        std::numeric_limits<double>::quiet_NaN(),
+        std::numeric_limits<double>::quiet_NaN(),
+        std::numeric_limits<double>::quiet_NaN()
+    };
 }
 
 
@@ -163,30 +182,54 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid,
     int pos[2];
     interactor->GetEventPosition(pos);
 
+    EventData eventData;
+	eventData.mousePosX = pos[0];
+	eventData.mousePosY = pos[1];
+    eventData.ctrlPressed = interactor->GetControlKey() != 0;
+    eventData.shiftPressed = interactor->GetShiftKey() != 0;
+    eventData.altPressed = interactor->GetAltKey() != 0;
+
     // ===== VTK 事件转换为应用层事件 =====
     EventType type;
     switch (eid) {
-    case vtkCommand::MouseWheelForwardEvent:
-        type = EventType::WheelForward;
-        break;
-    case vtkCommand::MouseWheelBackwardEvent:
-        type = EventType::WheelBackward;
-        break;
-    case vtkCommand::LeftButtonPressEvent:
-        type = EventType::LeftPress;
-        break;
-    case vtkCommand::MouseMoveEvent:
-        type = EventType::LeftMove;
-        break;
-    case vtkCommand::LeftButtonReleaseEvent:
-        type = EventType::LeftRelease;
-        break;
-    case vtkCommand::RightButtonPressEvent:
-        type = EventType::RightPress;
-        break;
-    default:
-        return;
+        case vtkCommand::MouseWheelForwardEvent:
+            type = EventType::WheelForward;
+            break;
+        case vtkCommand::MouseWheelBackwardEvent:
+            type = EventType::WheelBackward;
+            break;
+        case vtkCommand::LeftButtonPressEvent:
+            type = EventType::LeftPress;
+            break;
+        case vtkCommand::MouseMoveEvent:
+            type = EventType::LeftMove;
+            break;
+        case vtkCommand::LeftButtonReleaseEvent:
+            type = EventType::LeftRelease;
+            break;
+        case vtkCommand::RightButtonPressEvent:
+            type = EventType::RightPress;
+            break;
+        case vtkCommand::KeyPressEvent: {
+            char* keySymPress = interactor->GetKeySym();
+            if (keySymPress) {
+                eventData.keySym = keySymPress;
+            }
+            type = EventType::KeyPress;
+            break;
+        }
+        case vtkCommand::KeyReleaseEvent: {
+            char* keySymRelease = interactor->GetKeySym();
+            if (keySymRelease) {
+                eventData.keySym = keySymRelease;
+            }
+            type = EventType::KeyRelease;
+            break;
+        }
+        default:
+            return;
     }
+
 
     // ===== 调用已注册的回调函数 =====
     auto it = self->m_callbacks.find(type);
@@ -194,7 +237,8 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid,
         auto posCopy = std::make_shared<std::array<int, 2>>(
             std::array<int, 2>{pos[0], pos[1]}
         );
-        it->second(posCopy.get());
+        //it->second(posCopy.get());
+        it->second(eventData);
 
         vtkCallbackCommand* cmd = static_cast<vtkCallbackCommand*>(self->m_vtkCmd);
         cmd->SetAbortFlag(1);

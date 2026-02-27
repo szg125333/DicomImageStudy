@@ -240,6 +240,9 @@
     <ClInclude Include="Renderer\OverlayManager\OverlayFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Common\EventData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="UI\DicomImageStudy.h">

@@ -8,6 +8,7 @@
 #include "Controller/Strategy/IInteractionStrategy.h"
 #include "Common/ViewTypes.h"
 #include <optional>
+#include "Common/EventData.h"
 
 class vtkImageData;
 

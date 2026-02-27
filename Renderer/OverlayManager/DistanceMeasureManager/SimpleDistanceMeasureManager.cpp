@@ -9,6 +9,8 @@
 #include <vtkRenderWindow.h>
 #include <vtkMath.h>
 #include <vtkAppendPolyData.h>
+#include <vtkPropPicker.h>
+#include <vtkCoordinate.h>
 
 SimpleDistanceMeasureManager::SimpleDistanceMeasureManager() = default;
 
@@ -50,7 +52,7 @@ void SimpleDistanceMeasureManager::Shutdown() {
 
 void SimpleDistanceMeasureManager::DrawStartPoint(std::array<double, 3> worldPoint) {
     if (!m_overlayRenderer) return;
-    MeasurementID id = generateNextId();
+    int id = generateNextId();
     auto [it, inserted] = m_measurements.emplace(id, Measurement{});
     assert(inserted);
     Measurement& m = it->second;
@@ -85,6 +87,39 @@ void SimpleDistanceMeasureManager::DrawFinalMeasurementLine(std::array<double, 3
     m.distanceLabel = createDistanceLabel(startPos, endPos, cam);
 
     m_overlayRenderer->AddActor(m.endPointActor);
+    m_overlayRenderer->AddActor(m.endCrosshairActor);
+    m_overlayRenderer->AddViewProp(m.lineActor);
+    m_overlayRenderer->AddViewProp(m.tickActor);
+    m_overlayRenderer->AddViewProp(m.distanceLabel);
+}
+
+void SimpleDistanceMeasureManager::DrawFinalMeasurementLine(int measurementId, std::array<double, 3> startPos, std::array<double, 3> endPos)
+{
+    if (!m_overlayRenderer) return;
+    ClearPreview();
+
+    auto it = m_measurements.find(measurementId);
+    if (it == m_measurements.end()) return;
+
+    Measurement& m = it->second;
+    m.endPointWorld = endPos;
+    m.startPointWorld = startPos; // 确保一致
+    m.isComplete = true;
+
+    // 创建正式测量的固定线（不可更新）
+    m.lineActor = createLineActor(startPos, endPos);
+    m.tickActor = createTickActor(startPos, endPos);
+    auto cam = m_overlayRenderer->GetActiveCamera();
+    m.distanceLabel = createDistanceLabel(startPos, endPos, cam);
+
+    m.startPointActor = createSphereActor(startPos);
+    m.startCrosshairActor = createCrosshairActor(startPos, 5.0);
+    m.endPointActor = createSphereActor(endPos);
+    m.endCrosshairActor = createCrosshairActor(endPos, 5.0);
+
+    m_overlayRenderer->AddActor(m.startPointActor);
+    m_overlayRenderer->AddActor(m.endPointActor);
+    m_overlayRenderer->AddActor(m.startCrosshairActor);
     m_overlayRenderer->AddActor(m.endCrosshairActor);
     m_overlayRenderer->AddViewProp(m.lineActor);
     m_overlayRenderer->AddViewProp(m.tickActor);
@@ -157,6 +192,93 @@ void SimpleDistanceMeasureManager::ClearPreview()
     m_previewTickActor = nullptr;
     m_previewTextSource = nullptr;
     m_previewLabelActor = nullptr;
+}
+
+EditablePoint SimpleDistanceMeasureManager::GetEditablePoint(int screenX, int screenY) const {
+    // ===== 第一步：尝试精确拾取（保留原有逻辑，快速路径） =====
+    vtkNew<vtkPropPicker> picker;
+    if (picker->PickProp(screenX, screenY, m_overlayRenderer)) {
+        for (const auto& [id, m] : m_measurements) {
+            if (!m.isComplete) continue;
+            if (m.startPointActor == picker->GetViewProp()) {
+                return { id, true };
+            }
+            if (m.endPointActor == picker->GetViewProp()) {
+                return { id, false };
+            }
+        }
+    }
+
+    // ===== 第二步：容差拾取（fallback） =====
+    constexpr double TOLERANCE_PX = 6.0; // 可根据 DPI 调整
+    double minDist2 = TOLERANCE_PX * TOLERANCE_PX + 1.0; // 初始值 > 容差²
+    EditablePoint bestMatch{ -1, false };
+
+    // 创建坐标转换器（复用，避免频繁 new）
+    vtkNew<vtkCoordinate> coord;
+    coord->SetCoordinateSystemToWorld();
+    coord->SetViewport(m_overlayRenderer);
+
+    for (const auto& [id, m] : m_measurements) {
+        if (!m.isComplete) continue;
+
+        // 检查起点
+        if (m.startPointActor && m.startPointActor->GetVisibility()) {
+            coord->SetValue(m.startPointWorld.data());
+            int* dispPos = coord->GetComputedDisplayValue(m_overlayRenderer);
+            double dx = dispPos[0] - static_cast<double>(screenX);
+            double dy = dispPos[1] - static_cast<double>(screenY);
+            double dist2 = dx * dx + dy * dy;
+            if (dist2 < minDist2) {
+                minDist2 = dist2;
+                bestMatch = { id, true };
+            }
+        }
+
+        // 检查终点
+        if (m.endPointActor && m.endPointActor->GetVisibility()) {
+            coord->SetValue(m.endPointWorld.data());
+            int* dispPos = coord->GetComputedDisplayValue(m_overlayRenderer);
+            double dx = dispPos[0] - static_cast<double>(screenX);
+            double dy = dispPos[1] - static_cast<double>(screenY);
+            double dist2 = dx * dx + dy * dy;
+            if (dist2 < minDist2) {
+                minDist2 = dist2;
+                bestMatch = { id, false };
+            }
+        }
+    }
+
+    // 如果最近点在容差范围内，返回它
+    if (minDist2 <= TOLERANCE_PX * TOLERANCE_PX) {
+        return bestMatch;
+    }
+
+    return {}; // 未命中
+}
+
+void SimpleDistanceMeasureManager::UpdateMeasurementPoint(
+    int measurementId, bool isStart, const std::array<double, 3>& newWorldPos) {
+
+    auto it = m_measurements.find(measurementId);
+    if (it == m_measurements.end() || !it->second.isComplete) return;
+
+    Measurement& m = it->second;
+    std::array<double, 3> other = isStart ? m.endPointWorld : m.startPointWorld;
+    std::array<double, 3> newStart = isStart ? newWorldPos : other;
+    std::array<double, 3> newEnd = isStart ? other : newWorldPos;
+
+    // 移除旧的
+    m_overlayRenderer->RemoveViewProp(m.startPointActor);
+    m_overlayRenderer->RemoveViewProp(m.endPointActor);
+    m_overlayRenderer->RemoveViewProp(m.startCrosshairActor);
+    m_overlayRenderer->RemoveViewProp(m.endCrosshairActor);
+    m_overlayRenderer->RemoveViewProp(m.lineActor);
+    m_overlayRenderer->RemoveViewProp(m.tickActor);
+    m_overlayRenderer->RemoveViewProp(m.distanceLabel);
+
+    // 重绘新的
+    DrawFinalMeasurementLine(measurementId, newStart, newEnd);
 }
 
 void SimpleDistanceMeasureManager::ClearAllMeasurement() {

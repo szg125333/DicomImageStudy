@@ -14,6 +14,12 @@
 class vtkRenderer;
 class vtkImageViewer2;
 
+// 👇 放在类外（或命名空间内）
+struct EditablePoint {
+    int measurementId = -1;
+    bool isStart = true;
+};
+
 /// @brief 距离测量工具管理器实现
 class SimpleDistanceMeasureManager : public IDistanceMeasureManager
 {
@@ -30,11 +36,17 @@ public:
 
     void DrawStartPoint(std::array<double, 3> worldPoint) override;
     void DrawFinalMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> endPos) override;
+    void DrawFinalMeasurementLine(int measurementId,std::array<double, 3> startPos, std::array<double, 3> endPos);
     void PreviewMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> currentPos) override;
     void ClearAllMeasurement() override;
     void ClearCurrentMeasurement() override;
     void ClearPreview();
 
+    EditablePoint GetEditablePoint(int screenX, int screenY) const;
+    void UpdateMeasurementPoint(int measurementId, bool isStart, const std::array<double, 3>& newWorldPos);
+
+
+private:
     // 工厂函数（纯函数，无副作用）
     vtkSmartPointer<vtkActor> createSphereActor(const std::array<double, 3>& point);
     vtkSmartPointer<vtkActor> createLineActor(const std::array<double, 3>& startPoint, const std::array<double, 3>& endPoint);
@@ -42,14 +54,13 @@ public:
     vtkSmartPointer<vtkActor> createTickActor(const std::array<double, 3>& p1, const std::array<double, 3>& p2, double tickLength = 3.0);
     vtkSmartPointer<vtkFollower> createDistanceLabel(const std::array<double, 3>& p1, const std::array<double, 3>& p2, vtkCamera* camera, double scale = 8.0, double offset = 2.0);
 
-private:
     vtkSmartPointer<vtkRenderer> m_overlayRenderer;
     bool m_initialized = false;
     bool m_visible = true;
 
-    using MeasurementID = int;
+    //using MeasurementID = int;
     struct Measurement {
-        MeasurementID id;
+        int id;
         std::array<double, 3> startPointWorld;
         std::array<double, 3> endPointWorld;
 
@@ -65,9 +76,9 @@ private:
         bool isComplete = false;
     };
 
-    std::unordered_map<MeasurementID, Measurement> m_measurements;
-    MeasurementID m_nextId = 0;
-    MeasurementID generateNextId() { return ++m_nextId; }
+    std::unordered_map<int, Measurement> m_measurements;
+    int m_nextId = 0;
+    int generateNextId() { return ++m_nextId; }
 
     // === 新增：预览专用可复用组件（不存入 m_measurements）===
     vtkSmartPointer<vtkLineSource> m_previewLineSource;

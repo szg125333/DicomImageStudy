@@ -9,6 +9,7 @@
 #include <vtkRenderer.h>
 #include <vtkCellPicker.h>
 #include <vtkCamera.h>
+#include <vtkPropPicker.h>
 
 #include "Renderer/OverlayManager/OverlayFactory.h"           // ← 轻量工厂头文件
 #include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
@@ -252,24 +253,23 @@ void ThreeViewController::registerEvents() {
         if (!m_renderers[i]) continue;
         int idx = i;
 
-        m_renderers[i]->OnEvent(EventType::WheelForward, [this, idx](void* data) {
-            if (m_strategy) m_strategy->HandleEvent(EventType::WheelForward, idx, data);
-            });
-        m_renderers[i]->OnEvent(EventType::WheelBackward, [this, idx](void* data) {
-            if (m_strategy) m_strategy->HandleEvent(EventType::WheelBackward, idx, data);
-            });
-        m_renderers[i]->OnEvent(EventType::LeftPress, [this, idx](void* data) {
-            if (m_strategy) m_strategy->HandleEvent(EventType::LeftPress, idx, data);
-            });
-        m_renderers[i]->OnEvent(EventType::LeftMove, [this, idx](void* data) {
-            if (m_strategy) m_strategy->HandleEvent(EventType::LeftMove, idx, data);
-            });
-        m_renderers[i]->OnEvent(EventType::LeftRelease, [this, idx](void* data) {
-            if (m_strategy) m_strategy->HandleEvent(EventType::LeftRelease, idx, data);
-            });
-        m_renderers[i]->OnEvent(EventType::RightPress, [this, idx](void* data) {
-            if (m_strategy) m_strategy->HandleEvent(EventType::RightPress, idx, data);
-            });
+        // 在你的类中（比如 ViewController.cpp）
+        auto forwardEvent = [this, idx](EventType type) {
+            return [this, idx, type](const EventData& data) {
+                if (m_strategy) {
+                    m_strategy->HandleEvent(type, idx, data);
+                }
+                };
+            };
+
+        m_renderers[i]->OnEvent(EventType::WheelForward, forwardEvent(EventType::WheelForward));
+        m_renderers[i]->OnEvent(EventType::WheelBackward, forwardEvent(EventType::WheelBackward));
+        m_renderers[i]->OnEvent(EventType::LeftPress, forwardEvent(EventType::LeftPress));
+        m_renderers[i]->OnEvent(EventType::LeftMove, forwardEvent(EventType::LeftMove));
+        m_renderers[i]->OnEvent(EventType::LeftRelease, forwardEvent(EventType::LeftRelease));
+        m_renderers[i]->OnEvent(EventType::RightPress, forwardEvent(EventType::RightPress));
+        m_renderers[i]->OnEvent(EventType::KeyPress, forwardEvent(EventType::KeyPress));
+        m_renderers[i]->OnEvent(EventType::KeyRelease, forwardEvent(EventType::KeyRelease));
 
         auto overlayMgr = CreateDefaultOverlayManager();
         m_renderers[i]->SetOverlayManager(std::move(overlayMgr));

@@ -5,7 +5,7 @@ ContourMeasureStrategy::ContourMeasureStrategy(IViewController* controller)
     : m_controller(controller) {
 }
 
-void ContourMeasureStrategy::HandleEvent(EventType type, int viewIndex, void* data) {
+void ContourMeasureStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {
     qDebug() << "[ContourMeasureStrategy] Event:" << static_cast<int>(type)
         << "ViewIndex:" << viewIndex;
 }

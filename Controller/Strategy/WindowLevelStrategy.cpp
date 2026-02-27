@@ -11,9 +11,14 @@ WindowLevelStrategy::WindowLevelStrategy(IViewController* ctrl)
     : m_ctrl(ctrl) {
 }
 
-void WindowLevelStrategy::HandleEvent(EventType type, int viewIndex, void* data) {
+void WindowLevelStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {
     if (type == EventType::LeftPress) {
-        auto pos = static_cast<int*>(data);
+        //auto pos = static_cast<int*>(data);
+
+        int pos[2];
+        pos[0] = data.mousePosX;
+        pos[1] = data.mousePosY;
+
         if (!pos) return;
 
         int dx = pos[0] - m_lastPos[0];

@@ -7,7 +7,7 @@ class IViewController;
 class DistanceMeasureStrategy : public IInteractionStrategy {
 public:
     explicit DistanceMeasureStrategy(IViewController* controller);
-    void HandleEvent(EventType type, int viewIndex, void* data) override;
+    void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
 
 private:
     IViewController* m_controller = nullptr;
@@ -16,4 +16,9 @@ private:
     bool m_hasFirstPoint = false;
     std::array<double, 3> m_startWorldPos;
     int m_startViewIndex = -1;
+
+    bool m_isEditing = false;
+    int m_editingMeasurementId = -1;
+    bool m_editingIsStart = true;
+    int m_editingViewIndex = -1;
 };

@@ -58,7 +58,7 @@ public:
     /// @brief 注册事件回调
     /// @param type 事件类型
     /// @param cb 回调函数，接收位置信息（int[2]）
-    void OnEvent(EventType type, std::function<void(void*)> cb);
+    void OnEvent(EventType type, std::function<void(const EventData&)> cb);
 
     /// @brief 获取 VTK 图像查看器
     /// @return vtkImageViewer2 指针
@@ -105,7 +105,8 @@ private:
     // ==================== 交互相关 ====================
     /// 事件回调映射表
     /// key: 事件类型，value: 回调函数
-    std::unordered_map<EventType, std::function<void(void*)>> m_callbacks;
+    //std::unordered_map<EventType, std::function<void(void*)>> m_callbacks;
+    std::unordered_map<EventType, std::function<void(const EventData&)>> m_callbacks;
 
     /// @brief VTK 事件回调函数（静态）
     /// 

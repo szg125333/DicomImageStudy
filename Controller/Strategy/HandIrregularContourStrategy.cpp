@@ -5,7 +5,7 @@ HandIrregularContourStrategy::HandIrregularContourStrategy(IViewController* cont
     : m_controller(controller) {
 }
 
-void HandIrregularContourStrategy::HandleEvent(EventType type, int viewIndex, void* data) {
+void HandIrregularContourStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {
     qDebug() << "[HandIrregularContourStrategy] Event:" << static_cast<int>(type)
         << "ViewIndex:" << viewIndex;
 }

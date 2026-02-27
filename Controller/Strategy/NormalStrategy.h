@@ -8,7 +8,7 @@ class NormalStrategy : public IInteractionStrategy {
 public:
     NormalStrategy(IViewController* ctrl) : m_ctrl(ctrl) {}
 
-    void HandleEvent(EventType type, int idx, void* data) override;
+    void HandleEvent(EventType type, int idx, const EventData& data) override;
 
 private:
     IViewController* m_ctrl;  // ← 指向抽象接口

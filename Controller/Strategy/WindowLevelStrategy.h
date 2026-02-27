@@ -8,7 +8,7 @@ class WindowLevelStrategy : public IInteractionStrategy {
 public:
     explicit WindowLevelStrategy(IViewController* ctrl);
 
-    void HandleEvent(EventType type, int viewIndex, void* data) override;
+    void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
 
 private:
     IViewController* m_ctrl;

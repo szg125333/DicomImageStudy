@@ -11,7 +11,7 @@ public:
     explicit AngleMeasureStrategy(IViewController* controller);
     ~AngleMeasureStrategy() override = default;
 
-    void HandleEvent(EventType type, int viewIndex, void* data) override;
+    void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
 
 private:
     IViewController* m_controller = nullptr;
