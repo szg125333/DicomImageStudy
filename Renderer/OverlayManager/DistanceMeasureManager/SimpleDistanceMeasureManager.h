@@ -45,9 +45,10 @@ public:
     EditablePoint GetEditablePoint(int screenX, int screenY) const;
     void UpdateMeasurementPoint(int measurementId, bool isStart, const std::array<double, 3>& newWorldPos);
 
-
+    void SetImageWorldBounds(const std::array<double, 6>& bounds) override;
+    bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const;
 private:
-    // 工厂函数（纯函数，无副作用）
+
     vtkSmartPointer<vtkActor> createSphereActor(const std::array<double, 3>& point);
     vtkSmartPointer<vtkActor> createLineActor(const std::array<double, 3>& startPoint, const std::array<double, 3>& endPoint);
     vtkSmartPointer<vtkActor> createCrosshairActor(const std::array<double, 3>& center, double length = 10.0);
@@ -93,4 +94,5 @@ private:
     // 辅助更新函数
     void updatePreviewTick(const std::array<double, 3>& p1, const std::array<double, 3>& p2, double tickLength = 3.0);
     void updatePreviewLabel(const std::array<double, 3>& p1, const std::array<double, 3>& p2, vtkCamera* camera);
+
 };

@@ -6,14 +6,14 @@ class IViewController;
 
 class NormalStrategy : public IInteractionStrategy {
 public:
-    NormalStrategy(IViewController* ctrl) : m_ctrl(ctrl) {}
-
+    explicit NormalStrategy(IViewController* ctrl)
+        : IInteractionStrategy(ctrl)
+    {
+    }
     void HandleEvent(EventType type, int idx, const EventData& data) override;
 
 private:
-    IViewController* m_ctrl;  // ← 指向抽象接口
 
-    // 用于窗宽窗位调整
     int m_lastPos[2] = { 0,0 };
     bool m_dragging = false;
     double m_window = 400;   // 初始窗宽

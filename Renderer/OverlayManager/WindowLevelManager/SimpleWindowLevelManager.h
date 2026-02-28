@@ -15,7 +15,7 @@ public:
     void SetWindowLevel(double ww, double wl) override;
     void SetVisible(bool visible) override;
     void Shutdown() override;
-
+    //void SetImageWorldBounds(const std::array<double, 6>& bounds) override;
 private:
     vtkSmartPointer<vtkRenderer> m_overlayRenderer;
     vtkSmartPointer<vtkImageViewer2> m_viewer;

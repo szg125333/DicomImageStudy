@@ -12,6 +12,4 @@ public:
     ~CheckboardStrategy() override = default;
 
     void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
-private:
-    IViewController* m_controller;  // ← 指向抽象接口
 };

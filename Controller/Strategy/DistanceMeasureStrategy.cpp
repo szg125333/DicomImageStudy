@@ -6,7 +6,7 @@
 #include "Renderer/OverlayManager/IOverlayManager.h"
 
 DistanceMeasureStrategy::DistanceMeasureStrategy(IViewController* controller)
-    : m_controller(controller)
+    : IInteractionStrategy(controller)
     , m_startWorldPos({ 0.0, 0.0, 0.0 })
     , m_hasFirstPoint(false)
 {
@@ -17,6 +17,12 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
     int pos[2];
     pos[0] = data.mousePosX;
     pos[1] = data.mousePosY;
+
+    qDebug() << "[DistanceMeasureStrategy] Event:" << static_cast<int>(type)
+        << "ViewIndex:" << viewIndex
+        << "MousePos:(" << pos[0] << "," << pos[1] << ")"
+		<< "CtrlPressed:" << data.ctrlPressed;
+
     if (!pos || !m_controller) return;
 
     // 获取当前视图的渲染器
@@ -31,6 +37,14 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
     auto distanceFeature = overlayMgr->GetFeature<SimpleDistanceMeasureManager>();
     if (!distanceFeature) return;
 
+    bool flag = distanceFeature->IsWorldPointInImage(renderer->PickWorldPosition(pos[0], pos[1]));
+	if (!flag)   // 如果点击位置不在图像范围内，直接忽略事件
+		return;
+
+    if (m_editingViewIndex != viewIndex && m_editingViewIndex != -1) {
+        return; // 只处理当前正在编辑的视图事件
+    }
+
     switch (type) {
     case EventType::LeftPress: {
         if (!m_isEditing) {
@@ -40,6 +54,7 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
                 m_startWorldPos = renderer->PickWorldPosition(pos[0], pos[1]);
                 m_startViewIndex = viewIndex;
                 m_hasFirstPoint = true;
+                m_editingViewIndex = viewIndex;
 
                 distanceFeature->DrawStartPoint(m_startWorldPos);
                 renderer->RequestRender(); // 触发重绘
@@ -49,6 +64,7 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
                 auto endWorldPos = renderer->PickWorldPosition(pos[0], pos[1]);
                 distanceFeature->DrawFinalMeasurementLine(m_startWorldPos, endWorldPos);
                 renderer->RequestRender();
+                m_editingViewIndex = viewIndex;
 
                 // 重置状态
                 m_hasFirstPoint = false;
@@ -64,7 +80,6 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
                 m_isEditing = true;
                 m_editingMeasurementId = editablePoint.measurementId;
                 m_editingIsStart = editablePoint.isStart;
-                m_editingViewIndex = viewIndex;
 
                 qDebug() << "Start editing measurement" << m_editingMeasurementId
                     << (m_editingIsStart ? "start" : "end") << "point";

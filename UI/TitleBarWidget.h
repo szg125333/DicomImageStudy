@@ -12,10 +12,10 @@ public:
 	~TitleBarWidget();
 
 signals:
-	void requestEnableDistanceMeasurement();
+	void requestEnableDistanceMeasurement(bool state);
 
 private slots:
-	void on_DistanceMeasurement_clicked();
+	void on_DistanceMeasurement_toggled(bool state);
 
 private:
 	Ui::TitleBarWidgetClass ui;

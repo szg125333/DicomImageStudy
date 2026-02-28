@@ -2,7 +2,7 @@
 #include <QDebug>
 
 RegistrationROIStrategy::RegistrationROIStrategy(IViewController* controller)
-    : m_controller(controller) {
+    : IInteractionStrategy(controller) {
 }
 
 void RegistrationROIStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {

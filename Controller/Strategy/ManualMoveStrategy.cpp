@@ -2,7 +2,7 @@
 #include <QDebug>
 
 ManualMoveStrategy::ManualMoveStrategy(IViewController* controller)
-    : m_controller(controller) {
+    : IInteractionStrategy(controller) {
 }
 
 void ManualMoveStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {

@@ -68,3 +68,29 @@ void SimpleOverlayManager::Shutdown() {
     m_overlayRenderer = nullptr;
     m_initialized = false;
 }
+
+void SimpleOverlayManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
+{
+    m_imageWorldBounds = bounds;
+    m_hasImageBounds = true;
+    for (auto& feature : m_features) {
+        if (feature) {
+            feature->SetImageWorldBounds(bounds); // 或只传 renderer，依接口而定
+        }
+    }
+}
+
+bool SimpleOverlayManager::IsWorldPointInImage(const std::array<double, 3>& worldPoint) const
+{
+    if (!m_hasImageBounds) {
+        return true; // 无边界信息时保守允许
+    }
+
+    const double eps = 1e-3; // 容差
+    const auto& b = m_imageWorldBounds;
+    const auto& p = worldPoint;
+
+    return (p[0] >= b[0] - eps && p[0] <= b[1] + eps &&
+        p[1] >= b[2] - eps && p[1] <= b[3] + eps &&
+        p[2] >= b[4] - eps && p[2] <= b[5] + eps);
+}

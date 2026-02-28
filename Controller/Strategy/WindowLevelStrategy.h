@@ -6,12 +6,11 @@ class IViewController;
 
 class WindowLevelStrategy : public IInteractionStrategy {
 public:
-    explicit WindowLevelStrategy(IViewController* ctrl);
+    explicit WindowLevelStrategy(IViewController* controller);
 
     void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
 
 private:
-    IViewController* m_ctrl;
     int m_lastPos[2] = { 0,0 };
     double m_window = 400;   // ≥ı º¥∞øÌ
     double m_level = 40;    // ≥ı º¥∞Œª

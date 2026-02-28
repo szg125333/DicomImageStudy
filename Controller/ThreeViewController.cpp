@@ -230,6 +230,44 @@ void ThreeViewController::SetWindowLevel(double ww, double wl) {
     }
 }
 
+bool ThreeViewController::isWorldPosInValidPixel(const std::array<double, 3>& worldPos)
+{
+    if (!m_image) return false;
+
+    // 1. World → Voxel (IJK) 坐标
+    double world[3] = { worldPos[0], worldPos[1], worldPos[2] };
+    int ijk[3];
+    m_image->ComputeStructuredCoordinates(world, ijk, nullptr);
+
+    // 2. 检查 IJK 是否在数据范围内
+    int* extent = m_image->GetExtent();
+    if (ijk[0] < extent[0] || ijk[0] > extent[1] ||
+        ijk[1] < extent[2] || ijk[1] > extent[3] ||
+        ijk[2] < extent[4] || ijk[2] > extent[5]) {
+        return false;
+    }
+
+    return true;
+}
+
+std::array<double, 6> ThreeViewController::GetImageBounds() const
+{
+    if (m_image) {
+        double rawBounds[6];
+        m_image->GetBounds(rawBounds);
+
+        // 转为 std::array
+        std::array<double, 6> bounds = {
+            rawBounds[0], rawBounds[1],
+            rawBounds[2], rawBounds[3],
+            rawBounds[4], rawBounds[5]
+        };
+
+		return bounds;
+    }
+    return std::array<double, 6>();
+}
+
 void ThreeViewController::updateSliceInternal(ViewType view, int slice) {
     int idx = static_cast<int>(view);
     if (m_renderers[idx]) {
@@ -272,6 +310,7 @@ void ThreeViewController::registerEvents() {
         m_renderers[i]->OnEvent(EventType::KeyRelease, forwardEvent(EventType::KeyRelease));
 
         auto overlayMgr = CreateDefaultOverlayManager();
+		overlayMgr->SetImageWorldBounds(GetImageBounds());
         m_renderers[i]->SetOverlayManager(std::move(overlayMgr));
         m_renderers[i]->GetOverlayManager()->Initialize(m_renderers[i]->GetOverlayRenderer(), m_renderers[i]->GetViewer());
     }

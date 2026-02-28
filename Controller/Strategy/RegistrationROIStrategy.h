@@ -12,7 +12,4 @@ public:
     ~RegistrationROIStrategy() override = default;
 
     void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
-
-private:
-    IViewController* m_controller = nullptr;
 };

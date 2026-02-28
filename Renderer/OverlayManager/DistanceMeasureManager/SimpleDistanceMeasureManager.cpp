@@ -373,13 +373,18 @@ vtkSmartPointer<vtkActor> SimpleDistanceMeasureManager::createTickActor(
     if (len < 1e-6) return nullptr;
 
     double mid[3] = { (p1[0] + p2[0]) / 2.0, (p1[1] + p2[1]) / 2.0, (p1[2] + p2[2]) / 2.0 };
-    double dir[3] = { dx / len, dy / len, dz / len };
+    //double dir[3] = { dx / len, dy / len, dz / len };
 
+    double dir[3] = { dx / len, dy / len, dz / len };
     double ref[3];
-    if (std::abs(dir[2]) < 0.9) {
+    if (std::abs(dir[2]) ==0) {
         ref[0] = 0.0; ref[1] = 0.0; ref[2] = 1.0;
     }
-    else {
+    else if (std::abs(dir[1]) ==0) {
+        ref[0] = 0.0; ref[1] = 1.0; ref[2] = 0.0;
+    }
+    else
+    {
         ref[0] = 1.0; ref[1] = 0.0; ref[2] = 0.0;
     }
 
@@ -430,6 +435,9 @@ vtkSmartPointer<vtkFollower> SimpleDistanceMeasureManager::createDistanceLabel(
     double dy = p2[1] - p1[1];
     double dz = p2[2] - p1[2];
     double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+    qDebug() << "[SimpleDistanceMeasureManager] createDistanceLabel - Distance:" << distance;
+
     double mid[3] = { (p1[0] + p2[0]) / 2.0, (p1[1] + p2[1]) / 2.0, (p1[2] + p2[2]) / 2.0 };
 
     std::ostringstream oss;
@@ -444,24 +452,12 @@ vtkSmartPointer<vtkFollower> SimpleDistanceMeasureManager::createDistanceLabel(
     follower->SetMapper(mapper);
     follower->GetProperty()->SetColor(1.0, 1.0, 1.0);
     follower->SetScale(scale, scale, scale);
+    follower->SetPosition(mid);
 
-    if (distance > 1e-6) {
-        double dir[3] = { dx / distance, dy / distance, dz / distance };
-        double perp[3];
-        vtkMath::Perpendiculars(dir, perp, nullptr, 0);
-        double pos[3] = {
-            mid[0] + (1.5 + offset) * perp[0],
-            mid[1] + (1.5 + offset) * perp[1],
-            mid[2] + (1.5 + offset) * perp[2]
-        };
-        follower->SetPosition(pos);
-    }
-    else {
-        follower->SetPosition(mid);
-    }
     if (camera) {
         follower->SetCamera(camera);
     }
+
     return follower;
 }
 
@@ -485,10 +481,14 @@ void SimpleDistanceMeasureManager::updatePreviewTick(
     else {
         double dir[3] = { dx / len, dy / len, dz / len };
         double ref[3];
-        if (std::abs(dir[2]) < 0.9) {
+        if (std::abs(dir[2]) ==0) {
             ref[0] = 0.0; ref[1] = 0.0; ref[2] = 1.0;
         }
-        else {
+        else if (std::abs(dir[1])==0){
+            ref[0] = 0.0; ref[1] = 1.0; ref[2] = 0.0;
+        }
+        else
+        {
             ref[0] = 1.0; ref[1] = 0.0; ref[2] = 0.0;
         }
 
@@ -504,6 +504,8 @@ void SimpleDistanceMeasureManager::updatePreviewTick(
             vtkMath::Normalize(perp);
         }
 
+		qDebug() << "perp:" << perp[0] << perp[1] << perp[2];
+
         double start[3] = {
             mid[0] - (tickLength / 2.0) * perp[0],
             mid[1] - (tickLength / 2.0) * perp[1],
@@ -514,6 +516,9 @@ void SimpleDistanceMeasureManager::updatePreviewTick(
             mid[1] + (tickLength / 2.0) * perp[1],
             mid[2] + (tickLength / 2.0) * perp[2]
         };
+
+		qDebug() << "tick start:" << start[0] << start[1] << start[2];
+		qDebug() << "tick end:" << end[0] << end[1] << end[2];
         m_previewTickSource->SetPoint1(start);
         m_previewTickSource->SetPoint2(end);
     }
@@ -536,20 +541,26 @@ void SimpleDistanceMeasureManager::updatePreviewLabel(
     m_previewTextSource->Modified();
 
     double mid[3] = { (p1[0] + p2[0]) / 2.0, (p1[1] + p2[1]) / 2.0, (p1[2] + p2[2]) / 2.0 };
+    m_previewLabelActor->SetPosition(mid);
+}
 
-    if (distance > 1e-6) {
-        double dir[3] = { dx / distance, dy / distance, dz / distance };
-        double perp[3];
-        vtkMath::Perpendiculars(dir, perp, nullptr, 0);
-        double offset = 2.5;
-        double pos[3] = {
-            mid[0] + offset * perp[0],
-            mid[1] + offset * perp[1],
-            mid[2] + offset * perp[2]
-        };
-        m_previewLabelActor->SetPosition(pos);
+void SimpleDistanceMeasureManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
+{
+    m_hasImageBounds = true;
+    m_imageWorldBounds = bounds;
+}
+
+bool SimpleDistanceMeasureManager::IsWorldPointInImage(const std::array<double, 3>& worldPoint) const
+{
+    if (!m_hasImageBounds) {
+        return true; // 无边界信息时保守允许
     }
-    else {
-        m_previewLabelActor->SetPosition(mid);
-    }
+
+    const double eps = 1e-3; // 容差
+    const auto& b = m_imageWorldBounds;
+    const auto& p = worldPoint;
+
+    return (p[0] >= b[0] - eps && p[0] <= b[1] + eps &&
+        p[1] >= b[2] - eps && p[1] <= b[3] + eps &&
+        p[2] >= b[4] - eps && p[2] <= b[5] + eps);
 }

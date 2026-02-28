@@ -2,7 +2,7 @@
 #include <QDebug>
 
 HandIrregularContourStrategy::HandIrregularContourStrategy(IViewController* controller)
-    : m_controller(controller) {
+    : IInteractionStrategy(controller) {
 }
 
 void HandIrregularContourStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {

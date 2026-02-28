@@ -89,6 +89,10 @@ public:
     /// @return 窗位值
     double GetWindowLevel() const override { return m_windowLevel; }
 
+    bool isWorldPosInValidPixel(const std::array<double, 3>& worldPos);
+
+	std::array<double, 6> GetImageBounds() const;
+
 signals:
     /// @brief 切片改变信号
     /// @param viewIndex 改变的视图索引

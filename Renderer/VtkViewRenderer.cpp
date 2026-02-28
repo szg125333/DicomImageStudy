@@ -11,8 +11,8 @@
 #include <vtkCellPicker.h>
 #include <vtkPropPicker.h>
 #include <vtkPointPicker.h>
+#include <vtkCamera.h>
 
-// ==================== 构造与析构 ====================
 
 VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
     : QObject(nullptr), m_widget(widget)
@@ -51,7 +51,7 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
 
     // ===== Overlay 渲染器初始化 =====
     m_renderWindow->SetNumberOfLayers(2);
-
+    m_viewer->GetRenderer()->SetLayer(0);
     m_overlayRenderer = vtkSmartPointer<vtkRenderer>::New();
     m_overlayRenderer->SetLayer(1);
     m_overlayRenderer->InteractiveOff();
@@ -61,7 +61,7 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
 
     // ===== 延迟渲染计时器设置 =====
     m_renderTimer.setSingleShot(true);
-    m_renderTimer.setInterval(0);
+    m_renderTimer.setInterval(16);
     connect(&m_renderTimer, &QTimer::timeout, this, &VtkViewRenderer::PerformRender);
 }
 

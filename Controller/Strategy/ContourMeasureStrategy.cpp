@@ -2,7 +2,7 @@
 #include <QDebug>
 
 ContourMeasureStrategy::ContourMeasureStrategy(IViewController* controller)
-    : m_controller(controller) {
+    : IInteractionStrategy(controller) {
 }
 
 void ContourMeasureStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {

@@ -21,7 +21,7 @@ public:
     void SetVisible(bool visible) override;
     void SetColor(double r, double g, double b) override;
     void Shutdown() override;
-
+    void SetImageWorldBounds(const std::array<double, 6>& bounds) override;
 private:
     vtkSmartPointer<vtkRenderer> m_overlayRenderer;
     vtkSmartPointer<vtkLineSource> m_hLine;

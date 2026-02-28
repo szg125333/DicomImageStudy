@@ -7,8 +7,8 @@
 #include <vtkSmartPointer.h>
 #include <vtkTextProperty.h>
 
-WindowLevelStrategy::WindowLevelStrategy(IViewController* ctrl)
-    : m_ctrl(ctrl) {
+WindowLevelStrategy::WindowLevelStrategy(IViewController* controller)
+    : IInteractionStrategy(controller) {
 }
 
 void WindowLevelStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {
@@ -35,7 +35,7 @@ void WindowLevelStrategy::HandleEvent(EventType type, int viewIndex, const Event
 }
 
 void WindowLevelStrategy::updateWindowLevel(int viewIndex) {
-    auto renderer = m_ctrl->GetRenderer(viewIndex);
+    auto renderer = m_controller->GetRenderer(viewIndex);
     if (!renderer) return;
 
     // ªÒ»° VTK viewer

@@ -2,7 +2,7 @@
 #include <QDebug>
 
 CheckboardStrategy::CheckboardStrategy(IViewController* controller)
-    : m_controller(controller) {
+    : IInteractionStrategy(controller) {
 }
 
 void CheckboardStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {

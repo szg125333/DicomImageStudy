@@ -5,15 +5,15 @@ TitleBarWidget::TitleBarWidget(QWidget *parent)
 {
 	ui.setupUi(this);
 
-	connect(ui.DistanceMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_DistanceMeasurement_clicked);
+	connect(ui.DistanceMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_DistanceMeasurement_toggled);
 }
 
 TitleBarWidget::~TitleBarWidget()
 {}
 
 
-void TitleBarWidget::on_DistanceMeasurement_clicked()
+void TitleBarWidget::on_DistanceMeasurement_toggled(bool state)
 {
-	emit requestEnableDistanceMeasurement();
+	emit requestEnableDistanceMeasurement(state);
 }
 

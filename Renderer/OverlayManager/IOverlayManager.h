@@ -10,6 +10,7 @@ public:
     virtual void SetVisible(bool visible) = 0;
     virtual void SetColor(double r, double g, double b) = 0;
     virtual void Shutdown() = 0;
+    virtual void SetImageWorldBounds(const std::array<double, 6>& bounds) = 0;
 
     template<typename T>
     T* GetFeature() {

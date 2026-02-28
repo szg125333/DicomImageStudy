@@ -10,8 +10,6 @@ public:
     void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
 
 private:
-    IViewController* m_controller = nullptr;
-
     // 存储起始点的世界坐标（不是屏幕坐标！）
     bool m_hasFirstPoint = false;
     std::array<double, 3> m_startWorldPos;

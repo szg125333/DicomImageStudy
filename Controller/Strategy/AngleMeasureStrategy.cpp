@@ -2,7 +2,7 @@
 #include <QDebug>
 
 AngleMeasureStrategy::AngleMeasureStrategy(IViewController* controller)
-    : m_controller(controller) {
+    : IInteractionStrategy(controller) {
 }
 
 void AngleMeasureStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {

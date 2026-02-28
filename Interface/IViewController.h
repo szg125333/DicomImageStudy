@@ -13,4 +13,5 @@ public:
     virtual void SetWindowLevel(double window, double level) = 0;
     virtual void LocatePoint(int viewIndex, int pos[2]) = 0;
     virtual IViewRenderer* GetRenderer(int viewIndex) = 0;
+    virtual bool isWorldPosInValidPixel(const std::array<double, 3>& worldPos) = 0;
 };

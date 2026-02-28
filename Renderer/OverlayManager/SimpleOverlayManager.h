@@ -23,6 +23,11 @@ public:
     void SetVisible(bool visible) override;
     void SetColor(double r, double g, double b) override;
     void Shutdown() override;
+    // 注入图像物理边界（世界坐标系）
+    void SetImageWorldBounds(const std::array<double, 6>& bounds) override;
+
+    // 判断世界坐标点是否在图像物理范围内
+    bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const;
 
     // 注册 feature（替代 SetXXXManager）
     void RegisterFeature(std::unique_ptr<IOverlayFeature> feature);
@@ -46,4 +51,7 @@ private:
     bool m_initialized = false;
     bool m_visible = true;
     double m_color[3] = { 0.0, 1.0, 0.0 };
+
+    std::array<double, 6> m_imageWorldBounds = { 0, 0, 0, 0, 0, 0 };
+    bool m_hasImageBounds = false;
 };

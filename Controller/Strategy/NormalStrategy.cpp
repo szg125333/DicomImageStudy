@@ -13,20 +13,20 @@ void NormalStrategy::HandleEvent(EventType type, int idx, const EventData& data)
     if (!pos) return;
 
     if (type == EventType::WheelForward) {
-        m_ctrl->ChangeSlice(idx, +1);
+        m_controller->ChangeSlice(idx, +1);
     }
     else if (type == EventType::WheelBackward) {
-        m_ctrl->ChangeSlice(idx, -1);
+        m_controller->ChangeSlice(idx, -1);
     }
     else if (type == EventType::LeftPress) {
         // 第一次按下
         m_lastPos[0] = pos[0];
         m_lastPos[1] = pos[1];
         m_dragging = true;
-        m_window = m_ctrl->GetWindowWidth();
-        m_level = m_ctrl->GetWindowLevel();
+        m_window = m_controller->GetWindowWidth();
+        m_level = m_controller->GetWindowLevel();
 
-        m_ctrl->LocatePoint(idx, pos);
+        m_controller->LocatePoint(idx, pos);
     }
     else if (type == EventType::LeftMove) {
         if (!m_dragging) {
@@ -68,5 +68,5 @@ void NormalStrategy::HandleEvent(EventType type, int idx, const EventData& data)
 }
 
 void NormalStrategy::updateWindowLevel(int viewIndex) {
-    m_ctrl->SetWindowLevel(m_window, m_level);
+    m_controller->SetWindowLevel(m_window, m_level);
 }
