@@ -12,8 +12,8 @@
 #include <vtkPropPicker.h>
 
 #include "Renderer/OverlayManager/OverlayFactory.h"
+#include "Controller/Strategy/InteractionStrategyFactory.h"
 #include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
-#include "Renderer/OverlayManager/DistanceMeasureManager/SimpleDistanceMeasureManager.h"
 
 ThreeViewController::ThreeViewController(QObject* parent) : QObject(parent) {
     m_renderers.fill(nullptr);
@@ -22,8 +22,10 @@ ThreeViewController::ThreeViewController(QObject* parent) : QObject(parent) {
         m_maxSlice[i] = 0;
     }
 
+    m_strategies = InteractionStrategyFactory::CreateStrategies(this);
     SetInteractionMode(InteractionMode::Normal);
 }
+
 ThreeViewController::~ThreeViewController() {
 }
 
@@ -35,46 +37,7 @@ void ThreeViewController::SetInteractionMode(InteractionMode mode) {
     if (m_mode == mode) return;
 
     unregisterEvents();
-
     m_mode = mode;
-    switch (mode) {
-    case InteractionMode::Normal:
-        m_strategy = std::make_unique<NormalStrategy>(this);
-        break;
-    case InteractionMode::Checkboard:
-        // TODO: 实现棋盘格对比模式
-        m_strategy.reset();
-        break;
-    case InteractionMode::ManualMove:
-        // TODO: 实现手动平移/旋转模式
-        m_strategy.reset();
-        break;
-    case InteractionMode::DistanceMeasure:
-        // TODO: 实现距离测量工具
-        m_strategy = std::make_unique<DistanceMeasureStrategy>(this);
-        break;
-    case InteractionMode::AngleMeasure:
-        // TODO: 实现角度测量工具
-        m_strategy.reset();
-        break;
-    case InteractionMode::ContourMeasure:
-        // TODO: 实现轮廓测量模式
-        m_strategy.reset();
-        break;
-    case InteractionMode::RegistrationROI:
-        // TODO: 实现配准 ROI 模式
-        m_strategy.reset();
-        break;
-    case InteractionMode::HandIrregularContour:
-        // TODO: 实现手工不规则轮廓模式
-        m_strategy.reset();
-        break;
-    case InteractionMode::None:
-    default:
-        m_strategy.reset();
-        break;
-    }
-
     registerEvents();
 }
 
@@ -228,26 +191,6 @@ void ThreeViewController::SetWindowLevel(double ww, double wl) {
     }
 }
 
-bool ThreeViewController::isWorldPosInValidPixel(const std::array<double, 3>& worldPos)
-{
-    if (!m_image) return false;
-
-    // 1. World → Voxel (IJK) 坐标
-    double world[3] = { worldPos[0], worldPos[1], worldPos[2] };
-    int ijk[3];
-    m_image->ComputeStructuredCoordinates(world, ijk, nullptr);
-
-    // 2. 检查 IJK 是否在数据范围内
-    int* extent = m_image->GetExtent();
-    if (ijk[0] < extent[0] || ijk[0] > extent[1] ||
-        ijk[1] < extent[2] || ijk[1] > extent[3] ||
-        ijk[2] < extent[4] || ijk[2] > extent[5]) {
-        return false;
-    }
-
-    return true;
-}
-
 std::array<double, 6> ThreeViewController::GetImageBounds() const
 {
     if (m_image) {
@@ -270,7 +213,10 @@ void ThreeViewController::resetStrategyDrawings()
 {
     for (int i = 0; i < m_renderers.size(); i++)
     {
-        m_strategy->Clear(i);
+        auto it = m_strategies.find(m_mode);
+        if (it != m_strategies.end() && it->second) {
+			it->second->Clear(i);
+        }
         m_renderers[i]->RequestRender();
     }
 }
@@ -306,9 +252,19 @@ void ThreeViewController::registerEvents() {
 
         auto forwardEvent = [this, idx](EventType type) {
             return [this, idx, type](const EventData& data) {
-                if (m_strategy) {
-                    m_strategy->HandleEvent(type, idx, data);
-                }
+                    if(type == EventType::WheelForward || type == EventType::WheelBackward) {
+                        auto it = m_strategies.find(InteractionMode::Normal);
+                        if (it != m_strategies.end() && it->second) {
+                            it->second->HandleEvent(type, idx, data);
+                        }
+                    }
+                    else
+                    {
+                        auto it = m_strategies.find(m_mode);
+                        if (it != m_strategies.end() && it->second) {
+                            it->second->HandleEvent(type, idx, data);
+                        }
+                    }
                 };
             };
 

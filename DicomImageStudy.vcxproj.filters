@@ -130,6 +130,9 @@
     <ClCompile Include="Dicom\DicomMetadataExtractor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Controller\Strategy\InteractionStrategyFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\InteractionMode.h">
@@ -253,6 +256,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Common\RenderViewState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller\Strategy\InteractionStrategyFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

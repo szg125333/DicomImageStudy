@@ -6,8 +6,8 @@ class IViewController;
 
 class NormalStrategy : public IInteractionStrategy {
 public:
-    explicit NormalStrategy(IViewController* ctrl)
-        : IInteractionStrategy(ctrl)
+    explicit NormalStrategy(IViewController* m_controller)
+        : IInteractionStrategy(m_controller)
     {
     }
     void HandleEvent(EventType type, int idx, const EventData& data) override;

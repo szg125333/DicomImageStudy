@@ -129,6 +129,7 @@
     <ClCompile Include="Controller\ThreeViewController.cpp" />
     <ClCompile Include="Dicom\DicomMetadataExtractor.cpp" />
     <ClCompile Include="Dicom\DicomRegWriter.cpp" />
+    <ClCompile Include="Controller\Strategy\InteractionStrategyFactory.cpp" />
     <ClCompile Include="Renderer\OverlayManager\AngleMeasureManager\SimpleAngleMeasureManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\CheckerboardManager\SimpleCheckerboardManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\ContourMeasureManager\SimpleContourMeasureManager.cpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="Controller\Strategy\WindowLevelStrategy.h" />
     <ClInclude Include="Dicom\DicomMetadataExtractor.h" />
     <ClInclude Include="Dicom\DicomRegWriter.h" />
+    <ClInclude Include="Controller\Strategy\InteractionStrategyFactory.h" />
     <ClInclude Include="Interface\IViewController.h" />
     <ClInclude Include="Interface\IViewRenderer.h" />
     <ClInclude Include="Renderer\OverlayManager\AngleMeasureManager\IAngleMeasureManager.h" />

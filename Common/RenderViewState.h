@@ -5,14 +5,6 @@
 #include <string>
 #include <map>
 
-//struct RenderViewState {
-//    ViewType viewType = ViewType::None;
-//    double mouseWorld[3] = { 0,0,0 };
-//    double windowWidth = 400;
-//    double windowLevel = 40;
-//    bool hasMouse = false;
-//};
-
 // 可显示的信息字段类型
 enum class OverlayField {
     ViewType,

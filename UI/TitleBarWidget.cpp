@@ -56,17 +56,8 @@ void TitleBarWidget::initUI()
     ui.AngleMeasurement->setStyleSheet(buttonStyle);
     ui.AngleMeasurement->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Angle.png"));
 
-    //ui.DistanceMeasurement->setStyleSheet(buttonStyle);
-    //ui.DistanceMeasurement->setIcon(QIcon(":/DicomImageStudy/images/Ruler.png"));
-
-    //ui.DistanceMeasurement->setStyleSheet(buttonStyle);
-    //ui.DistanceMeasurement->setIcon(QIcon(":/DicomImageStudy/images/Ruler.png"));
-
-    //ui.DistanceMeasurement->setStyleSheet(buttonStyle);
-    //ui.DistanceMeasurement->setIcon(QIcon(":/DicomImageStudy/images/Ruler.png"));
-
-    //ui.DistanceMeasurement->setStyleSheet(buttonStyle);
-    //ui.DistanceMeasurement->setIcon(QIcon(":/DicomImageStudy/images/Ruler.png"));
+    ui.OpenFolder->setStyleSheet(buttonStyle);
+    ui.OpenFolder->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Folder.png"));
 }
 
 void TitleBarWidget::initConnections()

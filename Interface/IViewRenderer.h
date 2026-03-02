@@ -27,21 +27,32 @@ enum class EventType {
 class IViewRenderer {
 public:
     virtual ~IViewRenderer() = default;
+
+    // 数据与视图设置
     virtual void SetInputData(vtkImageData* img) = 0;
     virtual void SetOrientation(ViewType viewType) = 0;
     virtual void SetSlice(int slice) = 0;
     virtual void SetMaxSlice(int slice) = 0;
-    virtual void SetCurrentClickWorldPos(std::array<double, 3> worldPos) = 0;
     virtual int GetSlice() const = 0;
-    virtual void RequestRender() = 0;
-    virtual void OnEvent(EventType type, std::function<void(const EventData&)> cb) = 0;
-    virtual std::array<double, 3> PickWorldPosition(int screenX, int screenY) = 0;
-    virtual void SetColorWindow(double s)=0;
-    virtual void SetColorLevel(double s)=0;
 
+    // 窗宽窗位
+    virtual void SetColorWindow(double s) = 0;
+    virtual void SetColorLevel(double s) = 0;
+
+    // 交互与事件
+    virtual void SetCurrentClickWorldPos(std::array<double, 3> worldPos) = 0;
+    virtual std::array<double, 3> PickWorldPosition(int screenX, int screenY) = 0;
+    virtual void OnEvent(EventType type, std::function<void(const EventData&)> cb) = 0;
+
+    // 渲染控制
+    virtual void RequestRender() = 0;
+
+    // Viewer 与 Overlay 访问
     virtual vtkSmartPointer<vtkImageViewer2> GetViewer() = 0;
-    virtual IOverlayManager* GetOverlayManager()=0;
+    virtual IOverlayManager* GetOverlayManager() = 0;
     virtual vtkSmartPointer<vtkRenderer> GetOverlayRenderer() = 0;      // 返回 overlay 层
-    virtual void SetOverlayManager(std::unique_ptr<IOverlayManager> manager)=0;
-	virtual void UpdaBasicInformationActor() = 0;
+    virtual void SetOverlayManager(std::unique_ptr<IOverlayManager> manager) = 0;
+
+    // UI 更新（保留原始拼写）
+    virtual void UpdaBasicInformationActor() = 0;
 };

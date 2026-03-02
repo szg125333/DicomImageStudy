@@ -3,5 +3,6 @@
         <file>images/Ruler.png</file>
         <file>images/FlatStyle-Angle.png</file>
         <file>images/FlatStyle-Set.png</file>
+        <file>images/FlatStyle-Folder.png</file>
     </qresource>
 </RCC>
