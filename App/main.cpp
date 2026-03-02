@@ -80,7 +80,6 @@ int main(int argc, char* argv[])
 
     startWidget.showMaximized();
 
-
     QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableDistanceMeasurement, threeViewWidget,&ThreeViewWidget::setModeToDistanceMeasurement);
 
     QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);

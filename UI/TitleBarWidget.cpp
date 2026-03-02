@@ -48,8 +48,25 @@ void TitleBarWidget::initUI()
     }
 )";
 
+	this->setStyleSheet(buttonStyle);
+
     ui.DistanceMeasurement->setStyleSheet(buttonStyle);
     ui.DistanceMeasurement->setIcon(QIcon(":/DicomImageStudy/images/Ruler.png"));
+
+    ui.AngleMeasurement->setStyleSheet(buttonStyle);
+    ui.AngleMeasurement->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Angle.png"));
+
+    //ui.DistanceMeasurement->setStyleSheet(buttonStyle);
+    //ui.DistanceMeasurement->setIcon(QIcon(":/DicomImageStudy/images/Ruler.png"));
+
+    //ui.DistanceMeasurement->setStyleSheet(buttonStyle);
+    //ui.DistanceMeasurement->setIcon(QIcon(":/DicomImageStudy/images/Ruler.png"));
+
+    //ui.DistanceMeasurement->setStyleSheet(buttonStyle);
+    //ui.DistanceMeasurement->setIcon(QIcon(":/DicomImageStudy/images/Ruler.png"));
+
+    //ui.DistanceMeasurement->setStyleSheet(buttonStyle);
+    //ui.DistanceMeasurement->setIcon(QIcon(":/DicomImageStudy/images/Ruler.png"));
 }
 
 void TitleBarWidget::initConnections()

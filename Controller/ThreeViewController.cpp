@@ -304,7 +304,6 @@ void ThreeViewController::registerEvents() {
         if (!m_renderers[i]) continue;
         int idx = i;
 
-        // 在你的类中（比如 ViewController.cpp）
         auto forwardEvent = [this, idx](EventType type) {
             return [this, idx, type](const EventData& data) {
                 if (m_strategy) {

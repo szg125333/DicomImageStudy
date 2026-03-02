@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/DicomImageStudy">
         <file>images/Ruler.png</file>
+        <file>images/FlatStyle-Angle.png</file>
+        <file>images/FlatStyle-Set.png</file>
     </qresource>
 </RCC>
