@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 
     // 延迟设置 splitter 尺寸（解决 setSizes 无效问题）
     QTimer::singleShot(0, [centralSplitter]() {
-        centralSplitter->setSizes({ 160, 840 });
+        centralSplitter->setSizes({ 200, 800 });
         });
 
     // === 构建带弹簧的标题栏 ===

@@ -57,12 +57,23 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
     m_overlayRenderer->InteractiveOff();
     m_renderWindow->AddRenderer(m_overlayRenderer);
     m_overlayRenderer->SetActiveCamera(m_viewer->GetRenderer()->GetActiveCamera());
-    m_overlayRenderer->ResetCameraClippingRange();
+    //m_overlayRenderer->ResetCameraClippingRange();
+
+    double viewport[4];
+    m_viewer->GetRenderer()->GetViewport(viewport);
+    m_overlayRenderer->SetViewport(viewport); // ← 关键！
+
+    m_overlayRenderer->SetBackground(0, 0, 0);     // 可选：设为黑
+    m_overlayRenderer->SetBackground2(0, 0, 0);    // 双背景也设黑
+    m_overlayRenderer->SetGradientBackground(false);
+    m_overlayRenderer->EraseOff();                // ← 关键！禁止清屏
 
     // ===== 延迟渲染计时器设置 =====
     m_renderTimer.setSingleShot(true);
     m_renderTimer.setInterval(16);
     connect(&m_renderTimer, &QTimer::timeout, this, &VtkViewRenderer::PerformRender);
+
+	connect(this, &VtkViewRenderer::viewStateChanged, this, &VtkViewRenderer::getViewStateChanged);
 }
 
 VtkViewRenderer::~VtkViewRenderer() {
@@ -94,24 +105,46 @@ void VtkViewRenderer::SetInputData(vtkImageData* img) {
     }
 }
 
-void VtkViewRenderer::SetOrientation(SliceOrientation o) {
+void VtkViewRenderer::SetOrientation(ViewType viewType) {
     if (m_viewer) {
-        if (o == SliceOrientation::XY) {
+        if (viewType == ViewType::Axial) {
             m_viewer->SetSliceOrientationToXY();
         }
-        else if (o == SliceOrientation::YZ) {
+        else if (viewType == ViewType::Sagittal) {
             m_viewer->SetSliceOrientationToYZ();
         }
-        else {
+        else if(viewType == ViewType::Coronal){
             m_viewer->SetSliceOrientationToXZ();
         }
+        else
+        {
+            return;
+        }
+		m_currentViewType = viewType;
     }
 }
 
 void VtkViewRenderer::SetSlice(int slice) {
     if (m_viewer) {
+		m_currentSlice = slice;
         m_viewer->SetSlice(slice);
     }
+}
+
+void VtkViewRenderer::SetMaxSlice(int slice)
+{
+	m_maxSlices = slice;
+}
+
+void VtkViewRenderer::UpdaBasicInformationActor()
+{
+    RenderViewState state;
+    state.viewType = GetCurrentViewType();
+    state.windowLevel = GetColorLevel();
+    state.windowWidth = GetColorWindow();
+    state.sliceIndex = GetCurrentSlice();
+    state.worldPos = GetCurrentClickWorldPos();
+    emit viewStateChanged(state);
 }
 
 int VtkViewRenderer::GetSlice() const {
@@ -128,6 +161,12 @@ void VtkViewRenderer::OnEvent(EventType type, std::function<void(const EventData
 void VtkViewRenderer::SetOverlayManager(std::unique_ptr<IOverlayManager> manager)
 {
     m_overlayManager = std::move(manager);
+	RenderViewState state;
+	state.viewType = m_currentViewType;
+	state.windowLevel = m_windowLevel;
+	state.windowWidth = m_windowWidth;
+    state.sliceIndex = m_currentSlice;
+    m_overlayManager->UpdaBasicInformationActor(state);
 }
 
 std::array<double, 3> VtkViewRenderer::PickWorldPosition(int screenX, int screenY)
@@ -157,14 +196,36 @@ std::array<double, 3> VtkViewRenderer::PickWorldPosition(int screenX, int screen
     };
 }
 
+void VtkViewRenderer::SetColorWindow(double s)
+{
+    m_windowWidth = s;
+	m_viewer->SetColorWindow(s);
+}
 
-void VtkViewRenderer::RequestRender() {
-    if (!m_renderTimer.isActive()) {
-        m_renderTimer.start();
+void VtkViewRenderer::SetColorLevel(double s)
+{
+    m_windowLevel=s;
+	m_viewer->SetColorLevel(s);
+}
+
+void VtkViewRenderer::SetCurrentClickWorldPos(std::array<double, 3> worldPos)
+{
+    m_currentClickWorldPos = worldPos;
+}
+
+void VtkViewRenderer::getViewStateChanged(const RenderViewState& data)
+{
+    if (m_overlayManager) {
+        m_overlayManager->UpdaBasicInformationActor(data);
     }
 }
 
-// ==================== 私有方法 ====================
+void VtkViewRenderer::RequestRender() {
+    if (!m_renderTimer.isActive()) {
+        UpdaBasicInformationActor();
+        m_renderTimer.start();
+    }
+}
 
 void VtkViewRenderer::PerformRender() {
     if (m_viewer) {
@@ -229,7 +290,6 @@ void VtkViewRenderer::VtkGenericCallback(vtkObject* caller, unsigned long eid,
         default:
             return;
     }
-
 
     // ===== 调用已注册的回调函数 =====
     auto it = self->m_callbacks.find(type);

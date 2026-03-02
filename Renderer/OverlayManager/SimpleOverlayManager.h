@@ -1,7 +1,6 @@
 #pragma once
 #include "IOverlayManager.h"
 #include "Renderer/OverlayManager/CrosshairManager/ICrosshairManager.h"
-#include "Renderer/OverlayManager/WindowLevelManager/IWindowLevelManager.h"
 #include "Renderer/OverlayManager/DistanceMeasureManager/IDistanceMeasureManager.h"
 #include <vtkSmartPointer.h>
 #include <vtkActor.h>
@@ -42,6 +41,7 @@ public:
         return nullptr;
     }
 
+    void UpdaBasicInformationActor(const RenderViewState& data);
 private:
     vtkSmartPointer<vtkRenderer> m_overlayRenderer;
     vtkImageViewer2* m_viewer = nullptr; // ·ÇÓµÓÐ

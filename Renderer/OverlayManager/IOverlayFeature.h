@@ -12,10 +12,10 @@ public:
     virtual void Initialize(vtkRenderer* renderer) = 0;
 
     // 可选：控制可见性（比如用户关闭测距）
-    virtual void SetVisible(bool visible) {}
+    virtual void SetVisible(bool visible) = 0;
 
     // 可选：统一设置颜色（比如全局高亮色）
-    virtual void SetColor(double r, double g, double b) {}
+    virtual void SetColor(double r, double g, double b) = 0;
 
     // 清理资源（移除 actor、释放内存等）
     virtual void Shutdown() = 0;

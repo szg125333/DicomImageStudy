@@ -24,7 +24,6 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
     }
 
     // 获取当前视图的渲染器
-    //auto renderer = m_controller->GetRenderer(m_editingViewIndex == -1 ? viewIndex : m_editingViewIndex);
     auto renderer = m_controller->GetRenderer(viewIndex);
     if (!renderer) return;
 
@@ -75,8 +74,6 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
                 m_editingIsStart = editablePoint.isStart;
             }
         }
-
-
         break;
     }
 
@@ -142,7 +139,6 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
 
 void DistanceMeasureStrategy::Clear(int viewIndex)
 {
-        // 获取当前视图的渲染器
     auto renderer = m_controller->GetRenderer(viewIndex);
     if (!renderer) return;
 

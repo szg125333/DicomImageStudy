@@ -91,7 +91,7 @@
     <ClCompile Include="Renderer\OverlayManager\SimpleOverlayManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\OverlayManager\WindowLevelManager\SimpleWindowLevelManager.cpp">
+    <ClCompile Include="Renderer\OverlayManager\OverlayInfoManager\SimpleOverlayInfoManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\VtkViewRenderer.cpp">
@@ -222,10 +222,10 @@
     <ClInclude Include="Renderer\OverlayManager\SimpleOverlayManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\OverlayManager\WindowLevelManager\IWindowLevelManager.h">
+    <ClInclude Include="Renderer\OverlayManager\OverlayInfoManager\IOverlayInfoManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\OverlayManager\WindowLevelManager\SimpleWindowLevelManager.h">
+    <ClInclude Include="Renderer\OverlayManager\OverlayInfoManager\SimpleOverlayInfoManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utils\ImageOrientationResampler.h">
@@ -250,6 +250,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Dicom\DicomMetadataExtractor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\RenderViewState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

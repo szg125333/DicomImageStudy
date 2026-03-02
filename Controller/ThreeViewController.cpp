@@ -29,7 +29,6 @@ ThreeViewController::~ThreeViewController() {
 
 void ThreeViewController::SetRenderers(std::array<IViewRenderer*, 3> renderers) {
     m_renderers = renderers;
-    registerEvents();
 }
 
 void ThreeViewController::SetInteractionMode(InteractionMode mode) {
@@ -106,11 +105,8 @@ void ThreeViewController::SetImageData(vtkImageData* image) {
     m_windowLevel = (range[0] + range[1]) / 2.0;
 
     for (int i = 0; i < m_renderers.size(); ++i) {
-        auto viewer = m_renderers[i]->GetViewer();
-        if (viewer) {
-            viewer->SetColorWindow(m_windowWidth);
-            viewer->SetColorLevel(m_windowLevel);
-        }
+        m_renderers[i]->SetColorWindow(m_windowWidth);
+        m_renderers[i]->SetColorLevel(m_windowLevel);
     }
 
     for (int i = 0; i < 3; ++i) {
@@ -120,6 +116,8 @@ void ThreeViewController::SetImageData(vtkImageData* image) {
             viewer->GetRenderer()->ResetCamera();
         }
     }
+
+    registerEvents();
 }
 
 void ThreeViewController::RequestSetSlice(ViewType view, int slice) {
@@ -210,7 +208,7 @@ void ThreeViewController::UpdateCrosshairInAllViews(std::array<double, 3> worldP
                 worldMin.data(),
                 worldMax.data());
         }
-
+		m_renderers[i]->SetCurrentClickWorldPos(worldPoint);
         m_renderers[i]->RequestRender();
     }
 }
@@ -223,8 +221,8 @@ void ThreeViewController::SetWindowLevel(double ww, double wl) {
         if (!m_renderers[i]) continue;
         auto viewer = m_renderers[i]->GetViewer();
         if (viewer) {
-            viewer->SetColorWindow(m_windowWidth);
-            viewer->SetColorLevel(m_windowLevel);
+            m_renderers[i]->SetColorWindow(m_windowWidth);
+            m_renderers[i]->SetColorLevel(m_windowLevel);
         }
         m_renderers[i]->RequestRender();
     }
@@ -270,7 +268,7 @@ std::array<double, 6> ThreeViewController::GetImageBounds() const
 
 void ThreeViewController::resetStrategyDrawings()
 {
-    for (size_t i = 0; i < m_renderers.size(); i++)
+    for (int i = 0; i < m_renderers.size(); i++)
     {
         m_strategy->Clear(i);
         m_renderers[i]->RequestRender();
@@ -281,6 +279,7 @@ void ThreeViewController::updateSliceInternal(ViewType view, int slice) {
     int idx = static_cast<int>(view);
     if (m_renderers[idx]) {
         m_renderers[idx]->SetSlice(slice);
+        m_renderers[idx]->SetMaxSlice(m_maxSlice[static_cast<int>(ViewType::Axial)]);
         m_renderers[idx]->RequestRender();
     }
 }
@@ -289,9 +288,14 @@ void ThreeViewController::computeSliceRanges() {
     if (!m_image) return;
     int dims[3];
     m_image->GetDimensions(dims);
-    m_minSlice[0] = 0; m_maxSlice[0] = dims[2] - 1;
-    m_minSlice[1] = 0; m_maxSlice[1] = dims[0] - 1;
-    m_minSlice[2] = 0; m_maxSlice[2] = dims[1] - 1;
+    m_minSlice[static_cast<int>(ViewType::Axial)] = 0;
+    m_maxSlice[static_cast<int>(ViewType::Axial)] = dims[2] - 1;
+
+    m_minSlice[static_cast<int>(ViewType::Sagittal)] = 0;
+    m_maxSlice[static_cast<int>(ViewType::Sagittal)] = dims[0] - 1;
+
+    m_minSlice[static_cast<int>(ViewType::Coronal)] = 0;
+    m_maxSlice[static_cast<int>(ViewType::Coronal)] = dims[1] - 1;
 }
 
 void ThreeViewController::registerEvents() {
@@ -320,8 +324,8 @@ void ThreeViewController::registerEvents() {
 
         auto overlayMgr = CreateDefaultOverlayManager();
 		overlayMgr->SetImageWorldBounds(GetImageBounds());
+		overlayMgr->Initialize(m_renderers[i]->GetOverlayRenderer(), m_renderers[i]->GetViewer());
         m_renderers[i]->SetOverlayManager(std::move(overlayMgr));
-        m_renderers[i]->GetOverlayManager()->Initialize(m_renderers[i]->GetOverlayRenderer(), m_renderers[i]->GetViewer());
     }
 }
 

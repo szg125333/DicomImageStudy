@@ -1,5 +1,7 @@
 ﻿#include "Renderer/OverlayManager/IOverlayFeature.h"
 #include <typeinfo>  
+#include "Common/EventData.h"
+#include "Common/RenderViewState.h"
 
 class IOverlayManager {
 public:
@@ -16,6 +18,7 @@ public:
     T* GetFeature() {
         return dynamic_cast<T*>(GetFeatureImpl(typeid(T)));
     }
+    virtual void UpdaBasicInformationActor(const RenderViewState& data) = 0;
 
 protected:
     virtual IOverlayFeature* GetFeatureImpl(const std::type_info& type) = 0;

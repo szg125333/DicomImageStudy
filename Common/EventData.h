@@ -14,5 +14,4 @@ struct EventData {
     bool ctrlPressed = false;
     bool shiftPressed = false;
     bool altPressed = false;
-
 };

@@ -61,7 +61,7 @@ void SimpleCrosshairManager::UpdateCrosshair(std::array<double, 3> worldPoint,
         vP1[0] = x; vP1[1] = worldPoint[1]; vP1[2] = worldMin[2];
         vP2[0] = x; vP2[1] = worldPoint[1]; vP2[2] = worldMax[2];
     }
-    else { // Coronal XZ 平面，y 固定
+    else if(view == ViewType::Coronal){ // Coronal XZ 平面，y 固定
         double y = worldPoint[1];
         hP1[0] = worldMin[0]; hP1[1] = y; hP1[2] = worldPoint[2];
         hP2[0] = worldMax[0]; hP2[1] = y; hP2[2] = worldPoint[2];

@@ -80,9 +80,9 @@ void ThreeViewWidget::setupRenderersAndController()
     }
 
     // 设置方向
-    m_renderers[static_cast<int>(ViewType::Axial)]->SetOrientation(SliceOrientation::XY);
-    m_renderers[static_cast<int>(ViewType::Sagittal)]->SetOrientation(SliceOrientation::YZ);
-    m_renderers[static_cast<int>(ViewType::Coronal)]->SetOrientation(SliceOrientation::XZ);
+    m_renderers[static_cast<int>(ViewType::Axial)]->SetOrientation(ViewType::Axial);
+    m_renderers[static_cast<int>(ViewType::Sagittal)]->SetOrientation(ViewType::Sagittal);
+    m_renderers[static_cast<int>(ViewType::Coronal)]->SetOrientation(ViewType::Coronal);
 
     // 如果外部没有注入 controller，则由 widget 创建并拥有它
     if (!m_controller) {

@@ -4,5 +4,6 @@
 enum class ViewType :int {
     Axial = 0,
     Sagittal = 1,
-    Coronal = 2
+    Coronal = 2,
+	None = 3
 };

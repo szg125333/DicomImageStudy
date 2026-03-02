@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Interface/IViewRenderer.h"
+#include "Common/RenderViewState.h"
 #include <QObject>
 #include <QPointer>
 #include <QTimer>
@@ -39,11 +40,14 @@ public:
 
     /// @brief 设置切片方向
     /// @param o 切片方向（XY/YZ/XZ）
-    void SetOrientation(SliceOrientation o) override;
+    void SetOrientation(ViewType viewType) override;
 
     /// @brief 设置当前切片索引
     /// @param slice 切片号
     void SetSlice(int slice) override;
+    void SetMaxSlice(int slice) override;
+
+    void UpdaBasicInformationActor() override;
 
     /// @brief 获取当前切片索引
     /// @return 当前切片号
@@ -71,15 +75,32 @@ public:
     /// @brief 获取 Overlay 管理器
     /// @return IOverlayManager 指针
     IOverlayManager* GetOverlayManager() override { return m_overlayManager.get(); }
+
     void SetOverlayManager(std::unique_ptr<IOverlayManager> manager) override;
 
     std::array<double, 3> PickWorldPosition(int screenX, int screenY)override;
+
+    void SetColorWindow(double s) override;
+    void SetColorLevel(double s) override;
+    void SetCurrentClickWorldPos(std::array<double, 3> worldPos) override;
+
+    double GetColorWindow()  { return m_windowWidth; };
+    double GetColorLevel() { return m_windowLevel; };
+
+    int GetCurrentSlice() { return m_currentSlice; };
+    int GetAllSlices() { return m_maxSlices; };
+    ViewType GetCurrentViewType() { return m_currentViewType; };
+    std::array<double, 3> GetCurrentClickWorldPos() { return m_currentClickWorldPos; };
+signals:
+    void viewStateChanged(const RenderViewState&data);
 
 private slots:
     /// @brief 执行渲染操作（内部使用）
     /// 
     /// 由 QTimer 触发，确保图像和 overlay 都被更新
     void PerformRender();
+
+    void getViewStateChanged(const RenderViewState& data);
 
 private:
     // ==================== Qt 相关 ====================
@@ -122,4 +143,13 @@ private:
     /// Overlay 管理器
     /// 负责管理十字线、窗宽窗位信息等 overlay 元素的显示
     std::unique_ptr<IOverlayManager> m_overlayManager;
+
+	ViewType m_currentViewType=ViewType::None;
+
+    /// 当前窗宽值
+    double m_windowWidth = 0.0;
+    double m_windowLevel = 0.0;
+	int m_currentSlice = 0;
+	int m_maxSlices = 0;
+    std::array<double, 3> m_currentClickWorldPos = { 0.0, 0.0, 0.0 };
 };

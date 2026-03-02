@@ -1,6 +1,6 @@
 ﻿#include "Renderer/OverlayManager/SimpleOverlayManager.h"
 #include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
-#include "Renderer/OverlayManager/WindowLevelManager/SimpleWindowLevelManager.h"
+#include "Renderer/OverlayManager/OverlayInfoManager/SimpleOverlayInfoManager.h"
 #include "Renderer/OverlayManager/DistanceMeasureManager/SimpleDistanceMeasureManager.h"
 #include <vtkRenderer.h>
 #include <vtkImageViewer2.h>
@@ -49,6 +49,15 @@ void SimpleOverlayManager::RegisterFeature(std::unique_ptr<IOverlayFeature> feat
         feature->Initialize(m_overlayRenderer);
     }
     m_features.push_back(std::move(feature));
+}
+
+void SimpleOverlayManager::UpdaBasicInformationActor(const RenderViewState& data)
+{
+    auto overlayInfoFeature = GetFeature<SimpleOverlayInfoManager>();
+    if (overlayInfoFeature) {
+        overlayInfoFeature->SetVisible(true);
+		overlayInfoFeature->Update(data);
+    }
 }
 
 void SimpleOverlayManager::SetVisible(bool visible) {

@@ -50,6 +50,10 @@ void SimpleDistanceMeasureManager::Shutdown() {
     m_initialized = false;
 }
 
+void SimpleDistanceMeasureManager::SetColor(double r, double g, double b)
+{
+}
+
 void SimpleDistanceMeasureManager::DrawStartPoint(std::array<double, 3> worldPoint) {
     if (!m_overlayRenderer) return;
     int id = generateNextId();
@@ -296,6 +300,8 @@ void SimpleDistanceMeasureManager::ClearAllMeasurement() {
     }
     m_measurements.clear();
     m_nextId = 0;
+
+    ClearPreview();
 }
 
 void SimpleDistanceMeasureManager::ClearCurrentMeasurement() {
