@@ -9,3 +9,7 @@ void RegistrationROIStrategy::HandleEvent(EventType type, int viewIndex, const E
     qDebug() << "[RegistrationROIStrategy] Event:" << static_cast<int>(type)
         << "ViewIndex:" << viewIndex;
 }
+
+void RegistrationROIStrategy::Clear(int viewIndex)
+{
+}

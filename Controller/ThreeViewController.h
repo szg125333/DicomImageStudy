@@ -93,6 +93,8 @@ public:
 
 	std::array<double, 6> GetImageBounds() const;
 
+	void resetStrategyDrawings();   //清除当前绘画
+
 signals:
     /// @brief 切片改变信号
     /// @param viewIndex 改变的视图索引

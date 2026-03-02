@@ -17,6 +17,8 @@ public:
 
     virtual void HandleEvent(EventType type, int viewIndex, const EventData& data) = 0;
 
+    virtual void Clear(int viewIndex) = 0;
+
 protected:
     IViewController* m_controller = nullptr;
 };

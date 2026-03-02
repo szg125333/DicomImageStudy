@@ -12,4 +12,6 @@ public:
     ~ManualMoveStrategy() override = default;
 
     void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
+    void Clear(int viewIndex) override;
+
 };

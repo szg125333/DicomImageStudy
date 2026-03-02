@@ -18,6 +18,9 @@ private slots:
 	void on_DistanceMeasurement_toggled(bool state);
 
 private:
+	void initUI();          // ← 新增：初始化 UI 外观
+	void initConnections(); // ← 新增：初始化信号槽
+
 	Ui::TitleBarWidgetClass ui;
 };
 

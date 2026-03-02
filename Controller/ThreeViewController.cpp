@@ -11,7 +11,7 @@
 #include <vtkCamera.h>
 #include <vtkPropPicker.h>
 
-#include "Renderer/OverlayManager/OverlayFactory.h"           // ← 轻量工厂头文件
+#include "Renderer/OverlayManager/OverlayFactory.h"
 #include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
 #include "Renderer/OverlayManager/DistanceMeasureManager/SimpleDistanceMeasureManager.h"
 
@@ -266,6 +266,15 @@ std::array<double, 6> ThreeViewController::GetImageBounds() const
 		return bounds;
     }
     return std::array<double, 6>();
+}
+
+void ThreeViewController::resetStrategyDrawings()
+{
+    for (size_t i = 0; i < m_renderers.size(); i++)
+    {
+        m_strategy->Clear(i);
+        m_renderers[i]->RequestRender();
+    }
 }
 
 void ThreeViewController::updateSliceInternal(ViewType view, int slice) {

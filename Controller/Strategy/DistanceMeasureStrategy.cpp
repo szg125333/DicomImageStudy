@@ -13,19 +13,18 @@ DistanceMeasureStrategy::DistanceMeasureStrategy(IViewController* controller)
 }
 
 void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {
-    //auto pos = static_cast<int*>(data);
     int pos[2];
     pos[0] = data.mousePosX;
     pos[1] = data.mousePosY;
 
-    qDebug() << "[DistanceMeasureStrategy] Event:" << static_cast<int>(type)
-        << "ViewIndex:" << viewIndex
-        << "MousePos:(" << pos[0] << "," << pos[1] << ")"
-		<< "CtrlPressed:" << data.ctrlPressed;
-
     if (!pos || !m_controller) return;
 
+    if (m_editingViewIndex != viewIndex && m_editingViewIndex != -1) {
+         return; // 只处理当前正在编辑的视图事件
+    }
+
     // 获取当前视图的渲染器
+    //auto renderer = m_controller->GetRenderer(m_editingViewIndex == -1 ? viewIndex : m_editingViewIndex);
     auto renderer = m_controller->GetRenderer(viewIndex);
     if (!renderer) return;
 
@@ -40,10 +39,6 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
     bool flag = distanceFeature->IsWorldPointInImage(renderer->PickWorldPosition(pos[0], pos[1]));
 	if (!flag)   // 如果点击位置不在图像范围内，直接忽略事件
 		return;
-
-    if (m_editingViewIndex != viewIndex && m_editingViewIndex != -1) {
-        return; // 只处理当前正在编辑的视图事件
-    }
 
     switch (type) {
     case EventType::LeftPress: {
@@ -64,7 +59,7 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
                 auto endWorldPos = renderer->PickWorldPosition(pos[0], pos[1]);
                 distanceFeature->DrawFinalMeasurementLine(m_startWorldPos, endWorldPos);
                 renderer->RequestRender();
-                m_editingViewIndex = viewIndex;
+                m_editingViewIndex = -1;
 
                 // 重置状态
                 m_hasFirstPoint = false;
@@ -73,16 +68,11 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
         else
         {
             auto editablePoint = distanceFeature->GetEditablePoint(pos[0], pos[1]);
-            qDebug() << "EditablePoint - MeasurementId:" << editablePoint.measurementId
-				<< "IsStart:" << editablePoint.isStart;
 
             if (editablePoint.measurementId != -1) {
                 m_isEditing = true;
                 m_editingMeasurementId = editablePoint.measurementId;
                 m_editingIsStart = editablePoint.isStart;
-
-                qDebug() << "Start editing measurement" << m_editingMeasurementId
-                    << (m_editingIsStart ? "start" : "end") << "point";
             }
         }
 
@@ -116,8 +106,6 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
             // 👉 结束此次编辑
             m_editingMeasurementId = -1;
             m_editingViewIndex = -1;
-            qDebug() << "Finish editing measurement";
-            // 可选：保存到 undo stack 或触发更新
         }
 		break;
     }
@@ -150,4 +138,22 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
     default:
         break;
     }
+}
+
+void DistanceMeasureStrategy::Clear(int viewIndex)
+{
+        // 获取当前视图的渲染器
+    auto renderer = m_controller->GetRenderer(viewIndex);
+    if (!renderer) return;
+
+    // 获取 overlay manager
+    auto overlayMgr = renderer->GetOverlayManager();
+    if (!overlayMgr) return;
+
+    // 获取测距功能模块
+    auto distanceFeature = overlayMgr->GetFeature<SimpleDistanceMeasureManager>();
+    if (!distanceFeature) return;
+
+    distanceFeature->ClearAllMeasurement(); // 清除所有绘制
+
 }

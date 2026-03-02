@@ -9,3 +9,7 @@ void AngleMeasureStrategy::HandleEvent(EventType type, int viewIndex, const Even
     qDebug() << "[AngleMeasureStrategy] Event:" << static_cast<int>(type)
         << "ViewIndex:" << viewIndex;
 }
+
+void AngleMeasureStrategy::Clear(int viewIndex)
+{
+}

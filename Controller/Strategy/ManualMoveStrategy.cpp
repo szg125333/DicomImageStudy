@@ -9,3 +9,7 @@ void ManualMoveStrategy::HandleEvent(EventType type, int viewIndex, const EventD
     qDebug() << "[ManualMoveStrategy] Event:" << static_cast<int>(type)
         << "ViewIndex:" << viewIndex;
 }
+
+void ManualMoveStrategy::Clear(int viewIndex)
+{
+}

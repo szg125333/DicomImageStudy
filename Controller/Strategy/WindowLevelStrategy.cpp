@@ -34,6 +34,10 @@ void WindowLevelStrategy::HandleEvent(EventType type, int viewIndex, const Event
     }
 }
 
+void WindowLevelStrategy::Clear(int viewIndex)
+{
+}
+
 void WindowLevelStrategy::updateWindowLevel(int viewIndex) {
     auto renderer = m_controller->GetRenderer(viewIndex);
     if (!renderer) return;

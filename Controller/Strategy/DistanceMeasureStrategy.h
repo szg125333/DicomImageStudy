@@ -8,7 +8,7 @@ class DistanceMeasureStrategy : public IInteractionStrategy {
 public:
     explicit DistanceMeasureStrategy(IViewController* controller);
     void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
-
+    void Clear(int viewIndex) override;
 private:
     // 存储起始点的世界坐标（不是屏幕坐标！）
     bool m_hasFirstPoint = false;

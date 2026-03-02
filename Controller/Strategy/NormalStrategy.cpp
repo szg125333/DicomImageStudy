@@ -67,6 +67,10 @@ void NormalStrategy::HandleEvent(EventType type, int idx, const EventData& data)
     }
 }
 
+void NormalStrategy::Clear(int viewIndex)
+{
+}
+
 void NormalStrategy::updateWindowLevel(int viewIndex) {
     m_controller->SetWindowLevel(m_window, m_level);
 }

@@ -9,3 +9,7 @@ void HandIrregularContourStrategy::HandleEvent(EventType type, int viewIndex, co
     qDebug() << "[HandIrregularContourStrategy] Event:" << static_cast<int>(type)
         << "ViewIndex:" << viewIndex;
 }
+
+void HandIrregularContourStrategy::Clear(int viewIndex)
+{
+}

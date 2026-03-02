@@ -1,5 +1,7 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QGridLayout>
+#include <QSplitter>
+#include <QTimer>
 #include "vld.h"
 #include "itkImageToVTKImageFilter.h"
 
@@ -8,6 +10,8 @@
 #include "Utils/ImageOrientationResampler.h"
 #include "UI/StartWidget.h"
 #include "UI/TitleBarWidget.h"
+#include "UI/LeftToolWidget.h"
+#include "Dicom/DicomMetadataExtractor.h"
 
 int main(int argc, char* argv[])
 {
@@ -18,8 +22,10 @@ int main(int argc, char* argv[])
     std::wstring wlog = logPath.toStdWString();
     VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, wlog.c_str());
 
+    QString path = "C:\\Workspace\\testData\\registrationData\\Head1\\CBCT";
+
     ImageOrientationResampler resampler;
-    std::vector<std::string> dicomFiles= resampler.loadDicomSeries("C:\\Workspace\\testData\\registrationData\\Head1\\CBCT");
+    std::vector<std::string> dicomFiles= resampler.loadDicomSeries(path);
     dicomFiles= resampler.SortDicomFiles(dicomFiles);
     auto cbctImage = resampler.ReadDicomSeries(dicomFiles);    // 读取 CBCT 序列
 
@@ -30,35 +36,55 @@ int main(int argc, char* argv[])
 
     StartWidget startWidget;
 
+    // 创建子部件
     ThreeViewWidget* threeViewWidget = new ThreeViewWidget(&startWidget);
     TitleBarWidget* titleBarWidget = new TitleBarWidget(&startWidget);
+    LeftToolWidget* leftToolWidget = new LeftToolWidget(&startWidget);
 
     threeViewWidget->SetImageData(itkToVtk->GetOutput());
 
-    // 关键：让影像区自动扩展
-    threeViewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    // === 使用 QSplitter 实现可拖拽分栏 ===
+    QSplitter* centralSplitter = new QSplitter(Qt::Horizontal, &startWidget);
+    centralSplitter->setHandleWidth(6);
+    centralSplitter->setChildrenCollapsible(false);
+    centralSplitter->addWidget(leftToolWidget);
+    centralSplitter->addWidget(threeViewWidget);
 
+    // 延迟设置 splitter 尺寸（解决 setSizes 无效问题）
+    QTimer::singleShot(0, [centralSplitter]() {
+        centralSplitter->setSizes({ 160, 840 });
+        });
+
+    // === 构建带弹簧的标题栏 ===
+    QWidget* titleContainer = new QWidget(&startWidget);
+    QHBoxLayout* titleLayout = new QHBoxLayout(titleContainer);
+    titleLayout->setContentsMargins(0, 0, 0, 0);
+    titleLayout->setSpacing(0);
+    titleLayout->addWidget(titleBarWidget);
+    titleLayout->addStretch(1); // ← 弹簧！让标题靠左
+
+    // === 整体垂直布局：标题栏 + 分栏区域 ===
     QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(startWidget.layout());
     if (mainLayout)
     {
-        // 创建一个容器，把头部栏和影像区放在一起
-        QWidget* contentWidget = new QWidget(&startWidget);
-        QVBoxLayout* vBoxLayout = new QVBoxLayout(contentWidget);
-        vBoxLayout->setContentsMargins(10, 10, 10, 10);
+        QWidget* contentContainer = new QWidget(&startWidget);
+        QVBoxLayout* contentLayout = new QVBoxLayout(contentContainer);
+        contentLayout->setContentsMargins(0, 0, 0, 0);
+        contentLayout->setSpacing(0);
 
-        // 上面是头部栏，下面是影像区
-        vBoxLayout->addWidget(titleBarWidget);
-        vBoxLayout->addWidget(threeViewWidget, /*stretch*/ 1);
+        contentLayout->addWidget(titleContainer, 4);      // ← 新的标题容器
+        contentLayout->addWidget(centralSplitter, 96);
 
-        // 插入到工具栏和状态栏之间
-        mainLayout->insertWidget(2, contentWidget, 1);
+        mainLayout->insertWidget(2, contentContainer, 1);
     }
 
-    startWidget.resize(1400, 900);
-    startWidget.show();
+    startWidget.showMaximized();
 
 
     QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableDistanceMeasurement, threeViewWidget,&ThreeViewWidget::setModeToDistanceMeasurement);
+
+    QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);
+    leftToolWidget->SetDicomMetadata(metadata);
 
     return app.exec();
 }

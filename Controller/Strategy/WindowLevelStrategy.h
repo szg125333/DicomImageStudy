@@ -9,6 +9,7 @@ public:
     explicit WindowLevelStrategy(IViewController* controller);
 
     void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
+    void Clear(int viewIndex) override;
 
 private:
     int m_lastPos[2] = { 0,0 };

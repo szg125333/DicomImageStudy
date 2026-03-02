@@ -9,3 +9,7 @@ void ContourMeasureStrategy::HandleEvent(EventType type, int viewIndex, const Ev
     qDebug() << "[ContourMeasureStrategy] Event:" << static_cast<int>(type)
         << "ViewIndex:" << viewIndex;
 }
+
+void ContourMeasureStrategy::Clear(int viewIndex)
+{
+}

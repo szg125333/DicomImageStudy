@@ -9,3 +9,7 @@ void CheckboardStrategy::HandleEvent(EventType type, int viewIndex, const EventD
     qDebug() << "[CheckboardStrategy] Event:" << static_cast<int>(type)
         << "ViewIndex:" << viewIndex;
 }
+
+void CheckboardStrategy::Clear(int viewIndex)
+{
+}

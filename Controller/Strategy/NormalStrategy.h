@@ -11,6 +11,7 @@ public:
     {
     }
     void HandleEvent(EventType type, int idx, const EventData& data) override;
+    void Clear(int viewIndex) override;
 
 private:
 
