@@ -61,9 +61,9 @@ void SimpleOverlayInfoManager::SetCustomFormat(const std::string& format) {
     m_customFormat = format;
 }
 
-void SimpleOverlayInfoManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
-{
-}
+//void SimpleOverlayInfoManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
+//{
+//}
 
 void SimpleOverlayInfoManager::Update(const RenderViewState& state) {
     if (!m_initialized) return;

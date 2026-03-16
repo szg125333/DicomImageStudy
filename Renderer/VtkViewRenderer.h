@@ -123,25 +123,11 @@ private:
     /// VTK 事件回调命令
     vtkSmartPointer<vtkCallbackCommand> m_vtkCmd;
 
-    // ==================== 交互相关 ====================
-    /// 事件回调映射表
-    /// key: 事件类型，value: 回调函数
-    //std::unordered_map<EventType, std::function<void(void*)>> m_callbacks;
     std::unordered_map<EventType, std::function<void(const EventData&)>> m_callbacks;
 
-    /// @brief VTK 事件回调函数（静态）
-    /// 
-    /// 处理来自 VTK 的鼠标、滚轮等事件，转换为应用层事件并转发
-    /// @param caller VTK 对象（通常是 Interactor）
-    /// @param eid 事件 ID（参见 vtkCommand 中的常量）
-    /// @param clientdata 用户数据（指向 VtkViewRenderer 实例）
-    /// @param calldata VTK 事件数据（通常为 nullptr）
     static void VtkGenericCallback(vtkObject* caller, unsigned long eid,
         void* clientdata, void* calldata);
 
-    // ==================== Overlay 管理 ====================
-    /// Overlay 管理器
-    /// 负责管理十字线、窗宽窗位信息等 overlay 元素的显示
     std::unique_ptr<IOverlayManager> m_overlayManager;
 
 	ViewType m_currentViewType=ViewType::None;

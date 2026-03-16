@@ -57,16 +57,15 @@ VtkViewRenderer::VtkViewRenderer(QVTKOpenGLNativeWidget* widget)
     m_overlayRenderer->InteractiveOff();
     m_renderWindow->AddRenderer(m_overlayRenderer);
     m_overlayRenderer->SetActiveCamera(m_viewer->GetRenderer()->GetActiveCamera());
-    //m_overlayRenderer->ResetCameraClippingRange();
 
     double viewport[4];
     m_viewer->GetRenderer()->GetViewport(viewport);
-    m_overlayRenderer->SetViewport(viewport); // ← 关键！
+    m_overlayRenderer->SetViewport(viewport);
 
-    m_overlayRenderer->SetBackground(0, 0, 0);     // 可选：设为黑
-    m_overlayRenderer->SetBackground2(0, 0, 0);    // 双背景也设黑
+    m_overlayRenderer->SetBackground(0, 0, 0);
+    m_overlayRenderer->SetBackground2(0, 0, 0);
     m_overlayRenderer->SetGradientBackground(false);
-    m_overlayRenderer->EraseOff();                // ← 关键！禁止清屏
+    m_overlayRenderer->EraseOff();
 
     // ===== 延迟渲染计时器设置 =====
     m_renderTimer.setSingleShot(true);

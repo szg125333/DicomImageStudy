@@ -118,12 +118,20 @@ void ThreeViewWidget::RequestSetSlice(ViewType view, int slice)
     m_controller->RequestSetSlice(view, slice);
 }
 
-void ThreeViewWidget::setModeToDistanceMeasurement(bool state)
+void ThreeViewWidget::setModeToDistanceMeasurement(InteractionMode mode, bool state)
 {
     if (!state) {
-        m_controller->resetStrategyDrawings();
-        m_controller->SetInteractionMode(InteractionMode::Normal);
-		return;
+        if (mode == InteractionMode::Normal) {
+            m_controller->SetInteractionMode(m_LastMode);
+        }
+        else {
+            m_controller->resetStrategyDrawings();
+            m_controller->SetInteractionMode(InteractionMode::Normal);
+        }
+        return;
     }
-	m_controller->SetInteractionMode(InteractionMode::DistanceMeasure);
+	m_controller->SetInteractionMode(mode);
+    if (mode != InteractionMode::Normal) {
+        m_LastMode = mode;
+    }
 }

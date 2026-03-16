@@ -104,19 +104,19 @@ vtkSmartPointer<vtkImageData> CTViewer::getVTKImage()
 
     InputImageType::Pointer image = reader->GetOutput();
 
-    typedef itk::ImageFileWriter<InputImageType> WriterType;
-    WriterType::Pointer writer = WriterType::New();
-    writer->SetFileName("output.mha");
-    writer->SetInput(image);
+    //typedef itk::ImageFileWriter<InputImageType> WriterType;
+    //WriterType::Pointer writer = WriterType::New();
+    //writer->SetFileName("output.mha");
+    //writer->SetInput(image);
 
-    try
-    {
-        writer->Update();
-    }
-    catch (itk::ExceptionObject& ex)
-    {
-        qDebug() << "Writer Exception: " << ex.what();
-    }
+    //try
+    //{
+    //    writer->Update();
+    //}
+    //catch (itk::ExceptionObject& ex)
+    //{
+    //    qDebug() << "Writer Exception: " << ex.what();
+    //}
 
 
     // 2. ITK → VTK 转换

@@ -152,4 +152,7 @@ void DistanceMeasureStrategy::Clear(int viewIndex)
 
     distanceFeature->ClearAllMeasurement(); // 清除所有绘制
 
+    qDebug() << "Renderer ptr:" << renderer;
+    qDebug() << "OverlayMgr ptr:" << overlayMgr;
+    qDebug() << "DistanceFeature ptr:" << distanceFeature;
 }

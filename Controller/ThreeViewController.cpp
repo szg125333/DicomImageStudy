@@ -1,7 +1,4 @@
 ﻿#include "ThreeViewController.h"
-#include "Controller/Strategy/NormalStrategy.h"
-#include "Controller/Strategy/WindowLevelStrategy.h"
-#include "Controller/Strategy/DistanceMeasureStrategy.h"
 #include "Renderer/OverlayManager/IOverlayManager.h"
 #include "Renderer/VtkViewRenderer.h"
 
@@ -9,7 +6,6 @@
 #include <vtkRenderer.h>
 #include <vtkCellPicker.h>
 #include <vtkCamera.h>
-#include <vtkPropPicker.h>
 
 #include "Renderer/OverlayManager/OverlayFactory.h"
 #include "Controller/Strategy/InteractionStrategyFactory.h"
@@ -34,10 +30,10 @@ void ThreeViewController::SetRenderers(std::array<IViewRenderer*, 3> renderers) 
 }
 
 void ThreeViewController::SetInteractionMode(InteractionMode mode) {
-    if (m_mode == mode) return;
+    if (m_CurrentMode == mode) return;
 
     unregisterEvents();
-    m_mode = mode;
+    m_CurrentMode = mode;
     registerEvents();
 }
 
@@ -213,7 +209,7 @@ void ThreeViewController::resetStrategyDrawings()
 {
     for (int i = 0; i < m_renderers.size(); i++)
     {
-        auto it = m_strategies.find(m_mode);
+        auto it = m_strategies.find(m_CurrentMode);
         if (it != m_strategies.end() && it->second) {
 			it->second->Clear(i);
         }
@@ -260,7 +256,7 @@ void ThreeViewController::registerEvents() {
                     }
                     else
                     {
-                        auto it = m_strategies.find(m_mode);
+                        auto it = m_strategies.find(m_CurrentMode);
                         if (it != m_strategies.end() && it->second) {
                             it->second->HandleEvent(type, idx, data);
                         }
@@ -277,10 +273,12 @@ void ThreeViewController::registerEvents() {
         m_renderers[i]->OnEvent(EventType::KeyPress, forwardEvent(EventType::KeyPress));
         m_renderers[i]->OnEvent(EventType::KeyRelease, forwardEvent(EventType::KeyRelease));
 
-        auto overlayMgr = CreateDefaultOverlayManager();
-		overlayMgr->SetImageWorldBounds(GetImageBounds());
-		overlayMgr->Initialize(m_renderers[i]->GetOverlayRenderer(), m_renderers[i]->GetViewer());
-        m_renderers[i]->SetOverlayManager(std::move(overlayMgr));
+        if (m_renderers[i]->GetOverlayManager() == nullptr) {
+            auto overlayMgr = OverlayFactory::CreateDefault();
+            overlayMgr->SetImageWorldBounds(GetImageBounds());
+            overlayMgr->Initialize(m_renderers[i]->GetOverlayRenderer(), m_renderers[i]->GetViewer());
+            m_renderers[i]->SetOverlayManager(std::move(overlayMgr));
+        }
     }
 }
 

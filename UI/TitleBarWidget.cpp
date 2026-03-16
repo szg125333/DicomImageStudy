@@ -6,12 +6,12 @@ TitleBarWidget::TitleBarWidget(QWidget *parent)
 	ui.setupUi(this);
 	initUI();
 	initConnections();
-
-	//ui.DistanceMeasurement->setChecked(false);
 }
 
 TitleBarWidget::~TitleBarWidget()
 {}
+
+
 
 void TitleBarWidget::initUI()
 {
@@ -62,12 +62,24 @@ void TitleBarWidget::initUI()
 
 void TitleBarWidget::initConnections()
 {
+	connect(ui.NormalMode, &QToolButton::toggled, this, &TitleBarWidget::on_NormalMode_toggled);
 	connect(ui.DistanceMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_DistanceMeasurement_toggled);
+	connect(ui.AngleMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_AngleMeasurement_toggled);
 }
 
 
 void TitleBarWidget::on_DistanceMeasurement_toggled(bool state)
 {
-	emit requestEnableDistanceMeasurement(state);
+    emit requestEnableDistanceMeasurement(InteractionMode::DistanceMeasure, state);
+}
+
+void TitleBarWidget::on_NormalMode_toggled(bool state)
+{
+    emit requestEnableNormalMode(InteractionMode::Normal, state);
+}
+
+void TitleBarWidget::on_AngleMeasurement_toggled(bool state)
+{
+	emit requestEnableAngleMeasurement(InteractionMode::AngleMeasure, state);
 }
 

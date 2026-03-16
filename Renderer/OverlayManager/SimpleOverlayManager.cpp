@@ -82,11 +82,11 @@ void SimpleOverlayManager::SetImageWorldBounds(const std::array<double, 6>& boun
 {
     m_imageWorldBounds = bounds;
     m_hasImageBounds = true;
-    for (auto& feature : m_features) {
-        if (feature) {
-            feature->SetImageWorldBounds(bounds); // 或只传 renderer，依接口而定
-        }
-    }
+    //for (auto& feature : m_features) {
+    //    if (feature) {
+    //        feature->SetImageWorldBounds(bounds); // 或只传 renderer，依接口而定
+    //    }
+    //}
 }
 
 bool SimpleOverlayManager::IsWorldPointInImage(const std::array<double, 3>& worldPoint) const

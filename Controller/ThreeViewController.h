@@ -28,7 +28,7 @@ public:
     int GetSlice(ViewType view) const;
 
     void SetInteractionMode(InteractionMode mode);
-    InteractionMode GetInteractionMode() const { return m_mode; }
+    InteractionMode GetInteractionMode() const { return m_CurrentMode; }
 
     void ChangeSlice(int viewIndex, int delta) override;
     IViewRenderer* GetRenderer(int viewIndex) override { return m_renderers[viewIndex]; }
@@ -76,7 +76,7 @@ private:
     bool m_internalUpdate = false;
 
     /// 当前交互模式
-    InteractionMode m_mode = InteractionMode::None;
+    InteractionMode m_CurrentMode = InteractionMode::None;
 
     /// 当前交互策略的实现
     std::unordered_map<InteractionMode, std::unique_ptr<IInteractionStrategy>> m_strategies;

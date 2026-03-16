@@ -261,6 +261,9 @@
     <ClInclude Include="Controller\Strategy\InteractionStrategyFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Common\Measurement\MeasurementTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="UI\DicomImageStudy.h">

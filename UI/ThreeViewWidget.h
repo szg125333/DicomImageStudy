@@ -6,6 +6,7 @@
 #include <memory>
 #include <vtkImageData.h>
 #include "Common/ViewTypes.h"
+#include "Common/InteractionMode.h"
 
 class QVTKOpenGLNativeWidget;
 class VtkViewRenderer;
@@ -26,7 +27,7 @@ public:
     void RequestSetSlice(ViewType view, int slice);
 
 public slots:
-    void setModeToDistanceMeasurement(bool state);
+    void setModeToDistanceMeasurement(InteractionMode mode, bool state);
 
 signals:
     // 对外暴露切片变化信号（由 controller 转发）
@@ -45,5 +46,7 @@ private:
     // Controller 可以由外部注入，也可以由 widget 创建并拥有
     ThreeViewController* m_controller = nullptr;
     bool m_controllerOwned = false;
+
+    InteractionMode m_LastMode = InteractionMode::None;
 };
 

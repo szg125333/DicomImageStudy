@@ -20,7 +20,7 @@ public:
     // 可选：设置要显示的字段（默认全显示）
     void SetEnabledFields(const std::vector<OverlayField>& fields);
     void SetCustomFormat(const std::string& format); // 如 "{view} | WW:{ww} WL:{wl}"
-    void SetImageWorldBounds(const std::array<double, 6>& bounds)override;
+    //void SetImageWorldBounds(const std::array<double, 6>& bounds)override;
 
 private:
     void buildDisplayText(const RenderViewState& state);

@@ -3,6 +3,7 @@
 
 #include "Controller/Strategy/NormalStrategy.h"
 #include "Controller/Strategy/DistanceMeasureStrategy.h"
+#include "Controller/Strategy/AngleMeasureStrategy.h"
 
 InteractionStrategyFactory::StrategyMap
 InteractionStrategyFactory::CreateStrategies(IViewController* m_controller) {
@@ -15,9 +16,8 @@ InteractionStrategyFactory::CreateStrategies(IViewController* m_controller) {
     strategies[InteractionMode::DistanceMeasure] =
         std::make_unique<DistanceMeasureStrategy>(m_controller);
 
-    // TODO: 补充其他已实现的策略
-    // strategies[InteractionMode::AngleMeasure] = 
-    //     std::make_unique<AngleMeasureStrategy>(renderer);
+     strategies[InteractionMode::AngleMeasure] = 
+         std::make_unique<AngleMeasureStrategy>(m_controller);
 
     // 未实现的模式可以跳过（不加入 map），或用空指针占位（不推荐）
 

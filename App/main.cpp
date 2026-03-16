@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
     std::wstring wlog = logPath.toStdWString();
     VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, wlog.c_str());
 
-    QString path = "C:\\Workspace\\testData\\registrationData\\Head1\\CT";
+    QString path = "C:\\Workspace\\testData\\registrationData\\Head1\\CBCT";
 
     ImageOrientationResampler resampler;
     std::vector<std::string> dicomFiles= resampler.loadDicomSeries(path);
@@ -81,6 +81,8 @@ int main(int argc, char* argv[])
     startWidget.showMaximized();
 
     QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableDistanceMeasurement, threeViewWidget,&ThreeViewWidget::setModeToDistanceMeasurement);
+    QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableAngleMeasurement, threeViewWidget,&ThreeViewWidget::setModeToDistanceMeasurement);
+    QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableNormalMode, threeViewWidget,&ThreeViewWidget::setModeToDistanceMeasurement);
 
     QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);
     leftToolWidget->SetDicomMetadata(metadata);

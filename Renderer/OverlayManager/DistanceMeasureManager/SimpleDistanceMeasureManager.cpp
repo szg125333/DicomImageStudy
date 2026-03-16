@@ -550,11 +550,11 @@ void SimpleDistanceMeasureManager::updatePreviewLabel(
     m_previewLabelActor->SetPosition(mid);
 }
 
-void SimpleDistanceMeasureManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
-{
-    m_hasImageBounds = true;
-    m_imageWorldBounds = bounds;
-}
+//void SimpleDistanceMeasureManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
+//{
+//    m_hasImageBounds = true;
+//    m_imageWorldBounds = bounds;
+//}
 
 bool SimpleDistanceMeasureManager::IsWorldPointInImage(const std::array<double, 3>& worldPoint) const
 {

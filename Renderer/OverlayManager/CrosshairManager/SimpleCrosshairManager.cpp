@@ -106,8 +106,8 @@ void SimpleCrosshairManager::Shutdown() {
     m_initialized = false;
 }
 
-void SimpleCrosshairManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
-{
-    m_hasImageBounds = true;
-    m_imageWorldBounds = bounds;
-}
+//void SimpleCrosshairManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
+//{
+//    m_hasImageBounds = true;
+//    m_imageWorldBounds = bounds;
+//}

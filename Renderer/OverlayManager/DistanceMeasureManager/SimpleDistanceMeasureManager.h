@@ -46,7 +46,6 @@ public:
     EditablePoint GetEditablePoint(int screenX, int screenY) const;
     void UpdateMeasurementPoint(int measurementId, bool isStart, const std::array<double, 3>& newWorldPos);
 
-    void SetImageWorldBounds(const std::array<double, 6>& bounds) override;
     bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const;
 private:
 
@@ -95,5 +94,4 @@ private:
     // 辅助更新函数
     void updatePreviewTick(const std::array<double, 3>& p1, const std::array<double, 3>& p2, double tickLength = 3.0);
     void updatePreviewLabel(const std::array<double, 3>& p1, const std::array<double, 3>& p2, vtkCamera* camera);
-
 };

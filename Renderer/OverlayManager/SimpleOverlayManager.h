@@ -26,7 +26,7 @@ public:
     void SetImageWorldBounds(const std::array<double, 6>& bounds) override;
 
     // 判断世界坐标点是否在图像物理范围内
-    bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const;
+    bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const override;
 
     // 注册 feature（替代 SetXXXManager）
     void RegisterFeature(std::unique_ptr<IOverlayFeature> feature);
