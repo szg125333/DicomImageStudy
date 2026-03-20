@@ -6,6 +6,7 @@
 #include <vtkRenderer.h>
 #include <vtkCellPicker.h>
 #include <vtkCamera.h>
+#include <vtkRenderWindow.h>
 
 #include "Renderer/OverlayManager/OverlayFactory.h"
 #include "Controller/Strategy/InteractionStrategyFactory.h"
@@ -292,4 +293,45 @@ void ThreeViewController::unregisterEvents() {
         m_renderers[i]->OnEvent(EventType::LeftRelease, nullptr);
         m_renderers[i]->OnEvent(EventType::RightPress, nullptr);
     }
+}
+
+void ThreeViewController::Zoom(int viewIndex, double factor, std::array<double, 3> initialFocalPoint)
+{
+    auto renderer = GetRenderer(viewIndex);
+    if (!renderer) return;
+
+    auto camera = renderer->GetViewer()->GetRenderer()->GetActiveCamera();
+    if (!camera || !camera->GetParallelProjection()) return;
+
+    auto windowSize=renderer->GetViewer()->GetRenderWindow()->GetSize();
+    if (windowSize[0] <= 0 || windowSize[1] <= 0) return;
+
+    // 当前相机参数
+    double oldFocal[3];
+    camera->GetFocalPoint(oldFocal);
+
+    double oldPos[3];
+    camera->GetPosition(oldPos);
+
+    // 计算缩放前后焦点与点击点的偏移
+    double shift[3];
+    for (int i = 0; i < 3; ++i) {
+        shift[i] = initialFocalPoint[i] - oldFocal[i];
+    }
+
+    // 更新相机焦点和位置，让点击点保持在屏幕上不动
+    double newFocal[3], newPos[3];
+    for (int i = 0; i < 3; ++i) {
+        newFocal[i] = oldFocal[i] + shift[i] * (1.0 - 1.0 / factor);
+        newPos[i] = oldPos[i] + shift[i] * (1.0 - 1.0 / factor);
+    }
+
+    camera->SetFocalPoint(newFocal);
+    camera->SetPosition(newPos);
+
+    double newScale = camera->GetParallelScale() / factor;
+    camera->SetParallelScale(newScale);
+    renderer->GetViewer()->GetRenderer()->ResetCameraClippingRange();
+
+    renderer->RequestRender();
 }

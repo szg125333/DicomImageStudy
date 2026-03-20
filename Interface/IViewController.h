@@ -7,6 +7,7 @@ class IViewController {
 public:
     virtual ~IViewController() = default;
 
+    virtual void Zoom(int viewIndex, double factor, std::array<double, 3> initialFocalPoint) = 0;
     virtual void ChangeSlice(int viewIndex, int delta) = 0;
     virtual double GetWindowWidth() const = 0;
     virtual double GetWindowLevel() const = 0;

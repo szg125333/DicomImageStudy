@@ -14,6 +14,7 @@ public:
     virtual void Shutdown() = 0;
     virtual void SetImageWorldBounds(const std::array<double, 6>& bounds) = 0;
     virtual bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const = 0;
+	virtual bool Update(const EventData& event) = 0;
     template<typename T>
     T* GetFeature() {
         return dynamic_cast<T*>(GetFeatureImpl(typeid(T)));

@@ -848,7 +848,6 @@ void SimpleAngleMeasureManager::UpdateAngleMeasurementPoint(
     DrawFinalAngleMeasurement(measurementId); // 新增辅助函数
 }
 
-// 新增辅助函数：根据 ID 重绘已完成的角度
 void SimpleAngleMeasureManager::DrawFinalAngleMeasurement(int measurementId)
 {
     auto it = m_measurements.find(measurementId);

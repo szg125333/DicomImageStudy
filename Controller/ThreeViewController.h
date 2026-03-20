@@ -29,7 +29,7 @@ public:
 
     void SetInteractionMode(InteractionMode mode);
     InteractionMode GetInteractionMode() const { return m_CurrentMode; }
-
+	void Zoom(int viewIndex, double factor, std::array<double, 3> initialFocalPoint) override;
     void ChangeSlice(int viewIndex, int delta) override;
     IViewRenderer* GetRenderer(int viewIndex) override { return m_renderers[viewIndex]; }
 

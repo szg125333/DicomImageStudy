@@ -1,6 +1,7 @@
 #pragma once
 #include "IInteractionStrategy.h"
 #include <QDebug>
+#include <array>
 
 class IViewController;
 
@@ -16,6 +17,8 @@ public:
 private:
 
     int m_lastPos[2] = { 0,0 };
+    //int m_fristClickedPos[2] = { 0,0 };
+    std::array<double, 3> m_initialFocalPoint;
     bool m_dragging = false;
     double m_window = 400;   // ≥ı º¥∞øÌ
     double m_level = 40;    // ≥ı º¥∞Œª

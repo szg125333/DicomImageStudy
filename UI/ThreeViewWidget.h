@@ -46,7 +46,5 @@ private:
     // Controller 可以由外部注入，也可以由 widget 创建并拥有
     ThreeViewController* m_controller = nullptr;
     bool m_controllerOwned = false;
-
-    InteractionMode m_LastMode = InteractionMode::None;
 };
 

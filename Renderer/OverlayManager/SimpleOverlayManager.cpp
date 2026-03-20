@@ -78,6 +78,11 @@ void SimpleOverlayManager::Shutdown() {
     m_initialized = false;
 }
 
+bool SimpleOverlayManager::Update(const EventData& event)
+{
+    return false;
+}
+
 void SimpleOverlayManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
 {
     m_imageWorldBounds = bounds;
