@@ -23,6 +23,7 @@ public:
     void SetColor(double r, double g, double b) override;
     void Shutdown() override;
 	bool Update(const EventData& event) override;
+    bool OnSliceChanged(ViewType viewType, int slice) override;
     // 注入图像物理边界（世界坐标系）
     void SetImageWorldBounds(const std::array<double, 6>& bounds) override;
 

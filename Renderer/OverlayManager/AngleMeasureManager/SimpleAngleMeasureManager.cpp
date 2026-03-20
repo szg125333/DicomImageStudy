@@ -10,6 +10,7 @@
 #include <vtkPolyDataMapper2D.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkImageViewer2.h>
+#include <vtkImageData.h>
 #include <QDebug>
 #include <vtkRegularPolygonSource.h>
 #include <vtkActor2D.h>
@@ -891,5 +892,49 @@ void SimpleAngleMeasureManager::DrawFinalAngleMeasurement(int measurementId)
     }
     if (m.angleLabel) {
         m_overlayRenderer->AddViewProp(m.angleLabel);
+    }
+}
+
+void SimpleAngleMeasureManager::OnSliceChanged(const vtkImageViewer2* viewer, int slice, ViewType viewType)
+{
+    auto nonConstViewer = const_cast<vtkImageViewer2*>(viewer);
+    vtkImageData* image = nonConstViewer->GetInput();
+    if (!m_initialized || !viewer || !nonConstViewer->GetInput()) return;
+
+    // 获取图像的 spacing 和 origin
+    double spacing[3];
+    double origin[3];
+    nonConstViewer->GetInput()->GetSpacing(spacing);
+    nonConstViewer->GetInput()->GetOrigin(origin);
+
+    for (auto& kv : m_measurements) {
+        Measurement& m = kv.second;
+        if (!m.isComplete) {
+            continue; // 跳过未完成的测量
+        }
+
+        // 更新 m_lastWorldPoint 对应的分量
+        switch (viewType) {
+        case ViewType::Axial:    // Z 轴方向
+            m.startPointWorld[2] = origin[2] + slice * spacing[2];
+            m.middlePointWorld[2] = origin[2] + slice * spacing[2];
+            m.endPointWorld[2] = origin[2] + slice * spacing[2];
+            break;
+        case ViewType::Sagittal: // X 轴方向
+            m.startPointWorld[0] = origin[0] + slice * spacing[0];
+            m.middlePointWorld[0] = origin[0] + slice * spacing[0];
+            m.endPointWorld[0] = origin[0] + slice * spacing[0];
+            break;
+        case ViewType::Coronal:  // Y 轴方向
+            m.startPointWorld[1] = origin[1] + slice * spacing[1];
+            m.middlePointWorld[1] = origin[1] + slice * spacing[1];
+            m.endPointWorld[1] = origin[1] + slice * spacing[1];
+            break;
+        default:
+            return;
+        }
+        UpdateAngleMeasurementPoint(m.id, AnglePointRole::Start, m.startPointWorld);
+        UpdateAngleMeasurementPoint(m.id, AnglePointRole::Middle, m.middlePointWorld);
+        UpdateAngleMeasurementPoint(m.id, AnglePointRole::End, m.endPointWorld);
     }
 }

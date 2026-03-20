@@ -112,6 +112,10 @@ void ThreeViewController::ChangeSlice(int viewIndex, int delta) {
     if (newSlice > m_maxSlice[static_cast<int>(view)]) newSlice = m_maxSlice[static_cast<int>(view)];
 
     RequestSetSlice(view, newSlice);
+    if (m_renderers[viewIndex]) {
+		m_renderers[viewIndex]->GetOverlayManager()->OnSliceChanged(static_cast<ViewType>(viewIndex),newSlice);
+        m_renderers[viewIndex]->RequestRender();
+    }
 }
 
 void ThreeViewController::UpdateSliceInternals(std::array<double, 3> worldPoint) {

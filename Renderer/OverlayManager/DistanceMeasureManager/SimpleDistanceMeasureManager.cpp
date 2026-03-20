@@ -11,6 +11,7 @@
 #include <vtkAppendPolyData.h>
 #include <vtkPropPicker.h>
 #include <vtkCoordinate.h>
+#include <vtkImageData.h>
 
 SimpleDistanceMeasureManager::SimpleDistanceMeasureManager() = default;
 
@@ -550,12 +551,6 @@ void SimpleDistanceMeasureManager::updatePreviewLabel(
     m_previewLabelActor->SetPosition(mid);
 }
 
-//void SimpleDistanceMeasureManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
-//{
-//    m_hasImageBounds = true;
-//    m_imageWorldBounds = bounds;
-//}
-
 bool SimpleDistanceMeasureManager::IsWorldPointInImage(const std::array<double, 3>& worldPoint) const
 {
     if (!m_hasImageBounds) {
@@ -569,4 +564,47 @@ bool SimpleDistanceMeasureManager::IsWorldPointInImage(const std::array<double, 
     return (p[0] >= b[0] - eps && p[0] <= b[1] + eps &&
         p[1] >= b[2] - eps && p[1] <= b[3] + eps &&
         p[2] >= b[4] - eps && p[2] <= b[5] + eps);
+}
+
+void SimpleDistanceMeasureManager::OnSliceChanged(const vtkImageViewer2* viewer,
+    int slice,
+    ViewType viewType)
+{
+    auto nonConstViewer = const_cast<vtkImageViewer2*>(viewer);
+    vtkImageData* image = nonConstViewer->GetInput();
+    if (!m_initialized || !viewer || !nonConstViewer->GetInput()) return;
+
+    // 获取图像的 spacing 和 origin
+    double spacing[3];
+    double origin[3];
+    nonConstViewer->GetInput()->GetSpacing(spacing);
+    nonConstViewer->GetInput()->GetOrigin(origin);
+
+    for (auto& kv : m_measurements) {
+        Measurement& m = kv.second;
+        if (!m.isComplete) {
+            continue; // 跳过未完成的测量
+        }
+
+        // 更新 m_lastWorldPoint 对应的分量
+        switch (viewType) {
+        case ViewType::Axial:    // Z 轴方向
+            m.startPointWorld[2] = origin[2] + slice * spacing[2];
+            m.endPointWorld[2] = origin[2] + slice * spacing[2];
+            break;
+        case ViewType::Sagittal: // X 轴方向
+            m.startPointWorld[0] = origin[0] + slice * spacing[0];
+            m.endPointWorld[0] = origin[0] + slice * spacing[0];
+            break;
+        case ViewType::Coronal:  // Y 轴方向
+            m.startPointWorld[1] = origin[1] + slice * spacing[1];
+            m.endPointWorld[1] = origin[1] + slice * spacing[1];
+            break;
+        default:
+            return;
+        }
+
+        UpdateMeasurementPoint(m.id, true, m.startPointWorld);
+        UpdateMeasurementPoint(m.id, false, m.endPointWorld);
+    }
 }

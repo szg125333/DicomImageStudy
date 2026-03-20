@@ -34,6 +34,7 @@ public:
     void SetVisible(bool visible) override;
     void Shutdown() override;
     void SetColor(double r, double g, double b) override;
+    void OnSliceChanged(const vtkImageViewer2* viewer,int slice,ViewType viewType) override;
 
     void DrawStartPoint(std::array<double, 3> worldPoint) override;
     void DrawFinalMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> endPos) override;

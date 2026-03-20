@@ -21,7 +21,8 @@ public:
     void SetVisible(bool visible) override;
     void SetColor(double r, double g, double b) override;
     void Shutdown() override;
-    //void SetImageWorldBounds(const std::array<double, 6>& bounds) override;
+    void OnSliceChanged(const vtkImageViewer2* viewer,int slice,ViewType viewType) override;
+    void ClearAllMeasurement();
 private:
     vtkSmartPointer<vtkRenderer> m_overlayRenderer;
     vtkSmartPointer<vtkLineSource> m_hLine;
@@ -32,4 +33,9 @@ private:
     vtkSmartPointer<vtkActor> m_vActor;
     bool m_initialized = false;
     bool m_visible = true;
+
+    std::array<double, 3> m_lastWorldPoint = { 0, 0, 0 };
+    double m_lastImageMin[3] = {0, 0, 0};
+    double m_lastImageMax[3] = {0, 0, 0};
+    bool m_hasValidPoint = false;
 };

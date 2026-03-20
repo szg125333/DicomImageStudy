@@ -30,6 +30,7 @@ public:
     void Initialize(vtkRenderer* overlayRenderer) override;
     void Shutdown() override;
     void SetVisible(bool visible) override;
+    void OnSliceChanged(const vtkImageViewer2* viewer,int slice,ViewType viewType) override;
 
     // === 测量流程控制 ===
     void StartMeasure(const std::array<double, 3>& point1) override;

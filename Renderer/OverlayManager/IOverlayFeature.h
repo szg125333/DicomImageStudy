@@ -1,6 +1,7 @@
 // IOverlayFeature.h
 #pragma once
 #include <array>
+#include "Interface/IViewRenderer.h"
 class vtkRenderer;
 class vtkImageViewer2;
 
@@ -20,7 +21,7 @@ public:
     // 清理资源（移除 actor、释放内存等）
     virtual void Shutdown() = 0;
 
-    //virtual void SetImageWorldBounds(const std::array<double, 6>& bounds) = 0;
+    virtual void OnSliceChanged(const vtkImageViewer2* viewer,int slice,ViewType viewType) = 0;
 
     std::array<double, 6> m_imageWorldBounds = { 0, 0, 0, 0, 0, 0 };
     bool m_hasImageBounds = false;

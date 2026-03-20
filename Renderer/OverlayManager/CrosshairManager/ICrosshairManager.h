@@ -15,8 +15,4 @@ public:
         ViewType view,
         const double worldMin[3],
         const double worldMax[3]) = 0;
-
-    //virtual void SetVisible(bool visible) = 0;
-    //virtual void SetColor(double r, double g, double b) = 0;
-    //virtual void Shutdown() = 0;
 };

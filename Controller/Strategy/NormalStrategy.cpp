@@ -9,7 +9,6 @@
 #include "Renderer/OverlayManager/IOverlayManager.h"
 
 void NormalStrategy::HandleEvent(EventType type, int idx, const EventData& data) {
-    //auto pos = static_cast<int*>(data);
     int pos[2];
 	pos[0] = data.mousePosX;
 	pos[1] = data.mousePosY;
@@ -75,9 +74,7 @@ void NormalStrategy::HandleEvent(EventType type, int idx, const EventData& data)
     }
 }
 
-void NormalStrategy::Clear(int viewIndex)
-{
-}
+
 
 void NormalStrategy::updateWindowLevel(int viewIndex) {
     m_controller->SetWindowLevel(m_window, m_level);
@@ -122,4 +119,20 @@ void NormalStrategy::LocatePoint(int viewIndex, int* pos) {
     }
 
     m_controller->UpdateSliceInternals(worldPoint);
+}
+
+void NormalStrategy::Clear(int viewIndex)
+{
+    auto renderer = m_controller->GetRenderer(viewIndex);
+    if (!renderer) return;
+
+    // 获取 overlay manager
+    auto overlayMgr = renderer->GetOverlayManager();
+    if (!overlayMgr) return;
+
+    // 获取测距功能模块
+    auto feature = overlayMgr->GetFeature<SimpleCrosshairManager>();
+    if (!feature) return;
+
+    feature->ClearAllMeasurement(); // 清除所有绘制
 }

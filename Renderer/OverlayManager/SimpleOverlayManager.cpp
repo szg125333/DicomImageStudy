@@ -83,6 +83,16 @@ bool SimpleOverlayManager::Update(const EventData& event)
     return false;
 }
 
+bool SimpleOverlayManager::OnSliceChanged(ViewType viewType, int slice)
+{
+    for (auto& feature : m_features) {
+        if (feature) {
+            feature->OnSliceChanged(m_viewer,slice, viewType); // 或只传 renderer，依接口而定
+        }
+    }
+    return true;
+}
+
 void SimpleOverlayManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
 {
     m_imageWorldBounds = bounds;
