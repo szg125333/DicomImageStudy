@@ -3,6 +3,10 @@
 #include "Interface/IViewRenderer.h"
 #include <cmath>
 #include <QDebug>
+#include <vtkImageData.h>
+#include <vtkRenderer.h>
+#include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
+#include "Renderer/OverlayManager/IOverlayManager.h"
 
 void NormalStrategy::HandleEvent(EventType type, int idx, const EventData& data) {
     //auto pos = static_cast<int*>(data);
@@ -25,14 +29,12 @@ void NormalStrategy::HandleEvent(EventType type, int idx, const EventData& data)
 
         m_initialFocalPoint = m_controller->GetRenderer(idx)->PickWorldPosition(pos[0], pos[1]);
 
-        //m_fristClickedPos[0] = pos[0];
-        //m_fristClickedPos[1] = pos[1];
-
         m_dragging = true;
         m_window = m_controller->GetWindowWidth();
         m_level = m_controller->GetWindowLevel();
 
-        m_controller->LocatePoint(idx, pos);
+        this->LocatePoint(idx, pos);
+
     }
     else if (type == EventType::LeftMove) {
         if (!m_dragging) {
@@ -79,4 +81,45 @@ void NormalStrategy::Clear(int viewIndex)
 
 void NormalStrategy::updateWindowLevel(int viewIndex) {
     m_controller->SetWindowLevel(m_window, m_level);
+}
+
+void NormalStrategy::LocatePoint(int viewIndex, int* pos) {
+    auto viewer = m_controller->GetRenderer(viewIndex)->GetViewer();
+	auto m_image = m_controller->GetImage();
+    if (!viewer || !m_image) return;
+
+    vtkRenderer* ren = viewer->GetRenderer();
+    if (!ren) return;
+
+    std::array<double, 3> worldPoint = m_controller->GetRenderer(viewIndex)->PickWorldPosition(pos[0], pos[1]); // 先更新拾取位置
+
+    int dims[3];
+    double spacing[3], origin[3];
+
+    const_cast<vtkImageData*>(m_image)->GetDimensions(dims);
+    const_cast<vtkImageData*>(m_image)->GetSpacing(spacing);
+    const_cast<vtkImageData*>(m_image)->GetOrigin(origin);
+
+    std::array<double, 3> worldMin, worldMax;
+    for (int j = 0; j < 3; ++j) {
+        worldMin[j] = origin[j];
+        worldMax[j] = origin[j] + (dims[j] - 1) * spacing[j];
+    }
+
+    for (int i = 0; i < 3; ++i) {
+        auto m_renderer = m_controller->GetRenderer(i);
+        if (!m_renderer) continue;
+
+        auto overlayManager = m_renderer->GetOverlayManager();
+        if (overlayManager) {
+            overlayManager->GetFeature<SimpleCrosshairManager>()->UpdateCrosshair(worldPoint,
+                static_cast<ViewType>(i),
+                worldMin.data(),
+                worldMax.data());
+        }
+        m_renderer->SetCurrentClickWorldPos(worldPoint);
+        m_renderer->RequestRender();
+    }
+
+    m_controller->UpdateSliceInternals(worldPoint);
 }

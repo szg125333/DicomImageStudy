@@ -10,7 +10,6 @@
 
 #include "Renderer/OverlayManager/OverlayFactory.h"
 #include "Controller/Strategy/InteractionStrategyFactory.h"
-#include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
 
 ThreeViewController::ThreeViewController(QObject* parent) : QObject(parent) {
     m_renderers.fill(nullptr);
@@ -115,62 +114,18 @@ void ThreeViewController::ChangeSlice(int viewIndex, int delta) {
     RequestSetSlice(view, newSlice);
 }
 
-void ThreeViewController::LocatePoint(int viewIndex, int* pos) {
-    auto viewer = m_renderers[viewIndex]->GetViewer();
-    if (!viewer || !m_image) return;
-
-    vtkRenderer* ren = viewer->GetRenderer();
-    if (!ren) return;
-
-    vtkSmartPointer<vtkCellPicker> picker = vtkSmartPointer<vtkCellPicker>::New();
-    picker->SetTolerance(0.001);
-    double picked[3];
-    if (picker->Pick(pos[0], pos[1], 0, ren)) {
-        picker->GetPickPosition(picked);
-    }
-    else {
-        return;
-    }
-    std::array<double, 3> worldPoint = { picked[0], picked[1], picked[2] };
-
-    UpdateCrosshairInAllViews(worldPoint);
-
+void ThreeViewController::UpdateSliceInternals(std::array<double, 3> worldPoint) {
     double ijk[3];
+    double picked[3] = { worldPoint[0], worldPoint[1], worldPoint[2] };
     m_image->TransformPhysicalPointToContinuousIndex(picked, ijk);
     updateSliceInternal(ViewType::Axial, static_cast<int>(std::round(ijk[2])));
     updateSliceInternal(ViewType::Sagittal, static_cast<int>(std::round(ijk[0])));
     updateSliceInternal(ViewType::Coronal, static_cast<int>(std::round(ijk[1])));
 }
 
-void ThreeViewController::UpdateCrosshairInAllViews(std::array<double, 3> worldPoint) {
-    if (!m_image) return;
-
-    int dims[3];
-    double spacing[3], origin[3];
-
-    m_image->GetDimensions(dims);
-    m_image->GetSpacing(spacing);
-    m_image->GetOrigin(origin);
-
-    std::array<double, 3> worldMin, worldMax;
-    for (int j = 0; j < 3; ++j) {
-        worldMin[j] = origin[j];
-        worldMax[j] = origin[j] + (dims[j] - 1) * spacing[j];
-    }
-
-    for (int i = 0; i < 3; ++i) {
-        if (!m_renderers[i]) continue;
-
-        auto overlayManager = m_renderers[i]->GetOverlayManager();
-        if (overlayManager) {
-            overlayManager->GetFeature<SimpleCrosshairManager>()->UpdateCrosshair(worldPoint,
-                static_cast<ViewType>(i),
-                worldMin.data(),
-                worldMax.data());
-        }
-		m_renderers[i]->SetCurrentClickWorldPos(worldPoint);
-        m_renderers[i]->RequestRender();
-    }
+const vtkImageData* ThreeViewController::GetImage() const
+{
+    return m_image.Get();
 }
 
 void ThreeViewController::SetWindowLevel(double ww, double wl) {

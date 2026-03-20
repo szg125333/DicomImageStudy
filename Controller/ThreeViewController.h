@@ -33,9 +33,8 @@ public:
     void ChangeSlice(int viewIndex, int delta) override;
     IViewRenderer* GetRenderer(int viewIndex) override { return m_renderers[viewIndex]; }
 
-    void LocatePoint(int viewIndex, int* pos) override;
-    void UpdateCrosshairInAllViews(std::array<double, 3> worldPoint);
-
+    void UpdateSliceInternals(std::array<double, 3> worldPoint) override;
+    const vtkImageData* GetImage() const override;
     void SetWindowLevel(double ww, double wl) override;
     double GetWindowWidth() const override { return m_windowWidth; }
     double GetWindowLevel() const override { return m_windowLevel; }
@@ -61,7 +60,7 @@ private:
 
 private:
     /// 要显示的医学图像数据
-    vtkImageData* m_image = nullptr;
+    vtkSmartPointer<vtkImageData> m_image;
 
     /// 三个视图的渲染器（Axial/Sagittal/Coronal）
     std::array<IViewRenderer*, 3> m_renderers;
