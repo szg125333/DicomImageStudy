@@ -61,6 +61,22 @@ void TitleBarWidget::initUI()
 
     ui.AngleMeasurement->setStyleSheet(buttonStyle);
     ui.AngleMeasurement->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Angle.png"));
+
+    ui.toolButton_5->setStyleSheet(buttonStyle);
+    ui.toolButton_5->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Calibration.png"));
+
+    ui.toolButton_6->setStyleSheet(buttonStyle);
+    ui.toolButton_6->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Frame.png"));
+
+    ui.toolButton_7->setStyleSheet(buttonStyle);
+    ui.toolButton_7->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Menu.png"));
+
+    ui.toolButton_10->setStyleSheet(buttonStyle);
+    ui.toolButton_10->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Squares.png"));
+
+    ui.toolButton_8->setStyleSheet(buttonStyle);
+    ui.toolButton_8->setIcon(QIcon(":/DicomImageStudy/images/move.png"));
+
 }
 
 void TitleBarWidget::initConnections()

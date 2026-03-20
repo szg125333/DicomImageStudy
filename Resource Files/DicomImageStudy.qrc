@@ -5,5 +5,11 @@
         <file>images/FlatStyle-Set.png</file>
         <file>images/FlatStyle-Folder.png</file>
         <file>images/reset.png</file>
+        <file>images/crosshair1.png</file>
+        <file>images/FlatStyle-Calibration.png</file>
+        <file>images/FlatStyle-Frame.png</file>
+        <file>images/FlatStyle-Menu.png</file>
+        <file>images/FlatStyle-Squares.png</file>
+        <file>images/move.png</file>
     </qresource>
 </RCC>

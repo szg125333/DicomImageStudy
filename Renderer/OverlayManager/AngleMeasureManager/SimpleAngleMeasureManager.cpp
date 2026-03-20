@@ -404,7 +404,7 @@ vtkSmartPointer<vtkFollower> SimpleAngleMeasureManager::CreateAngleLabel(
         labelPosition[1],
         labelPosition[2]
     );
-    follower->SetScale(5.0, 5.0, 5.0);
+    follower->SetScale(8.0, 8.0, 8.0);
     follower->SetCamera(camera);
     follower->GetProperty()->SetColor(1.0, 1.0, 0.0); // yellow
 
@@ -526,7 +526,7 @@ void SimpleAngleMeasureManager::UpdatePreviewAngleLabel(
 
         m_previewAngleLabel = vtkSmartPointer<vtkFollower>::New();
         m_previewAngleLabel->SetMapper(mapper);
-        m_previewAngleLabel->SetScale(5.0, 5.0, 5.0);
+        m_previewAngleLabel->SetScale(8.0, 8.0, 8.0);
         m_previewAngleLabel->SetCamera(camera);
         m_previewAngleLabel->GetProperty()->SetColor(1.0, 1.0, 0.0); // yellow
         m_overlayRenderer->AddViewProp(m_previewAngleLabel);

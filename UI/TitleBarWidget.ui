@@ -104,6 +104,9 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/FlatStyle-Frame.png);</string>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -116,6 +119,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/move.png);</string>
        </property>
        <property name="text">
         <string/>
@@ -191,6 +197,9 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/FlatStyle-Angle.png);</string>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -206,6 +215,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/FlatStyle-Calibration.png);</string>
        </property>
        <property name="text">
         <string/>
@@ -235,6 +247,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/FlatStyle-Menu.png);</string>
        </property>
        <property name="text">
         <string/>
@@ -371,6 +386,9 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/FlatStyle-Squares.png);</string>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -383,6 +401,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/FlatStyle-Folder.png);</string>
        </property>
        <property name="text">
         <string/>
@@ -470,6 +491,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/reset.png);</string>
        </property>
        <property name="text">
         <string/>
