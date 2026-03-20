@@ -18,5 +18,5 @@
 <img width="1674" height="710" alt="image" src="https://github.com/user-attachments/assets/58c8dad8-6561-4f56-904e-d41d440c37f9" />
 
 🔗 4. 软件界面（Mermaid）
-<img width="2559" height="1528" alt="image" src="https://github.com/user-attachments/assets/92f99a31-2703-4f81-b9cc-5decf7f1aa95" />
+<img width="2559" height="1523" alt="image" src="https://github.com/user-attachments/assets/ac9b5330-a70f-430b-8d36-0ee23f44a086" />
 
