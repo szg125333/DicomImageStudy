@@ -115,4 +115,6 @@ public:
      * @param cb   回调函数；传 nullptr 可注销
      */
     virtual void OnEvent(EventType type, std::function<void(const EventData&)> cb) = 0;
+
+    virtual ViewType GetCurrentViewType() = 0;
 };

@@ -49,7 +49,7 @@ public:
     void SetSlice(int slice)                            override;
     void SetMaxSlice(int maxSlice)                      override;
     int  GetSlice() const                               override;
-
+    ViewType GetCurrentViewType()                       override;
     void SetColorWindow(double window)                  override;
     void SetColorLevel(double level)                    override;
 
@@ -74,7 +74,7 @@ public:
     double   GetColorLevel()     const { return m_windowLevel; }
     int      GetCurrentSlice()   const { return m_currentSlice; }
     int      GetMaxSlices()      const { return m_maxSlices; }
-    ViewType GetCurrentViewType()const { return m_currentViewType; }
+    //ViewType GetCurrentViewType()const { return m_currentViewType; }
     std::array<double, 3> GetCurrentClickWorldPos() const { return m_currentClickWorldPos; }
 
 signals:

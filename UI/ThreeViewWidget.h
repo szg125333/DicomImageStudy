@@ -27,7 +27,7 @@ public:
     void RequestSetSlice(ViewType view, int slice);
 
 public slots:
-    void setModeToDistanceMeasurement(InteractionMode mode, bool state);
+    void setModeToMeasurement(InteractionMode mode, bool state);
 
 signals:
     // 对外暴露切片变化信号（由 controller 转发）

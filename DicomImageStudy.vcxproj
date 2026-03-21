@@ -138,7 +138,7 @@
     <ClCompile Include="Renderer\OverlayManager\DistanceMeasureManager\SimpleDistanceMeasureManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\HandIrregularContourManager\SimpleHandIrregularContourManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\OverlayFactory.cpp" />
-    <ClCompile Include="Renderer\OverlayManager\RegistrationROIManager\SimpleRegistrationROIManager.cpp" />
+    <ClCompile Include="Renderer\OverlayManager\ROIManager\SimpleROIManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\SimpleOverlayManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\OverlayInfoManager\SimpleOverlayInfoManager.cpp" />
     <ClCompile Include="Renderer\VtkViewRenderer.cpp" />
@@ -192,8 +192,9 @@
     <ClInclude Include="Renderer\OverlayManager\IOverlayFeature.h" />
     <ClInclude Include="Renderer\OverlayManager\IOverlayManager.h" />
     <ClInclude Include="Renderer\OverlayManager\OverlayFactory.h" />
-    <ClInclude Include="Renderer\OverlayManager\RegistrationROIManager\IRegistrationROIManager.h" />
-    <ClInclude Include="Renderer\OverlayManager\RegistrationROIManager\SimpleRegistrationROIManager.h" />
+    <ClInclude Include="Renderer\OverlayManager\ROIManager\IRegistrationROIManager.h" />
+    <ClInclude Include="Renderer\OverlayManager\ROIManager\RoiStats.h" />
+    <ClInclude Include="Renderer\OverlayManager\ROIManager\SimpleROIManager.h" />
     <ClInclude Include="Renderer\OverlayManager\SimpleOverlayManager.h" />
     <ClInclude Include="Renderer\OverlayManager\OverlayInfoManager\IOverlayInfoManager.h" />
     <ClInclude Include="Renderer\OverlayManager\OverlayInfoManager\SimpleOverlayInfoManager.h" />

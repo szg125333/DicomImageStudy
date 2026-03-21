@@ -167,6 +167,11 @@ int VtkViewRenderer::GetSlice() const
     return m_viewer ? m_viewer->GetSlice() : 0;
 }
 
+ViewType VtkViewRenderer::GetCurrentViewType()
+{
+    return m_currentViewType;
+}
+
 // ============================================================
 //  窗宽窗位
 // ============================================================

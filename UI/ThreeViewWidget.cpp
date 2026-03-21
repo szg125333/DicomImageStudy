@@ -118,7 +118,7 @@ void ThreeViewWidget::RequestSetSlice(ViewType view, int slice)
     m_controller->RequestSetSlice(view, slice);
 }
 
-void ThreeViewWidget::setModeToDistanceMeasurement(InteractionMode mode, bool state)
+void ThreeViewWidget::setModeToMeasurement(InteractionMode mode, bool state)
 {
     if (!state) {
         m_controller->SetInteractionMode(mode);

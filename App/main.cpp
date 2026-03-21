@@ -80,9 +80,10 @@ int main(int argc, char* argv[])
 
     startWidget.showMaximized();
 
-    QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableDistanceMeasurement, threeViewWidget,&ThreeViewWidget::setModeToDistanceMeasurement);
-    QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableAngleMeasurement, threeViewWidget,&ThreeViewWidget::setModeToDistanceMeasurement);
-    QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableNormalMode, threeViewWidget,&ThreeViewWidget::setModeToDistanceMeasurement);
+    QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableDistanceMeasurement, threeViewWidget,&ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableAngleMeasurement, threeViewWidget,&ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableNormalMode, threeViewWidget,&ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget,&TitleBarWidget::requestRoiNormalMode, threeViewWidget,&ThreeViewWidget::setModeToMeasurement);
 
     QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);
     leftToolWidget->SetDicomMetadata(metadata);

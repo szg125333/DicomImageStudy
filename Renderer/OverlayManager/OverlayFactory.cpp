@@ -4,16 +4,18 @@
 #include "DistanceMeasureManager/SimpleDistanceMeasureManager.h"
 #include "AngleMeasureManager/SimpleAngleMeasureManager.h"
 #include "OverlayInfoManager/SimpleOverlayInfoManager.h"
+#include "ROIManager/SimpleROIManager.h"           // ĞÂÔö
 
 std::unique_ptr<IOverlayManager> OverlayFactory::CreateDefault()
 {
     auto manager = std::make_unique<SimpleOverlayManager>();
 
-    // ×¢²áË³Ğò¼´äÖÈ¾²ã¼¶Ë³Ğò£¨ÏÈ×¢²áµÄÏÈäÖÈ¾£©
+    // ×¢²áË³Ğò¼´äÖÈ¾²ã¼¶£¨ÏÈ×¢²áµÄÏÈäÖÈ¾£¬ºó×¢²áµÄ¸²¸ÇÔÚÉÏ²ã£©
     manager->RegisterFeature(std::make_unique<SimpleCrosshairManager>());
     manager->RegisterFeature(std::make_unique<SimpleDistanceMeasureManager>());
     manager->RegisterFeature(std::make_unique<SimpleAngleMeasureManager>());
     manager->RegisterFeature(std::make_unique<SimpleOverlayInfoManager>());
+    manager->RegisterFeature(std::make_unique<SimpleROIManager>());     // ĞÂÔö
 
     return manager;
 }

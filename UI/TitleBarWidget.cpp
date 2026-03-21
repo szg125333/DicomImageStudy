@@ -65,8 +65,8 @@ void TitleBarWidget::initUI()
     ui.toolButton_5->setStyleSheet(buttonStyle);
     ui.toolButton_5->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Calibration.png"));
 
-    ui.toolButton_6->setStyleSheet(buttonStyle);
-    ui.toolButton_6->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Frame.png"));
+    ui.RoiMeasurement->setStyleSheet(buttonStyle);
+    ui.RoiMeasurement->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Frame.png"));
 
     ui.toolButton_7->setStyleSheet(buttonStyle);
     ui.toolButton_7->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Menu.png"));
@@ -84,6 +84,7 @@ void TitleBarWidget::initConnections()
 	connect(ui.NormalMode, &QToolButton::toggled, this, &TitleBarWidget::on_NormalMode_toggled);
 	connect(ui.DistanceMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_DistanceMeasurement_toggled);
 	connect(ui.AngleMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_AngleMeasurement_toggled);
+	connect(ui.RoiMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_RoiMeasurement_toggled);
 }
 
 
@@ -100,5 +101,10 @@ void TitleBarWidget::on_NormalMode_toggled(bool state)
 void TitleBarWidget::on_AngleMeasurement_toggled(bool state)
 {
 	emit requestEnableAngleMeasurement(InteractionMode::AngleMeasure, state);
+}
+
+void TitleBarWidget::on_RoiMeasurement_toggled(bool state)
+{
+    emit requestRoiNormalMode(InteractionMode::RegistrationROI, state);
 }
 
