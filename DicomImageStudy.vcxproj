@@ -117,6 +117,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App\main.cpp" />
+    <ClCompile Include="Controller\Strategy\AbstractMeasureStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\AngleMeasureStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\CheckboardStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\ContourMeasureStrategy.cpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="Common\Measurement\MeasurementTypes.h" />
     <ClInclude Include="Common\RenderViewState.h" />
     <ClInclude Include="Common\ViewTypes.h" />
+    <ClInclude Include="Controller\Strategy\AbstractMeasureStrategy.h" />
     <ClInclude Include="Controller\Strategy\AngleMeasureStrategy.h" />
     <ClInclude Include="Controller\Strategy\CheckboardStrategy.h" />
     <ClInclude Include="Controller\Strategy\ContourMeasureStrategy.h" />

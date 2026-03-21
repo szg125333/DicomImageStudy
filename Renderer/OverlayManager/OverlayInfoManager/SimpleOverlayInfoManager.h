@@ -16,7 +16,7 @@ public:
     void Update(const RenderViewState& state) override;
     void SetVisible(bool visible) override;
     void SetColor(double r, double g, double b) override;
-    void OnSliceChanged(const vtkImageViewer2* viewer,int slice,ViewType viewType) override;
+    void OnSliceChanged(vtkImageViewer2* viewer,int slice,ViewType viewType) override;
 
     // 可选：设置要显示的字段（默认全显示）
     void SetEnabledFields(const std::vector<OverlayField>& fields);

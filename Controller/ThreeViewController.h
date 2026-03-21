@@ -1,19 +1,33 @@
 #pragma once
 
-#include <QObject>
-#include <array>
-#include <memory>
-#include <unordered_map>
-
 #include "Interface/IViewController.h"
 #include "Common/InteractionMode.h"
-#include "Interface/IViewRenderer.h"
-#include "Controller/Strategy/IInteractionStrategy.h"
 #include "Common/ViewTypes.h"
-#include "Common/EventData.h"
 
+#include <QObject>
+#include <array>
+#include <map>
+#include <memory>
+
+#include <vtkSmartPointer.h>
+#include <vtkWeakPointer.h>
+
+class IInteractionStrategy;
 class vtkImageData;
 
+/**
+ * @brief 三视图控制器
+ *
+ * 管理轴状（Axial）、矢状（Sagittal）、冠状（Coronal）三个切片视图的
+ * 全局状态协调，包括：
+ *   - 图像数据绑定与初始化
+ *   - 切片同步（点击某视图时其余两个视图对齐）
+ *   - 窗宽窗位广播
+ *   - 交互模式切换（普通浏览 / 测距 / 测角 / ...）
+ *   - 视图缩放
+ *
+ * 视图渲染器由外部通过 SetRenderers() 注入，控制器不拥有渲染器生命周期。
+ */
 class ThreeViewController : public QObject, public IViewController {
     Q_OBJECT
 
@@ -21,69 +35,121 @@ public:
     explicit ThreeViewController(QObject* parent = nullptr);
     ~ThreeViewController() override;
 
+    // ----------------------------------------------------------------
+    //  初始化
+    // ----------------------------------------------------------------
+
+    /**
+     * @brief 注入三个视图渲染器
+     *
+     * 必须在 SetImageData() 之前调用。
+     * 顺序：[0]=Axial  [1]=Sagittal  [2]=Coronal
+     */
     void SetRenderers(std::array<IViewRenderer*, 3> renderers);
+
+    /**
+     * @brief 加载图像数据并初始化三视图
+     *
+     * 自动计算切片范围、初始化窗宽窗位并将相机设为正交投影。
+     */
     void SetImageData(vtkImageData* image);
 
-    void RequestSetSlice(ViewType view, int slice);
-    int GetSlice(ViewType view) const;
+    // ----------------------------------------------------------------
+    //  IViewController 接口实现
+    // ----------------------------------------------------------------
 
+    void ChangeSlice(int viewIndex, int delta)                  override;
+    void UpdateSliceByWorldPoint(std::array<double, 3> worldPoint) override;
+    double GetWindowWidth() const                               override { return m_windowWidth; }
+    double GetWindowLevel() const                               override { return m_windowLevel; }
+    void SetWindowLevel(double window, double level)            override;
+    void Zoom(int viewIndex, double factor,
+        std::array<double, 3> focalWorldPoint)            override;
+    IViewRenderer* GetRenderer(int viewIndex)                   override;
+    const vtkImageData* GetImage() const                        override;
+
+    // ----------------------------------------------------------------
+    //  交互模式
+    // ----------------------------------------------------------------
+
+    /**
+     * @brief 切换交互模式
+     *
+     * 切换时自动重新注册事件回调，确保新模式立即生效。
+     */
     void SetInteractionMode(InteractionMode mode);
-    InteractionMode GetInteractionMode() const { return m_CurrentMode; }
-	void Zoom(int viewIndex, double factor, std::array<double, 3> initialFocalPoint) override;
-    void ChangeSlice(int viewIndex, int delta) override;
-    IViewRenderer* GetRenderer(int viewIndex) override { return m_renderers[viewIndex]; }
 
-    void UpdateSliceInternals(std::array<double, 3> worldPoint) override;
-    const vtkImageData* GetImage() const override;
-    void SetWindowLevel(double ww, double wl) override;
-    double GetWindowWidth() const override { return m_windowWidth; }
-    double GetWindowLevel() const override { return m_windowLevel; }
+    /// @brief 获取当前交互模式
+    InteractionMode GetInteractionMode() const { return m_currentMode; }
 
+    // ----------------------------------------------------------------
+    //  其他控制
+    // ----------------------------------------------------------------
+
+    /// @brief 获取图像世界坐标包围盒 [xMin,xMax, yMin,yMax, zMin,zMax]
     std::array<double, 6> GetImageBounds() const;
 
-    void resetStrategyDrawings();   //清除当前绘画
+    /// @brief 清除当前模式在所有视图上产生的所有 Overlay 标注
+    void ClearAllStrategyDrawings();
+
+    // ----------------------------------------------------------------
+    //  切片操作（供外部 UI 直接调用）
+    // ----------------------------------------------------------------
+
+    /**
+     * @brief 请求设置指定视图的切片（含范围夹紧和信号发射）
+     * @param view  目标视图方向
+     * @param slice 目标切片索引（自动夹紧到有效范围）
+     */
+    void RequestSetSlice(ViewType view, int slice);
+
+    /// @brief 获取指定视图的当前切片索引
+    int GetSlice(ViewType view) const;
 
 signals:
+    /**
+     * @brief 切片索引发生变化时发出
+     * @param viewIndex 视图索引（0–2）
+     * @param slice     新切片索引
+     */
     void sliceChanged(int viewIndex, int slice);
 
 private:
-    void updateSliceInternal(ViewType view, int slice);
+    // ----------------------------------------------------------------
+    //  私有方法
+    // ----------------------------------------------------------------
 
-    /// @brief 计算每个视图的切片范围
-    void computeSliceRanges();
+    /// @brief 计算三个方向的切片范围（依赖 m_image 已就绪）
+    void ComputeSliceRanges();
 
-    /// @brief 注册当前交互模式的事件回调
-    void registerEvents();
+    /// @brief 直接设置切片并触发渲染（不发信号，不做边界检查）
+    void SetSliceInternal(ViewType view, int slice);
 
-    /// @brief 移除旧交互模式的事件回调
-    void unregisterEvents();
+    /// @brief 向三个视图注册事件转发回调
+    void RegisterEventCallbacks();
 
-private:
-    /// 要显示的医学图像数据
-    vtkSmartPointer<vtkImageData> m_image;
+    /// @brief 注销三个视图的事件回调
+    void UnregisterEventCallbacks();
 
-    /// 三个视图的渲染器（Axial/Sagittal/Coronal）
-    std::array<IViewRenderer*, 3> m_renderers;
+    // ----------------------------------------------------------------
+    //  成员变量
+    // ----------------------------------------------------------------
 
-    /// 每个视图的最小切片索引
-    int m_minSlice[3];
+    std::array<IViewRenderer*, 3> m_renderers = { nullptr, nullptr, nullptr };
 
-    /// 每个视图的最大切片索引
-    int m_maxSlice[3];
+    vtkWeakPointer<vtkImageData> m_image;   // 不拥有图像数据生命周期
 
-    /// 防止递归更新切片的标志
-    bool m_internalUpdate = false;
+    double m_windowWidth = 400.0;
+    double m_windowLevel = 40.0;
 
-    /// 当前交互模式
-    InteractionMode m_CurrentMode = InteractionMode::None;
+    int m_minSlice[3] = { 0, 0, 0 };
+    int m_maxSlice[3] = { 0, 0, 0 };
 
-    /// 当前交互策略的实现
-    std::unordered_map<InteractionMode, std::unique_ptr<IInteractionStrategy>> m_strategies;
+    InteractionMode m_currentMode = InteractionMode::Normal;
 
-    // ==================== 窗宽窗位管理 ====================
-    /// 当前窗宽值
-    double m_windowWidth = 0.0;
+    /// 交互模式 → 策略对象 映射表
+    std::map<InteractionMode, std::unique_ptr<IInteractionStrategy>> m_strategies;
 
-    /// 当前窗位值
-    double m_windowLevel = 0.0;
+    /// 防止 UpdateSliceByWorldPoint 递归触发切片变化
+    bool m_isUpdatingSlice = false;
 };

@@ -1,135 +1,128 @@
 ﻿#include "DistanceMeasureStrategy.h"
 #include "Interface/IViewController.h"
 #include "Interface/IViewRenderer.h"
-#include "Renderer/OverlayManager/DistanceMeasureManager/SimpleDistanceMeasureManager.h"
-#include <QDebug>
 #include "Renderer/OverlayManager/IOverlayManager.h"
+#include "Renderer/OverlayManager/DistanceMeasureManager/SimpleDistanceMeasureManager.h"
 
 DistanceMeasureStrategy::DistanceMeasureStrategy(IViewController* controller)
-    : IInteractionStrategy(controller)
-    , m_startWorldPos({ 0.0, 0.0, 0.0 })
-    , m_hasFirstPoint(false)
+    : AbstractMeasureStrategy(controller)
 {
 }
 
-void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {
-    int pos[2];
-    pos[0] = data.mousePosX;
-    pos[1] = data.mousePosY;
+// ============================================================
+//  事件分发
+// ============================================================
 
-    if (!pos || !m_controller) return;
+void DistanceMeasureStrategy::HandleEvent(EventType type,
+    int viewIndex,
+    const EventData& data)
+{
+    if (!m_controller) return;
 
-    if (m_editingViewIndex != viewIndex && m_editingViewIndex != -1) {
-         return; // 只处理当前正在编辑的视图事件
-    }
+    // 视图锁定：一次测量只在一个视图内完成
+    if (!TryLockView(viewIndex)) return;
 
-    // 获取当前视图的渲染器
-    auto renderer = m_controller->GetRenderer(viewIndex);
+    const int screenX = data.mousePosX;
+    const int screenY = data.mousePosY;
+
+    // 边界检查：点击到图像外直接忽略
+    if (!IsInsideImage(viewIndex, screenX, screenY)) return;
+
+    auto* renderer = m_controller->GetRenderer(viewIndex);
     if (!renderer) return;
 
-    // 获取 overlay manager
-    auto overlayMgr = renderer->GetOverlayManager();
+    auto* overlayMgr = renderer->GetOverlayManager();
     if (!overlayMgr) return;
 
-    // 获取测距功能模块
-    auto distanceFeature = overlayMgr->GetFeature<SimpleDistanceMeasureManager>();
-    if (!distanceFeature) return;
-
-    bool flag = distanceFeature->IsWorldPointInImage(renderer->PickWorldPosition(pos[0], pos[1]));
-	if (!flag)   // 如果点击位置不在图像范围内，直接忽略事件
-		return;
+    auto* distFeature = overlayMgr->GetFeature<SimpleDistanceMeasureManager>();
+    if (!distFeature) return;
 
     switch (type) {
-    case EventType::LeftPress: {
-        if (!m_isEditing) {
-            // 如果不是在编辑状态，才处理测量的起点和终点
-            if (!m_hasFirstPoint) {
-                // 第一次点击：记录起始点（世界坐标）
-                m_startWorldPos = renderer->PickWorldPosition(pos[0], pos[1]);
-                m_startViewIndex = viewIndex;
-                m_hasFirstPoint = true;
-                m_editingViewIndex = viewIndex;
 
-                distanceFeature->DrawStartPoint(m_startWorldPos);
-                renderer->RequestRender(); // 触发重绘
+        // ---- 左键点击：放置端点 ----
+    case EventType::LeftPress: {
+        if (!m_isEditingExisting) {
+            if (!m_hasFirstPoint) {
+                // 第一次点击：记录起始端点
+                m_firstWorldPos = renderer->PickWorldPosition(screenX, screenY);
+                m_hasFirstPoint = true;
+
+                distFeature->DrawStartPoint(m_firstWorldPos);
+                renderer->RequestRender();
             }
             else {
                 // 第二次点击：完成测量
-                auto endWorldPos = renderer->PickWorldPosition(pos[0], pos[1]);
-                distanceFeature->DrawFinalMeasurementLine(m_startWorldPos, endWorldPos);
+                auto endPos = renderer->PickWorldPosition(screenX, screenY);
+                distFeature->DrawFinalMeasurementLine(m_firstWorldPos, endPos);
                 renderer->RequestRender();
-                m_editingViewIndex = -1;
 
-                // 重置状态
+                // 重置状态，允许继续下一次测量
                 m_hasFirstPoint = false;
+                UnlockView();
             }
         }
-        else
-        {
-            auto editablePoint = distanceFeature->GetEditablePoint(pos[0], pos[1]);
-
-            if (editablePoint.measurementId != -1) {
-                m_isEditing = true;
-                m_editingMeasurementId = editablePoint.measurementId;
-                m_editingIsStart = editablePoint.isStart;
+        else {
+            // 编辑模式：拾取可拖拽端点
+            auto editPoint = distFeature->GetEditablePoint(screenX, screenY);
+            if (editPoint.measurementId != -1) {
+                m_editingMeasurementId = editPoint.measurementId;
+                m_editingIsStartPoint = editPoint.isStart;
             }
         }
         break;
     }
 
+                             // ---- 鼠标移动：预览或拖拽 ----
     case EventType::LeftMove: {
-        if (!m_isEditing) {
+        if (!m_isEditingExisting) {
             if (m_hasFirstPoint) {
-                // 鼠标移动：预览测量线
-                auto currentWorldPos = renderer->PickWorldPosition(pos[0], pos[1]);
-                distanceFeature->PreviewMeasurementLine(m_startWorldPos, currentWorldPos);
+                // 实时预览测量线
+                auto currentPos = renderer->PickWorldPosition(screenX, screenY);
+                distFeature->PreviewMeasurementLine(m_firstWorldPos, currentPos);
                 renderer->RequestRender();
             }
         }
-        else
-        {
-            // 👉 拖动：拾取新世界坐标并更新
-            auto newWorldPos = renderer->PickWorldPosition(data.mousePosX, data.mousePosY);
-            distanceFeature->UpdateMeasurementPoint(
-                m_editingMeasurementId, m_editingIsStart, newWorldPos);
-            renderer->RequestRender(); // 实时刷新
+        else if (m_editingMeasurementId != -1) {
+            // 拖拽已有端点
+            auto newPos = renderer->PickWorldPosition(screenX, screenY);
+            distFeature->UpdateMeasurementPoint(
+                m_editingMeasurementId, m_editingIsStartPoint, newPos);
+            renderer->RequestRender();
         }
-
         break;
     }
 
+                            // ---- 左键释放：结束拖拽编辑 ----
     case EventType::LeftRelease: {
-        if (m_isEditing) {
-            // 👉 结束此次编辑
+        if (m_isEditingExisting) {
             m_editingMeasurementId = -1;
-            m_editingViewIndex = -1;
+            UnlockView();
         }
-		break;
+        break;
     }
-    case EventType::RightPress:
-    case EventType::RightRelease: {
+
+                               // ---- 右键：取消当前未完成的测量 ----
+    case EventType::RightPress: {
         if (m_hasFirstPoint) {
-            // 右键取消
-            distanceFeature->ClearCurrentMeasurement(); // 清除所有绘制
+            distFeature->ClearCurrentMeasurement();
             renderer->RequestRender();
             m_hasFirstPoint = false;
+            UnlockView();
         }
         break;
     }
 
+                              // ---- 键盘：Ctrl 键控制编辑模式 ----
     case EventType::KeyPress:
-		m_isEditing = data.ctrlPressed;
-		qDebug() << "KeyPress event received. Entering editing mode.";
+        m_isEditingExisting = data.ctrlPressed;
         break;
+
     case EventType::KeyRelease:
-        m_isEditing = data.ctrlPressed;
-        if (!m_isEditing) {
-            m_isEditing = false;
+        m_isEditingExisting = data.ctrlPressed;
+        if (!m_isEditingExisting) {
             m_editingMeasurementId = -1;
-            m_editingViewIndex = -1;
-            qDebug() << "Finish editing measurement";
+            UnlockView();
         }
-        qDebug() << "KeyRelease event received. Exiting editing mode.";
         break;
 
     default:
@@ -137,22 +130,28 @@ void DistanceMeasureStrategy::HandleEvent(EventType type, int viewIndex, const E
     }
 }
 
+// ============================================================
+//  清除
+// ============================================================
+
 void DistanceMeasureStrategy::Clear(int viewIndex)
 {
-    auto renderer = m_controller->GetRenderer(viewIndex);
+    if (!m_controller) return;
+
+    auto* renderer = m_controller->GetRenderer(viewIndex);
     if (!renderer) return;
 
-    // 获取 overlay manager
-    auto overlayMgr = renderer->GetOverlayManager();
+    auto* overlayMgr = renderer->GetOverlayManager();
     if (!overlayMgr) return;
 
-    // 获取测距功能模块
-    auto distanceFeature = overlayMgr->GetFeature<SimpleDistanceMeasureManager>();
-    if (!distanceFeature) return;
+    auto* distFeature = overlayMgr->GetFeature<SimpleDistanceMeasureManager>();
+    if (distFeature) {
+        distFeature->ClearAllMeasurement();
+    }
 
-    distanceFeature->ClearAllMeasurement(); // 清除所有绘制
-
-    qDebug() << "Renderer ptr:" << renderer;
-    qDebug() << "OverlayMgr ptr:" << overlayMgr;
-    qDebug() << "DistanceFeature ptr:" << distanceFeature;
+    // 重置策略内部状态
+    m_hasFirstPoint = false;
+    m_isEditingExisting = false;
+    m_editingMeasurementId = -1;
+    UnlockView();
 }

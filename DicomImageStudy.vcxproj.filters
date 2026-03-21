@@ -133,6 +133,9 @@
     <ClCompile Include="Controller\Strategy\InteractionStrategyFactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Controller\Strategy\AbstractMeasureStrategy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\InteractionMode.h">
@@ -262,6 +265,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Common\Measurement\MeasurementTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller\Strategy\AbstractMeasureStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

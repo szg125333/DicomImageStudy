@@ -1,76 +1,43 @@
 ﻿#include "Renderer/OverlayManager/SimpleOverlayManager.h"
-#include "Renderer/OverlayManager/CrosshairManager/SimpleCrosshairManager.h"
 #include "Renderer/OverlayManager/OverlayInfoManager/SimpleOverlayInfoManager.h"
-#include "Renderer/OverlayManager/DistanceMeasureManager/SimpleDistanceMeasureManager.h"
+
 #include <vtkRenderer.h>
 #include <vtkImageViewer2.h>
-#include <vtkImageData.h>
-#include <vtkCellPicker.h>
-#include <QString>
 
-#include <vtkSmartPointer.h>
-#include <vtkSphereSource.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
-#include <vtkRenderWindow.h>
-#include <vtkProperty.h>
+// ============================================================
+//  构造 / 析构
+// ============================================================
 
 SimpleOverlayManager::SimpleOverlayManager() = default;
+SimpleOverlayManager::~SimpleOverlayManager() { Shutdown(); }
 
-SimpleOverlayManager::~SimpleOverlayManager() {
-    Shutdown();
-}
+// ============================================================
+//  生命周期
+// ============================================================
 
-void SimpleOverlayManager::Initialize(vtkRenderer* overlayRenderer, vtkImageViewer2* viewer) {
-    if (m_initialized) return;
-    if (!overlayRenderer) return;
+void SimpleOverlayManager::Initialize(vtkRenderer* overlayRenderer,
+    vtkImageViewer2* viewer)
+{
+    if (m_initialized || !overlayRenderer) return;
 
     m_overlayRenderer = overlayRenderer;
     m_viewer = viewer;
 
-    // 👇 对每一个 feature 调用 Initialize
+    // 依次初始化所有已注册的 Feature
     for (auto& feature : m_features) {
         if (feature) {
-            feature->Initialize(m_overlayRenderer); // 或只传 renderer，依接口而定
+            feature->Initialize(m_overlayRenderer);
         }
     }
-    // 应用初始样式/可见性
+
     SetVisible(m_visible);
     SetColor(m_color[0], m_color[1], m_color[2]);
 
     m_initialized = true;
 }
 
-void SimpleOverlayManager::RegisterFeature(std::unique_ptr<IOverlayFeature> feature) {
-    if (!feature) return;
-
-    // 如果已经初始化了，就立即初始化这个新 feature
-    if (m_initialized && m_overlayRenderer) {
-        feature->Initialize(m_overlayRenderer);
-    }
-    m_features.push_back(std::move(feature));
-}
-
-void SimpleOverlayManager::UpdaBasicInformationActor(const RenderViewState& data)
+void SimpleOverlayManager::Shutdown()
 {
-    auto overlayInfoFeature = GetFeature<SimpleOverlayInfoManager>();
-    if (overlayInfoFeature) {
-        overlayInfoFeature->SetVisible(true);
-		overlayInfoFeature->Update(data);
-    }
-}
-
-void SimpleOverlayManager::SetVisible(bool visible) {
-    m_visible = visible;
-    if (!m_initialized) return;
-}
-
-void SimpleOverlayManager::SetColor(double r, double g, double b) {
-    m_color[0] = r; m_color[1] = g; m_color[2] = b;
-    if (!m_initialized) return;
-}
-
-void SimpleOverlayManager::Shutdown() {
     if (!m_initialized) return;
 
     m_viewer = nullptr;
@@ -78,8 +45,80 @@ void SimpleOverlayManager::Shutdown() {
     m_initialized = false;
 }
 
-bool SimpleOverlayManager::Update(const EventData& event)
+// ============================================================
+//  Feature 注册
+// ============================================================
+
+void SimpleOverlayManager::RegisterFeature(std::unique_ptr<IOverlayFeature> feature)
 {
+    if (!feature) return;
+
+    // 若已初始化，立即初始化新注册的 Feature
+    if (m_initialized && m_overlayRenderer) {
+        feature->Initialize(m_overlayRenderer);
+    }
+    m_features.push_back(std::move(feature));
+}
+
+IOverlayFeature* SimpleOverlayManager::GetFeatureImpl(const std::type_info& type)
+{
+    for (auto& feature : m_features) {
+        if (feature && typeid(*feature) == type) {
+            return feature.get();
+        }
+    }
+    return nullptr;
+}
+
+// ============================================================
+//  样式控制
+// ============================================================
+
+void SimpleOverlayManager::SetVisible(bool visible)
+{
+    m_visible = visible;
+    // 各 Feature 内部持有 Actor，由 Feature 自行处理可见性
+}
+
+void SimpleOverlayManager::SetColor(double r, double g, double b)
+{
+    m_color[0] = r;
+    m_color[1] = g;
+    m_color[2] = b;
+}
+
+// ============================================================
+//  图像边界
+// ============================================================
+
+void SimpleOverlayManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
+{
+    m_imageWorldBounds = bounds;
+    m_hasImageBounds = true;
+}
+
+bool SimpleOverlayManager::IsWorldPointInImage(
+    const std::array<double, 3>& worldPoint) const
+{
+    // 未设置边界时保守允许（不会误拒合法操作）
+    if (!m_hasImageBounds) return true;
+
+    constexpr double kEps = 1e-3;  // 容差，避免浮点边界误判
+    const auto& b = m_imageWorldBounds;
+    const auto& p = worldPoint;
+
+    return (p[0] >= b[0] - kEps && p[0] <= b[1] + kEps &&
+        p[1] >= b[2] - kEps && p[1] <= b[3] + kEps &&
+        p[2] >= b[4] - kEps && p[2] <= b[5] + kEps);
+}
+
+// ============================================================
+//  驱动接口
+// ============================================================
+
+bool SimpleOverlayManager::Update(const EventData& /*event*/)
+{
+    // 预留扩展接口，暂不使用
     return false;
 }
 
@@ -87,34 +126,17 @@ bool SimpleOverlayManager::OnSliceChanged(ViewType viewType, int slice)
 {
     for (auto& feature : m_features) {
         if (feature) {
-            feature->OnSliceChanged(m_viewer,slice, viewType); // 或只传 renderer，依接口而定
+            feature->OnSliceChanged(m_viewer, slice, viewType);
         }
     }
     return true;
 }
 
-void SimpleOverlayManager::SetImageWorldBounds(const std::array<double, 6>& bounds)
+void SimpleOverlayManager::UpdateBasicInfoActor(const RenderViewState& state)
 {
-    m_imageWorldBounds = bounds;
-    m_hasImageBounds = true;
-    //for (auto& feature : m_features) {
-    //    if (feature) {
-    //        feature->SetImageWorldBounds(bounds); // 或只传 renderer，依接口而定
-    //    }
-    //}
-}
-
-bool SimpleOverlayManager::IsWorldPointInImage(const std::array<double, 3>& worldPoint) const
-{
-    if (!m_hasImageBounds) {
-        return true; // 无边界信息时保守允许
+    auto* infoFeature = GetFeature<SimpleOverlayInfoManager>();
+    if (infoFeature) {
+        infoFeature->SetVisible(true);
+        infoFeature->Update(state);
     }
-
-    const double eps = 1e-3; // 容差
-    const auto& b = m_imageWorldBounds;
-    const auto& p = worldPoint;
-
-    return (p[0] >= b[0] - eps && p[0] <= b[1] + eps &&
-        p[1] >= b[2] - eps && p[1] <= b[3] + eps &&
-        p[2] >= b[4] - eps && p[2] <= b[5] + eps);
 }

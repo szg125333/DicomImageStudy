@@ -1,6 +1,8 @@
 ﻿#pragma once
+
 #include "Interface/IViewRenderer.h"
 #include "Common/RenderViewState.h"
+
 #include <QObject>
 #include <QPointer>
 #include <QTimer>
@@ -8,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <vtkSmartPointer.h>
+#include <vtkObject.h>
 
 class QVTKOpenGLNativeWidget;
 class vtkImageViewer2;
@@ -17,125 +20,128 @@ class vtkImageData;
 class vtkRenderer;
 class IOverlayManager;
 
-/// @brief VTK 视图渲染器
-/// 
-/// 负责管理单个切片视图的渲染，包括：
-/// - 图像数据的显示
-/// - Overlay 元素的管理（十字线、窗宽窗位信息等）
-/// - 用户交互事件的处理
-/// - 渲染请求的合并和优化
+/**
+ * @brief VTK 切片视图渲染器
+ *
+ * 封装单个切片视图（轴状 / 矢状 / 冠状）的完整渲染逻辑：
+ *   - 使用 vtkImageViewer2 显示 DICOM 图像切片
+ *   - 在独立的第二层渲染器（Overlay）上绘制测量标注
+ *   - 拦截 VTK 鼠标 / 键盘事件并转发给上层 Strategy
+ *   - 通过 QTimer 合并高频渲染请求，16 ms 内只渲染一次
+ */
 class VtkViewRenderer : public QObject, public IViewRenderer {
     Q_OBJECT
-public:
-    /// @brief 构造函数
-    /// @param widget Qt VTK 渲染窗口
-    VtkViewRenderer(QVTKOpenGLNativeWidget* widget);
 
-    /// @brief 析构函数
+public:
+    /**
+     * @brief 构造函数
+     * @param widget 承载此视图的 Qt VTK 渲染窗口，不可为 nullptr
+     */
+    explicit VtkViewRenderer(QVTKOpenGLNativeWidget* widget);
     ~VtkViewRenderer() override;
 
-    /// @brief 设置输入图像数据
-    /// @param img VTK 图像数据
-    void SetInputData(vtkImageData* img) override;
+    // ----------------------------------------------------------------
+    //  IViewRenderer 接口实现
+    // ----------------------------------------------------------------
 
-    /// @brief 设置切片方向
-    /// @param o 切片方向（XY/YZ/XZ）
-    void SetOrientation(ViewType viewType) override;
+    void SetInputData(vtkImageData* image)              override;
+    void SetOrientation(ViewType viewType)              override;
+    void SetSlice(int slice)                            override;
+    void SetMaxSlice(int maxSlice)                      override;
+    int  GetSlice() const                               override;
 
-    /// @brief 设置当前切片索引
-    /// @param slice 切片号
-    void SetSlice(int slice) override;
-    void SetMaxSlice(int slice) override;
+    void SetColorWindow(double window)                  override;
+    void SetColorLevel(double level)                    override;
 
-    void UpdaBasicInformationActor() override;
+    std::array<double, 3> PickWorldPosition(int screenX, int screenY) override;
+    void SetCurrentClickWorldPos(std::array<double, 3> worldPos)      override;
 
-    /// @brief 获取当前切片索引
-    /// @return 当前切片号
-    int GetSlice() const override;
+    void RequestRender()                                override;
+    void UpdateBasicInfoActor()                         override;
 
-    /// @brief 请求渲染
-    /// 
-    /// 使用 QTimer 延迟渲染，确保在事件循环中只渲染一次
-    /// 即使多个地方同时请求渲染，也只会触发一次 PerformRender()
-    void RequestRender() override;
-
-    /// @brief 注册事件回调
-    /// @param type 事件类型
-    /// @param cb 回调函数，接收位置信息（int[2]）
-    void OnEvent(EventType type, std::function<void(const EventData&)> cb);
-
-    /// @brief 获取 VTK 图像查看器
-    /// @return vtkImageViewer2 指针
-    vtkSmartPointer<vtkImageViewer2> GetViewer() override { return m_viewer; }
-
-    /// @brief 获取 Overlay 渲染器
-    /// @return vtkRenderer 指针
-    vtkSmartPointer<vtkRenderer> GetOverlayRenderer() override { return m_overlayRenderer; }
-
-    /// @brief 获取 Overlay 管理器
-    /// @return IOverlayManager 指针
-    IOverlayManager* GetOverlayManager() override { return m_overlayManager.get(); }
-
+    vtkSmartPointer<vtkImageViewer2> GetViewer()        override { return m_viewer; }
+    vtkSmartPointer<vtkRenderer>     GetOverlayRenderer() override { return m_overlayRenderer; }
+    IOverlayManager* GetOverlayManager()                override { return m_overlayManager.get(); }
     void SetOverlayManager(std::unique_ptr<IOverlayManager> manager) override;
 
-    std::array<double, 3> PickWorldPosition(int screenX, int screenY)override;
+    void OnEvent(EventType type, std::function<void(const EventData&)> cb) override;
 
-    void SetColorWindow(double s) override;
-    void SetColorLevel(double s) override;
-    void SetCurrentClickWorldPos(std::array<double, 3> worldPos) override;
+    // ----------------------------------------------------------------
+    //  状态查询（供 Overlay 信息层读取）
+    // ----------------------------------------------------------------
 
-    double GetColorWindow()  { return m_windowWidth; };
-    double GetColorLevel() { return m_windowLevel; };
+    double   GetColorWindow()    const { return m_windowWidth; }
+    double   GetColorLevel()     const { return m_windowLevel; }
+    int      GetCurrentSlice()   const { return m_currentSlice; }
+    int      GetMaxSlices()      const { return m_maxSlices; }
+    ViewType GetCurrentViewType()const { return m_currentViewType; }
+    std::array<double, 3> GetCurrentClickWorldPos() const { return m_currentClickWorldPos; }
 
-    int GetCurrentSlice() { return m_currentSlice; };
-    int GetAllSlices() { return m_maxSlices; };
-    ViewType GetCurrentViewType() { return m_currentViewType; };
-    std::array<double, 3> GetCurrentClickWorldPos() { return m_currentClickWorldPos; };
 signals:
-    void viewStateChanged(const RenderViewState&data);
+    /// @brief 视图状态发生变化时发出，Overlay 信息层监听此信号
+    void viewStateChanged(const RenderViewState& state);
 
 private slots:
-    /// @brief 执行渲染操作（内部使用）
-    /// 
-    /// 由 QTimer 触发，确保图像和 overlay 都被更新
-    void PerformRender();
+    /// @brief 由 QTimer 触发，执行真实渲染
+    void OnRenderTimerTimeout();
 
-    void getViewStateChanged(const RenderViewState& data);
+    /// @brief 接收 viewStateChanged 信号，转发给 Overlay 管理器
+    void OnViewStateChanged(const RenderViewState& state);
 
 private:
-    // ==================== Qt 相关 ====================
-    /// Qt VTK 渲染窗口
+    // ----------------------------------------------------------------
+    //  VTK 事件回调（静态，避免 VTK 与 Qt 对象生命周期耦合）
+    // ----------------------------------------------------------------
+
+    /**
+     * @brief VTK 通用回调入口
+     *
+     * 将 VTK 鼠标 / 键盘事件转换为 EventData，
+     * 再调用 m_callbacks 中对应的回调函数。
+     */
+    static void VtkEventCallback(vtkObject* caller, unsigned long eventId,
+        void* clientData, void* callData);
+
+    // ----------------------------------------------------------------
+    //  成员变量 —— Qt
+    // ----------------------------------------------------------------
+
+    /// 承载渲染窗口的 Qt Widget（弱引用，防止悬空指针）
     QPointer<QVTKOpenGLNativeWidget> m_widget;
 
-    /// 渲染计时器，用于延迟渲染合并
+    /// 渲染合并计时器，16 ms 单次触发
     QTimer m_renderTimer;
 
-    // ==================== VTK 相关 ====================
-    /// VTK 图像查看器
-    vtkSmartPointer<vtkImageViewer2> m_viewer;
+    // ----------------------------------------------------------------
+    //  成员变量 —— VTK
+    // ----------------------------------------------------------------
 
-    /// VTK 渲染窗口
+    vtkSmartPointer<vtkImageViewer2>           m_viewer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
 
-    /// 用于绘制 overlay 元素的渲染器
-    vtkSmartPointer<vtkRenderer> m_overlayRenderer;
+    /// Overlay 独立渲染器（第二层，不影响图像渲染）
+    vtkSmartPointer<vtkRenderer>               m_overlayRenderer;
 
-    /// VTK 事件回调命令
-    vtkSmartPointer<vtkCallbackCommand> m_vtkCmd;
+    /// VTK 事件监听命令
+    vtkSmartPointer<vtkCallbackCommand>        m_vtkCmd;
 
+    /// 事件类型 → 回调函数 映射表
     std::unordered_map<EventType, std::function<void(const EventData&)>> m_callbacks;
 
-    static void VtkGenericCallback(vtkObject* caller, unsigned long eid,
-        void* clientdata, void* calldata);
+    // ----------------------------------------------------------------
+    //  成员变量 —— Overlay
+    // ----------------------------------------------------------------
 
     std::unique_ptr<IOverlayManager> m_overlayManager;
 
-	ViewType m_currentViewType=ViewType::None;
+    // ----------------------------------------------------------------
+    //  成员变量 —— 状态缓存
+    // ----------------------------------------------------------------
 
-    /// 当前窗宽值
-    double m_windowWidth = 0.0;
-    double m_windowLevel = 0.0;
-	int m_currentSlice = 0;
-	int m_maxSlices = 0;
+    ViewType             m_currentViewType = ViewType::None;
+    double               m_windowWidth = 0.0;
+    double               m_windowLevel = 0.0;
+    int                  m_currentSlice = 0;
+    int                  m_maxSlices = 0;
     std::array<double, 3> m_currentClickWorldPos = { 0.0, 0.0, 0.0 };
 };

@@ -76,7 +76,7 @@ void SimpleOverlayInfoManager::SetColor(double r, double g, double b) {
 
 }
 
-void SimpleOverlayInfoManager::OnSliceChanged(const vtkImageViewer2* viewer,int slice,ViewType viewType)
+void SimpleOverlayInfoManager::OnSliceChanged(vtkImageViewer2* viewer,int slice,ViewType viewType)
 {
 }
 

@@ -551,22 +551,22 @@ void SimpleDistanceMeasureManager::updatePreviewLabel(
     m_previewLabelActor->SetPosition(mid);
 }
 
-bool SimpleDistanceMeasureManager::IsWorldPointInImage(const std::array<double, 3>& worldPoint) const
-{
-    if (!m_hasImageBounds) {
-        return true; // 无边界信息时保守允许
-    }
+//bool SimpleDistanceMeasureManager::IsWorldPointInImage(const std::array<double, 3>& worldPoint) const
+//{
+//    if (!m_hasImageBounds) {
+//        return true; // 无边界信息时保守允许
+//    }
+//
+//    const double eps = 1e-3; // 容差
+//    const auto& b = m_imageWorldBounds;
+//    const auto& p = worldPoint;
+//
+//    return (p[0] >= b[0] - eps && p[0] <= b[1] + eps &&
+//        p[1] >= b[2] - eps && p[1] <= b[3] + eps &&
+//        p[2] >= b[4] - eps && p[2] <= b[5] + eps);
+//}
 
-    const double eps = 1e-3; // 容差
-    const auto& b = m_imageWorldBounds;
-    const auto& p = worldPoint;
-
-    return (p[0] >= b[0] - eps && p[0] <= b[1] + eps &&
-        p[1] >= b[2] - eps && p[1] <= b[3] + eps &&
-        p[2] >= b[4] - eps && p[2] <= b[5] + eps);
-}
-
-void SimpleDistanceMeasureManager::OnSliceChanged(const vtkImageViewer2* viewer,
+void SimpleDistanceMeasureManager::OnSliceChanged(vtkImageViewer2* viewer,
     int slice,
     ViewType viewType)
 {

@@ -34,7 +34,7 @@ public:
     void SetVisible(bool visible) override;
     void Shutdown() override;
     void SetColor(double r, double g, double b) override;
-    void OnSliceChanged(const vtkImageViewer2* viewer,int slice,ViewType viewType) override;
+    void OnSliceChanged(vtkImageViewer2* viewer,int slice,ViewType viewType) override;
 
     void DrawStartPoint(std::array<double, 3> worldPoint) override;
     void DrawFinalMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> endPos) override;
@@ -47,7 +47,7 @@ public:
     EditablePoint GetEditablePoint(int screenX, int screenY) const;
     void UpdateMeasurementPoint(int measurementId, bool isStart, const std::array<double, 3>& newWorldPos);
 
-    bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const;
+    //bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const;
 private:
 
     vtkSmartPointer<vtkActor> createSphereActor(const std::array<double, 3>& point);

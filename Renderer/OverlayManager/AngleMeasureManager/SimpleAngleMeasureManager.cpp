@@ -504,7 +504,7 @@ void SimpleAngleMeasureManager::UpdateAngleMeasurementPoint(
 //  切片变更
 // ============================================================
 
-void SimpleAngleMeasureManager::OnSliceChanged(const vtkImageViewer2* viewer, int slice, ViewType viewType) {
+void SimpleAngleMeasureManager::OnSliceChanged(vtkImageViewer2* viewer, int slice, ViewType viewType) {
     if (!m_initialized || !viewer) return;
 
     // 避免 const_cast 后再次判断 null

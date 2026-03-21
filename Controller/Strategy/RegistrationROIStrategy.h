@@ -1,17 +1,21 @@
+// ================================================================
+//  RegistrationROIStrategy.h
+// ================================================================
 #pragma once
 #include "IInteractionStrategy.h"
 
-class IViewController;
-
-/// @brief 配准 ROI（盒子）模式交互策略
-/// 
-/// 处理配准 ROI 模式下的交互事件
+/**
+ * @brief 配准 ROI 选择策略（待实现）
+ *
+ * 用于在配准流程中选取感兴趣区域（ROI）。
+ * 当前为占位实现，后续按配准模块需求补全。
+ */
 class RegistrationROIStrategy : public IInteractionStrategy {
 public:
-    explicit RegistrationROIStrategy(IViewController* controller);
-    ~RegistrationROIStrategy() override = default;
+    explicit RegistrationROIStrategy(IViewController* controller)
+        : IInteractionStrategy(controller) {
+    }
 
     void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
     void Clear(int viewIndex) override;
-
 };

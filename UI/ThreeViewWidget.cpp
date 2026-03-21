@@ -122,7 +122,7 @@ void ThreeViewWidget::setModeToDistanceMeasurement(InteractionMode mode, bool st
 {
     if (!state) {
         m_controller->SetInteractionMode(mode);
-        m_controller->resetStrategyDrawings();
+        m_controller->ClearAllStrategyDrawings();
         m_controller->SetInteractionMode(InteractionMode::Normal);
         return;
     }

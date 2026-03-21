@@ -1,25 +1,38 @@
 #include "InteractionStrategyFactory.h"
-#include "IInteractionStrategy.h"
 
-#include "Controller/Strategy/NormalStrategy.h"
-#include "Controller/Strategy/DistanceMeasureStrategy.h"
-#include "Controller/Strategy/AngleMeasureStrategy.h"
+#include "NormalStrategy.h"
+#include "DistanceMeasureStrategy.h"
+#include "AngleMeasureStrategy.h"
+#include "RegistrationROIStrategy.h"
+#include "CheckboardStrategy.h"
+#include "ManualMoveStrategy.h"
+#include "ContourMeasureStrategy.h"
 
-InteractionStrategyFactory::StrategyMap
-InteractionStrategyFactory::CreateStrategies(IViewController* m_controller) {
-    StrategyMap strategies;
+std::map<InteractionMode, std::unique_ptr<IInteractionStrategy>>
+InteractionStrategyFactory::CreateStrategies(IViewController* controller)
+{
+    std::map<InteractionMode, std::unique_ptr<IInteractionStrategy>> strategies;
 
-    // 按需注册已实现的策略
-    strategies[InteractionMode::Normal] =
-        std::make_unique<NormalStrategy>(m_controller);
+    strategies[InteractionMode::Normal]
+        = std::make_unique<NormalStrategy>(controller);
 
-    strategies[InteractionMode::DistanceMeasure] =
-        std::make_unique<DistanceMeasureStrategy>(m_controller);
+    strategies[InteractionMode::DistanceMeasure]
+        = std::make_unique<DistanceMeasureStrategy>(controller);
 
-     strategies[InteractionMode::AngleMeasure] = 
-         std::make_unique<AngleMeasureStrategy>(m_controller);
+    strategies[InteractionMode::AngleMeasure]
+        = std::make_unique<AngleMeasureStrategy>(controller);
 
-    // 未实现的模式可以跳过（不加入 map），或用空指针占位（不推荐）
+    strategies[InteractionMode::RegistrationROI]
+        = std::make_unique<RegistrationROIStrategy>(controller);
+
+    strategies[InteractionMode::Checkboard]
+        = std::make_unique<CheckboardStrategy>(controller);
+
+    strategies[InteractionMode::ManualMove]
+        = std::make_unique<ManualMoveStrategy>(controller);
+
+    strategies[InteractionMode::ContourMeasure]
+        = std::make_unique<ContourMeasureStrategy>(controller);
 
     return strategies;
 }

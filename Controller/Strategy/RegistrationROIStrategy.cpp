@@ -1,15 +1,16 @@
+// ================================================================
+//  RegistrationROIStrategy.cpp
+// ================================================================
 #include "RegistrationROIStrategy.h"
-#include <QDebug>
 
-RegistrationROIStrategy::RegistrationROIStrategy(IViewController* controller)
-    : IInteractionStrategy(controller) {
-}
-
-void RegistrationROIStrategy::HandleEvent(EventType type, int viewIndex, const EventData& data) {
-    qDebug() << "[RegistrationROIStrategy] Event:" << static_cast<int>(type)
-        << "ViewIndex:" << viewIndex;
-}
-
-void RegistrationROIStrategy::Clear(int viewIndex)
+void RegistrationROIStrategy::HandleEvent(EventType /*type*/,
+    int     /*viewIndex*/,
+    const EventData& /*data*/)
 {
+    // TODO: 实现 ROI 配准交互逻辑
+}
+
+void RegistrationROIStrategy::Clear(int /*viewIndex*/)
+{
+    // TODO: 清除 ROI 标注
 }
