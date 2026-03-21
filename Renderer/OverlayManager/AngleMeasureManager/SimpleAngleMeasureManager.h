@@ -3,7 +3,6 @@
 #include "IAngleMeasureManager.h"
 #include "Common/Measurement/MeasurementTypes.h"
 
-// 前置声明（避免包含重量级头文件）
 class vtkRenderer;
 class vtkImageViewer2;
 class vtkActor;
@@ -20,17 +19,17 @@ class vtkCamera;
 #include <array>
 #include <unordered_map>
 
-/// @brief 角度测量工具管理器实现
+/// @brief 角度测量线管理器实现
 class SimpleAngleMeasureManager : public IAngleMeasureManager {
 public:
-    // === 构造与生命周期 ===
+    // === 生命周期管理 ===
     SimpleAngleMeasureManager();
     ~SimpleAngleMeasureManager() override;
 
     void Initialize(vtkRenderer* overlayRenderer) override;
     void Shutdown() override;
     void SetVisible(bool visible) override;
-    void OnSliceChanged(const vtkImageViewer2* viewer,int slice,ViewType viewType) override;
+    void OnSliceChanged(const vtkImageViewer2* viewer, int slice, ViewType viewType) override;
 
     // === 测量流程控制 ===
     void StartMeasure(const std::array<double, 3>& point1) override;
@@ -40,16 +39,15 @@ public:
     // === 样式 ===
     void SetColor(double r, double g, double b) override;
 
-    // === 清理 ===
+    // === 清除 ===
     void ClearAllMeasurement() override;
     void ClearCurrentMeasurement() override;
-    void ClearPreview();
 
-    // === 交互编辑支持 ===
+    // === 点编辑支持（供外部交互使用）===
     EditableAnglePoint GetEditableAnglePoint(int screenX, int screenY) const;
     void UpdateAngleMeasurementPoint(int measurementId, AnglePointRole role, const std::array<double, 3>& newWorldPos);
 
-    // === 公共工具函数（供外部或测试使用）===
+    // === 静态计算工具（供外部调用）===
     static double ComputeAngle(
         const std::array<double, 3>& startPoint,
         const std::array<double, 3>& vertexPoint,
@@ -61,24 +59,19 @@ public:
         const std::array<double, 3>& end,
         double offsetFactor = 0.3);
 
-    vtkSmartPointer<vtkActor> CreateAngleArc(
-        const std::array<double, 3>& startPoint,
-        const std::array<double, 3>& vertexPoint,
-        const std::array<double, 3>& endPoint);
+    // === 绘制入口（由 StartMeasure/UpdateMeasure/EndMeasure 调用）===
+    void DrawStartPoint(const std::array<double, 3>& worldPoint);
+    void DrawMiddlePointAndStartToMiddleLine(const std::array<double, 3>& worldPoint);
+    void DrawEndPointAndMiddleToEndLine(const std::array<double, 3>& worldPoint);
 
-    vtkSmartPointer<vtkFollower> CreateAngleLabel(
-        double angleDeg,
-        const std::array<double, 3>& labelPosition,
-        vtkCamera* camera);
-
-    void DrawStartPoint(std::array<double, 3> worldPoint);
-    void DrawMiddlePointAndStartToMiddleLine(std::array<double, 3> worldPoint);
-    void DrawEndPointAndMiddleToEndLine(std::array<double, 3> worldPoint);
-
-    void PreviewStartToMiddleMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> currentPos);
-    void PreviewMiddleToEndMeasurementLine(std::array<double, 3> startPos, std::array<double, 3> currentPos);
+    // === 预览更新 ===
+    void PreviewStartToMiddleMeasurementLine(const std::array<double, 3>& startPos, const std::array<double, 3>& currentPos);
+    void PreviewMiddleToEndMeasurementLine(const std::array<double, 3>& startPos, const std::array<double, 3>& currentPos);
+    void ClearPreview();
 
 private:
+
+    // === 预览弧线/标签更新（懒初始化，零重建）===
     void UpdatePreviewAngleArc(
         const std::array<double, 3>& start,
         const std::array<double, 3>& vertex,
@@ -91,8 +84,10 @@ private:
         const std::array<double, 3>& end,
         vtkCamera* camera);
 
+    // === 最终测量绘制（新建或重建全部 actor）===
     void DrawFinalAngleMeasurement(int measurementId);
 
+    // === 弧线点生成（被 CreateAngleArc 和预览共用）===
     void GenerateArcPoints(
         const std::array<double, 3>& startPoint,
         const std::array<double, 3>& vertexPoint,
@@ -100,34 +95,45 @@ private:
         vtkPoints* points,
         vtkPolyLine* polyLine);
 
-    // === 工厂函数：创建基础图元 ===
+    // === 创建弧线 Actor（内部复用 GenerateArcPoints）===
+    vtkSmartPointer<vtkActor> CreateAngleArc(
+        const std::array<double, 3>& startPoint,
+        const std::array<double, 3>& vertexPoint,
+        const std::array<double, 3>& endPoint);
+
+    // === 创建角度标签 Follower ===
+    vtkSmartPointer<vtkFollower> CreateAngleLabel(
+        double angleDeg,
+        const std::array<double, 3>& labelPosition,
+        vtkCamera* camera);
+
+    // === 基础图元创建 ===
     vtkSmartPointer<vtkActor> createSphereActor(const std::array<double, 3>& point);
     vtkSmartPointer<vtkActor> createLineActor(const std::array<double, 3>& p1, const std::array<double, 3>& p2);
     vtkSmartPointer<vtkActor> createCrosshairActor(const std::array<double, 3>& center, double length = 10.0);
-    vtkSmartPointer<vtkActor> createTickActor(const std::array<double, 3>& p1, const std::array<double, 3>& p2, double tickLength = 3.0);
-    vtkSmartPointer<vtkFollower> createDistanceLabel(const std::array<double, 3>& p1, const std::array<double, 3>& p2, vtkCamera* camera, double scale = 8.0, double offset = 2.0);
+
+    // === 移除单个测量的所有 actor 辅助函数 ===
+    void removeMeasurementActors(int measurementId);
 
     // === 数据结构 ===
     struct Measurement {
         int id = -1;
 
-        // 世界坐标（用于计算）
-        std::array<double, 3> startPointWorld;
-        std::array<double, 3> middlePointWorld;
-        std::array<double, 3> endPointWorld;
+        // 三个控制点世界坐标
+        std::array<double, 3> startPointWorld = {};
+        std::array<double, 3> middlePointWorld = {};
+        std::array<double, 3> endPointWorld = {};
 
-        // 可视化组件
-        vtkSmartPointer<vtkActor> startPointActor;
-        vtkSmartPointer<vtkActor> startCrosshairActor;
-        vtkSmartPointer<vtkActor> middlePointActor;
-        vtkSmartPointer<vtkActor> middleCrosshairActor;
-        vtkSmartPointer<vtkActor> endPointActor;
-        vtkSmartPointer<vtkActor> endCrosshairActor;
-
-        vtkSmartPointer<vtkActor> startToMiddleLine1Actor;
-        vtkSmartPointer<vtkActor> middleToEndLineActor;
-
-        vtkSmartPointer<vtkActor> angleArcActor;
+        // 可视化 Actor
+        vtkSmartPointer<vtkActor>   startPointActor;
+        vtkSmartPointer<vtkActor>   startCrosshairActor;
+        vtkSmartPointer<vtkActor>   middlePointActor;
+        vtkSmartPointer<vtkActor>   middleCrosshairActor;
+        vtkSmartPointer<vtkActor>   endPointActor;
+        vtkSmartPointer<vtkActor>   endCrosshairActor;
+        vtkSmartPointer<vtkActor>   startToMiddleLineActor;
+        vtkSmartPointer<vtkActor>   middleToEndLineActor;
+        vtkSmartPointer<vtkActor>   angleArcActor;
         vtkSmartPointer<vtkFollower> angleLabel;
 
         bool isComplete = false;
@@ -135,21 +141,21 @@ private:
 
     // === 成员变量 ===
     std::unordered_map<int, Measurement> m_measurements;
-    int m_currentId = 0;
+    int m_currentId = 0;  // 当前正在绘制的测量 ID
     int generateNextId() { return ++m_currentId; }
 
-    // 预览专用（不存入 m_measurements）
+    // 预览专用对象（不在 m_measurements 中，懒初始化）
     vtkSmartPointer<vtkLineSource> m_previewStartToMiddleLineSource;
     vtkSmartPointer<vtkActor>      m_previewStartToMiddleLineActor;
     vtkSmartPointer<vtkLineSource> m_previewMiddleToEndLineSource;
     vtkSmartPointer<vtkActor>      m_previewMiddleToEndLineActor;
 
-    vtkSmartPointer<vtkActor> m_previewAngleArcActor;
-    vtkSmartPointer<vtkPoints> m_previewArcPoints;
-    vtkSmartPointer<vtkPolyLine> m_previewArcPolyLine;
-    vtkSmartPointer<vtkCellArray> m_previewArcCells;
-    vtkSmartPointer<vtkPolyData> m_previewArcPolyData;
-    vtkSmartPointer<vtkFollower> m_previewAngleLabel;
+    vtkSmartPointer<vtkActor>      m_previewAngleArcActor;
+    vtkSmartPointer<vtkPoints>     m_previewArcPoints;
+    vtkSmartPointer<vtkPolyLine>   m_previewArcPolyLine;
+    vtkSmartPointer<vtkCellArray>  m_previewArcCells;
+    vtkSmartPointer<vtkPolyData>   m_previewArcPolyData;
+    vtkSmartPointer<vtkFollower>   m_previewAngleLabel;
     vtkSmartPointer<vtkVectorText> m_previewLabelText;
 
     vtkSmartPointer<vtkRenderer> m_overlayRenderer;
