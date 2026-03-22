@@ -148,6 +148,12 @@
     <ClCompile Include="Controller\Strategy\ImageDragStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Controller\Strategy\RulerLineStrategy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\OverlayManager\RulerLineManager\SimpleRulerLineManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\InteractionMode.h">
@@ -298,6 +304,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Controller\Strategy\ImageDragStrategy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller\Strategy\RulerLineStrategy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\OverlayManager\RulerLineManager\SimpleRulerLineManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\ViewportUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

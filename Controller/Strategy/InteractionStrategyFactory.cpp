@@ -9,6 +9,7 @@
 #include "ContourMeasureStrategy.h"
 #include "FreehandROIStrategy.h"    // 新增
 #include "ImageDragStrategy.h"    // 新增
+#include "RulerLineStrategy.h"
 
 std::map<InteractionMode, std::unique_ptr<IInteractionStrategy>>
 InteractionStrategyFactory::CreateStrategies(IViewController* controller)
@@ -38,6 +39,9 @@ InteractionStrategyFactory::CreateStrategies(IViewController* controller)
 
     strategies[InteractionMode::FreehandROI]
         = std::make_unique<FreehandROIStrategy>(controller);
+
+    strategies[InteractionMode::CrosshairRuler]
+        = std::make_unique<RulerLineStrategy>(controller);
 
     return strategies;
 }

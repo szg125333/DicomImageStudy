@@ -80,6 +80,8 @@ void TitleBarWidget::initUI()
     ui.ImageDrag->setStyleSheet(buttonStyle);
     ui.ImageDrag->setIcon(QIcon(":/DicomImageStudy/images/move.png"));
 
+    ui.CrosshairRuler->setStyleSheet(buttonStyle);
+    ui.CrosshairRuler->setIcon(QIcon(":/DicomImageStudy/images/crosshair1.png"));
 }
 
 void TitleBarWidget::initConnections()
@@ -91,6 +93,7 @@ void TitleBarWidget::initConnections()
 	connect(ui.ResetView, &QToolButton::clicked, this, &TitleBarWidget::on_ResetView_clicked);
 	connect(ui.FreehandROI, &QToolButton::toggled, this, &TitleBarWidget::on_FreehandROI_toggled);
 	connect(ui.ImageDrag, &QToolButton::toggled, this, &TitleBarWidget::on_ToolButton_toggled);
+	connect(ui.CrosshairRuler, &QToolButton::toggled, this, &TitleBarWidget::on_CrosshairRuler_toggled);
 }
 
 
@@ -123,6 +126,11 @@ void TitleBarWidget::on_FreehandROI_toggled(bool state)
 {
     emit requestFreehandROIMode(InteractionMode::FreehandROI, state);
 
+}
+
+void TitleBarWidget::on_CrosshairRuler_toggled(bool state)
+{
+	emit requestCrosshairRulerMode(InteractionMode::CrosshairRuler, state);
 }
 
 void TitleBarWidget::on_ToolButton_toggled(bool state)

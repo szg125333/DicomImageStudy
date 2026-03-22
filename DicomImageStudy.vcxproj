@@ -121,6 +121,7 @@
     <ClCompile Include="Controller\Strategy\AngleMeasureStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\CheckboardStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\ContourMeasureStrategy.cpp" />
+    <ClCompile Include="Controller\Strategy\RulerLineStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\DistanceMeasureStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\FreehandROIStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\HandIrregularContourStrategy.cpp" />
@@ -137,6 +138,7 @@
     <ClCompile Include="Renderer\OverlayManager\CheckerboardManager\SimpleCheckerboardManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\ContourMeasureManager\SimpleContourMeasureManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\CrosshairManager\SimpleCrosshairManager.cpp" />
+    <ClCompile Include="Renderer\OverlayManager\RulerLineManager\SimpleRulerLineManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\DistanceMeasureManager\SimpleDistanceMeasureManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\FreehandROIManager\SimpleFreehandROIManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\HandIrregularContourManager\SimpleHandIrregularContourManager.cpp" />
@@ -169,6 +171,7 @@
     <ClInclude Include="Controller\Strategy\AngleMeasureStrategy.h" />
     <ClInclude Include="Controller\Strategy\CheckboardStrategy.h" />
     <ClInclude Include="Controller\Strategy\ContourMeasureStrategy.h" />
+    <ClInclude Include="Controller\Strategy\RulerLineStrategy.h" />
     <ClInclude Include="Controller\Strategy\DistanceMeasureStrategy.h" />
     <ClInclude Include="Controller\Strategy\FreehandROIStrategy.h" />
     <ClInclude Include="Controller\Strategy\HandIrregularContourStrategy.h" />
@@ -191,6 +194,7 @@
     <ClInclude Include="Renderer\OverlayManager\ContourMeasureManager\SimpleContourMeasureManager.h" />
     <ClInclude Include="Renderer\OverlayManager\CrosshairManager\ICrosshairManager.h" />
     <ClInclude Include="Renderer\OverlayManager\CrosshairManager\SimpleCrosshairManager.h" />
+    <ClInclude Include="Renderer\OverlayManager\RulerLineManager\SimpleRulerLineManager.h" />
     <ClInclude Include="Renderer\OverlayManager\DistanceMeasureManager\IDistanceMeasureManager.h" />
     <ClInclude Include="Renderer\OverlayManager\DistanceMeasureManager\SimpleDistanceMeasureManager.h" />
     <ClInclude Include="Renderer\OverlayManager\FreehandROIManager\FreehandStats.h" />
@@ -212,6 +216,7 @@
     <QtMoc Include="UI\LeftToolWidget.h" />
     <ClInclude Include="Utils\ImageOrientationResampler.h" />
     <ClInclude Include="Utils\MyInteractorStyle.h" />
+    <ClInclude Include="Utils\ViewportUtils.h" />
     <ClInclude Include="Viewer\CTViewer.h" />
   </ItemGroup>
   <ItemGroup>

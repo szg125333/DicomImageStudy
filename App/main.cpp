@@ -86,6 +86,7 @@ int main(int argc, char* argv[])
 	QObject::connect(titleBarWidget, &TitleBarWidget::requestRoiNormalMode, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
 	QObject::connect(titleBarWidget, &TitleBarWidget::requestResetViews, threeViewWidget, &ThreeViewWidget::ResetAllViews);
 	QObject::connect(titleBarWidget, &TitleBarWidget::requestFreehandROIMode, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
+	QObject::connect(titleBarWidget, &TitleBarWidget::requestCrosshairRulerMode, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
 
 	QObject::connect(titleBarWidget, &TitleBarWidget::requestMode, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
 	QObject::connect(threeViewWidget, &ThreeViewWidget::imageDragUpdated,

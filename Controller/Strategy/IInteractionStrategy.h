@@ -35,6 +35,8 @@ public:
      */
     virtual void Clear(int viewIndex) = 0;
 
+    virtual void OnActivated() {}
+
 protected:
     /// 关联的视图控制器，用于访问渲染器和图像数据
     IViewController* m_controller = nullptr;

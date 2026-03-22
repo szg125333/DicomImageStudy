@@ -200,6 +200,12 @@ void ThreeViewController::SetInteractionMode(InteractionMode mode)
 	UnregisterEventCallbacks();
 	m_currentMode = mode;
 	RegisterEventCallbacks();
+
+	// ← 新增：通知新策略已激活，让其做立即初始化
+	auto it = m_strategies.find(m_currentMode);
+	if (it != m_strategies.end() && it->second) {
+		it->second->OnActivated();
+	}
 }
 
 // ============================================================

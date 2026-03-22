@@ -15,6 +15,7 @@ enum class InteractionMode :int{
     ContourMeasure,       // 轮廓测量 / 手绘轮廓
     RegistrationROI,      // 配准 ROI（盒子）模式
     FreehandROI,          // 手工不规则轮廓
+    CrosshairRuler,          // 手工不规则轮廓
     None                  // 无交互（占位，用于计数或禁用）
 };
 
@@ -32,6 +33,7 @@ inline std::string ToString(InteractionMode m) {
     case InteractionMode::ContourMeasure: return "ContourMeasure";
     case InteractionMode::RegistrationROI: return "RegistrationROI";
     case InteractionMode::FreehandROI: return "FreehandROI";
+    case InteractionMode::CrosshairRuler: return "CrosshairRuler";
     case InteractionMode::None: return "None";
     default: return "Unknown";
     }

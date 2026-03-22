@@ -20,6 +20,7 @@ signals:
 	void requestRoiNormalMode(InteractionMode mode, bool state);
 	void requestResetViews();
 	void requestFreehandROIMode(InteractionMode mode, bool state);
+	void requestCrosshairRulerMode(InteractionMode mode, bool state);
 
 	void requestMode(InteractionMode mode, bool state);
 
@@ -30,6 +31,7 @@ private slots:
 	void on_RoiMeasurement_toggled(bool state);
 	void on_ResetView_clicked();
 	void on_FreehandROI_toggled(bool state);
+	void on_CrosshairRuler_toggled(bool state);
 
 	void on_ToolButton_toggled(bool state);
 

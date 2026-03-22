@@ -353,12 +353,15 @@
       </widget>
      </item>
      <item row="0" column="12">
-      <widget class="QToolButton" name="toolButton_11">
+      <widget class="QToolButton" name="CrosshairRuler">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/crosshair1.png);</string>
        </property>
        <property name="text">
         <string/>

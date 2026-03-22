@@ -132,6 +132,8 @@ void ThreeViewWidget::setModeToMeasurement(InteractionMode mode, bool state)
 		m_controller->SetInteractionMode(InteractionMode::Normal);
 		return;
 	}
+	m_controller->SetInteractionMode(InteractionMode::Normal);
+	m_controller->ClearAllStrategyDrawings();
 	m_controller->SetInteractionMode(mode);
 }
 
