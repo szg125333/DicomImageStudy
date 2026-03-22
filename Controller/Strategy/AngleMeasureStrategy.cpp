@@ -19,9 +19,6 @@ void AngleMeasureStrategy::HandleEvent(EventType type,
 {
     if (!m_controller) return;
 
-    // 视图锁定：一次测量只在一个视图内完成
-    if (!TryLockView(viewIndex)) return;
-
     const int screenX = data.mousePosX;
     const int screenY = data.mousePosY;
 
@@ -45,6 +42,9 @@ void AngleMeasureStrategy::HandleEvent(EventType type,
             auto worldPos = renderer->PickWorldPosition(screenX, screenY);
 
             if (m_step == MeasureStep::Idle) {
+                // 视图锁定：一次测量只在一个视图内完成
+                if (!TryLockView(viewIndex)) return;
+
                 // 第一次点击：放置起始点
                 m_firstWorldPos = worldPos;
                 m_step = MeasureStep::StartPlaced;

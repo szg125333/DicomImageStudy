@@ -2,25 +2,31 @@
 
 #include "AbstractMeasureStrategy.h"
 #include "Common/ViewTypes.h"
+#include "Renderer/OverlayManager/ROIManager/SimpleROIManager.h"
 
 /**
- * @brief ROI 矩形框绘制交互策略
+ * @brief ROI 矩形框绘制 + 拖动交互策略
  *
- * 操作流程：
- *   1. 左键按下          → 记录起始角点，开始绘制
- *   2. 左键拖拽（移动）   → 实时更新预览矩形框
- *   3. 左键释放          → 完成 ROI，计算并显示统计信息
- *   4. 右键 / Esc 键     → 取消当前未完成的 ROI
- *   5. Delete 键         → 删除最后一个已完成的 ROI
- *   6. Ctrl + Delete     → 清除所有 ROI
+ * ──────────────────────────────────────────────
+ *  绘制新 ROI（未命中已有 ROI 时）
+ * ──────────────────────────────────────────────
+ *   左键按下         → BeginROI()
+ *   左键拖拽         → UpdatePreview() 实时刷新虚线框
+ *   左键释放         → CommitROI() 固定矩形 + 统计标签显示在框下方
+ *   右键 / Esc 键    → CancelCurrentROI()
  *
- * ROI 统计项（在矩形框右上角以悬浮标签显示）：
- *   - 均值（Mean）
- *   - 标准差（Std Dev）
- *   - 最小值（Min）
- *   - 最大值（Max）
- *   - 面积（mm²）
- *   - 像素数（Pixels）
+ * ──────────────────────────────────────────────
+ *  拖动已有 ROI（命中已有 ROI 时）
+ * ──────────────────────────────────────────────
+ *   命中边框或内部   → 整体平移（MoveROI）
+ *   命中四个角点     → 角点缩放（ResizeROI）
+ *   操作期间统计实时更新
+ *
+ * ──────────────────────────────────────────────
+ *  删除
+ * ──────────────────────────────────────────────
+ *   Delete 键        → DeleteLastROI()
+ *   Ctrl + Delete    → ClearAllROI()
  */
 class RegistrationROIStrategy : public AbstractMeasureStrategy {
 public:
@@ -30,15 +36,30 @@ public:
     void Clear(int viewIndex) override;
 
 private:
-    /// 当前正在绘制的视图索引（-1 = 未在绘制）
-    int      m_drawingViewIndex = -1;
+    // ----------------------------------------------------------------
+    //  状态机
+    // ----------------------------------------------------------------
 
-    /// 当前绘制所在的视图方向
-    ViewType m_drawingViewType = ViewType::None;
+    /**
+     * @brief 策略当前所处的工作阶段
+     */
+    enum class Phase {
+        Idle,       ///< 空闲，等待下一次操作
+        Drawing,    ///< 正在绘制新 ROI（左键按住拖拽中）
+        Moving,     ///< 正在整体平移已有 ROI
+        Resizing,   ///< 正在缩放已有 ROI（拖拽角点）
+    };
 
-    /// 当前绘制所在的切片索引
-    int      m_drawingSlice = 0;
+    Phase m_phase = Phase::Idle;
 
-    /// 是否正在拖拽（鼠标按下且未释放）
-    bool     m_isDragging = false;
+    // ---- 绘制阶段状态 ----
+    ViewType m_drawViewType = ViewType::None;
+    int      m_drawSlice = 0;
+
+    // ---- 拖动阶段状态 ----
+    int        m_dragRoiId = -1;              ///< 正在拖动的 ROI ID
+    RoiHitType m_dragHitType = RoiHitType::None;///< 命中类型（整体/角点）
+
+    /// 上一帧鼠标世界坐标（平移时计算增量用）
+    std::array<double, 3> m_lastDragWorldPos = { 0, 0, 0 };
 };

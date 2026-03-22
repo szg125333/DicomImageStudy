@@ -136,6 +136,9 @@
     <ClCompile Include="Controller\Strategy\AbstractMeasureStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\OverlayManager\ROIManager\RoiLabel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\InteractionMode.h">
@@ -271,6 +274,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\OverlayManager\ROIManager\RoiStats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\OverlayManager\ROIManager\RoiLabel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

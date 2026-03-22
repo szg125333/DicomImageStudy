@@ -21,13 +21,9 @@ void RegistrationROIStrategy::HandleEvent(EventType        type,
 {
     if (!m_controller) return;
 
-    // 视图锁定：一次绘制只在一个视图内完成
-    if (!TryLockView(viewIndex)) return;
-
     const int screenX = data.mousePosX;
     const int screenY = data.mousePosY;
 
-    // 获取渲染器和 ROI Manager
     auto* renderer = m_controller->GetRenderer(viewIndex);
     if (!renderer) return;
 
@@ -37,100 +33,150 @@ void RegistrationROIStrategy::HandleEvent(EventType        type,
     auto* roiMgr = overlayMgr->GetFeature<SimpleROIManager>();
     if (!roiMgr) return;
 
-    // 获取当前视图方向和切片（用于统计计算和切片跟随）
-    ViewType viewType = renderer->GetCurrentViewType();
-    int      slice = renderer->GetSlice();
+    // 获取当前视图信息（绘制和统计需要）
+    const ViewType viewType = renderer->GetCurrentViewType();
+    const int      slice = renderer->GetSlice();
+    auto           viewer = renderer->GetViewer();
 
     switch (type) {
 
-        // ---- 左键按下：开始绘制 ----
+        // ================================================================
+        //  左键按下：判断是开始新绘制还是拖动已有 ROI
+        // ================================================================
     case EventType::LeftPress: {
-        // 边界检查：起点必须在图像范围内
-        if (!IsInsideImage(viewIndex, screenX, screenY)) break;
 
-        auto startWorld = renderer->PickWorldPosition(screenX, screenY);
+        // 视图锁定：一次操作只在一个视图内
+        if (!TryLockView(viewIndex)) return;
 
-        m_isDragging = true;
-        m_drawingViewIndex = viewIndex;
-        m_drawingViewType = viewType;
-        m_drawingSlice = slice;
+        // 先做命中测试
+        RoiHitResult hit = roiMgr->HitTest(screenX, screenY);
 
-        // 缓存起始角点（AbstractMeasureStrategy 基类字段）
-        m_firstWorldPos = startWorld;
+        if (hit.roiId != -1) {
+            // ---- 命中已有 ROI ----
+            m_dragRoiId = hit.roiId;
+            m_dragHitType = hit.hitType;
 
-        // 通知 Manager 开始一次新 ROI
-        roiMgr->BeginROI(startWorld);
+            // 记录按下时的世界坐标作为拖动基准
+            m_lastDragWorldPos = renderer->PickWorldPosition(screenX, screenY);
+
+            m_phase = (hit.hitType == RoiHitType::Body) ? Phase::Moving
+                : Phase::Resizing;
+        }
+        else {
+            // ---- 未命中，开始绘制新 ROI ----
+            // 边界检查：起点必须在图像范围内
+            if (!IsInsideImage(viewIndex, screenX, screenY)) {
+                UnlockView();
+                break;
+            }
+
+            m_drawViewType = viewType;
+            m_drawSlice = slice;
+            m_phase = Phase::Drawing;
+
+            auto startWorld = renderer->PickWorldPosition(screenX, screenY);
+            roiMgr->BeginROI(startWorld, viewType, slice);
+        }
+
         renderer->RequestRender();
         break;
     }
 
-                             // ---- 左键拖拽：实时更新预览框 ----
+    // ================================================================
+    //  左键拖拽：根据当前阶段执行不同操作
+    // ================================================================
     case EventType::LeftMove: {
-        if (!m_isDragging) break;
+        if (m_phase == Phase::Idle) break;
 
         auto currentWorld = renderer->PickWorldPosition(screenX, screenY);
-        roiMgr->UpdatePreview(currentWorld);
+
+        if (m_phase == Phase::Drawing) {
+            // 更新预览虚线框
+            roiMgr->UpdatePreview(currentWorld);
+        }
+        else if (m_phase == Phase::Moving) {
+            // 整体平移：计算当前帧与上一帧的世界坐标增量
+            if (!viewer) break;
+
+            std::array<double, 3> delta = {
+                currentWorld[0] - m_lastDragWorldPos[0],
+                currentWorld[1] - m_lastDragWorldPos[1],
+                currentWorld[2] - m_lastDragWorldPos[2],
+            };
+            m_lastDragWorldPos = currentWorld;
+
+            roiMgr->MoveROI(m_dragRoiId, delta, viewer.Get());
+        }
+        else if (m_phase == Phase::Resizing) {
+            // 角点缩放：将命中的角点移动到当前鼠标位置
+            if (!viewer) break;
+            roiMgr->ResizeROI(m_dragRoiId, m_dragHitType,
+                currentWorld, viewer.Get());
+        }
+
         renderer->RequestRender();
         break;
     }
 
-                            // ---- 左键释放：完成 ROI ----
+                            // ================================================================
+                            //  左键释放：结束当前操作
+                            // ================================================================
     case EventType::LeftRelease: {
-        if (!m_isDragging) break;
-
-        m_isDragging = false;
-
-        // 获取 VTK Viewer（传给 Manager 用于读取像素值）
-        auto viewer = renderer->GetViewer();
-        if (!viewer) {
-            roiMgr->CancelCurrentROI();
-            UnlockView();
-            break;
+        if (m_phase == Phase::Drawing) {
+            // 完成绘制：固定矩形并计算统计
+            if (viewer) {
+                auto endWorld = renderer->PickWorldPosition(screenX, screenY);
+                roiMgr->CommitROI(endWorld, viewer.Get());
+            }
+            else {
+                roiMgr->CancelCurrentROI();
+            }
         }
+        // Moving / Resizing 阶段在 LeftMove 中已实时更新，释放时只需重置状态
 
-        auto endWorld = renderer->PickWorldPosition(screenX, screenY);
-
-        // 提交：固定矩形框并计算统计
-        roiMgr->CommitROI(endWorld, viewer.Get(),
-            m_drawingViewType, m_drawingSlice);
-        renderer->RequestRender();
+        m_phase = Phase::Idle;
+        m_dragRoiId = -1;
+        m_dragHitType = RoiHitType::None;
         UnlockView();
+
+        renderer->RequestRender();
         break;
     }
 
-                               // ---- 右键按下：取消当前绘制 ----
+                               // ================================================================
+                               //  右键：取消当前绘制
+                               // ================================================================
     case EventType::RightPress: {
-        if (m_isDragging) {
+        if (m_phase == Phase::Drawing) {
             roiMgr->CancelCurrentROI();
-            renderer->RequestRender();
-            m_isDragging = false;
+            m_phase = Phase::Idle;
             UnlockView();
+            renderer->RequestRender();
         }
         break;
     }
 
-                              // ---- 键盘：Delete / Esc / Ctrl+Delete ----
+                              // ================================================================
+                              //  键盘：Delete / Ctrl+Delete / Esc
+                              // ================================================================
     case EventType::KeyPress: {
         const std::string& key = data.keySym;
 
         if (key == "Delete" || key == "BackSpace") {
             if (data.ctrlPressed) {
-                // Ctrl + Delete：清除所有 ROI
                 roiMgr->ClearAllROI();
             }
             else {
-                // Delete：删除最后一个 ROI
                 roiMgr->DeleteLastROI();
             }
             renderer->RequestRender();
         }
         else if (key == "Escape") {
-            // Esc：取消当前未完成的绘制
-            if (m_isDragging) {
+            if (m_phase == Phase::Drawing) {
                 roiMgr->CancelCurrentROI();
-                renderer->RequestRender();
-                m_isDragging = false;
+                m_phase = Phase::Idle;
                 UnlockView();
+                renderer->RequestRender();
             }
         }
         break;
@@ -160,10 +206,10 @@ void RegistrationROIStrategy::Clear(int viewIndex)
         roiMgr->ClearAllROI();
     }
 
-    // 重置策略内部状态
-    m_isDragging = false;
-    m_drawingViewIndex = -1;
-    m_drawingViewType = ViewType::None;
-    m_drawingSlice = 0;
+    m_phase = Phase::Idle;
+    m_dragRoiId = -1;
+    m_dragHitType = RoiHitType::None;
+    m_drawViewType = ViewType::None;
+    m_drawSlice = 0;
     UnlockView();
 }

@@ -19,9 +19,6 @@ void DistanceMeasureStrategy::HandleEvent(EventType type,
 {
     if (!m_controller) return;
 
-    // 视图锁定：一次测量只在一个视图内完成
-    if (!TryLockView(viewIndex)) return;
-
     const int screenX = data.mousePosX;
     const int screenY = data.mousePosY;
 
@@ -44,6 +41,9 @@ void DistanceMeasureStrategy::HandleEvent(EventType type,
         if (!m_isEditingExisting) {
             if (!m_hasFirstPoint) {
                 // 第一次点击：记录起始端点
+                // 视图锁定：一次测量只在一个视图内完成
+                if (!TryLockView(viewIndex)) return;
+
                 m_firstWorldPos = renderer->PickWorldPosition(screenX, screenY);
                 m_hasFirstPoint = true;
 
@@ -95,6 +95,11 @@ void DistanceMeasureStrategy::HandleEvent(EventType type,
                             // ---- 左键释放：结束拖拽编辑 ----
     case EventType::LeftRelease: {
         if (m_isEditingExisting) {
+            m_editingMeasurementId = -1;
+            UnlockView();
+        }
+
+        if (!m_hasFirstPoint) {
             m_editingMeasurementId = -1;
             UnlockView();
         }
