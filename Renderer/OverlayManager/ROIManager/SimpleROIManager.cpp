@@ -23,6 +23,25 @@
 #include <limits>
 
 // ============================================================
+//  工具函数：获取三视图的轴索引
+//
+//  ax0  ax1  axF
+//   X    Y    Z   → Axial    (XY 平面)
+//   Y    Z    X   → Sagittal (YZ 平面)
+//   X    Z    Y   → Coronal  (XZ 平面)
+// ============================================================
+
+static void GetPlaneAxes(ViewType viewType, int& ax0, int& ax1, int& axF)
+{
+    switch (viewType) {
+    case ViewType::Axial:    ax0 = 0; ax1 = 1; axF = 2; break;
+    case ViewType::Sagittal: ax0 = 1; ax1 = 2; axF = 0; break;
+    case ViewType::Coronal:  ax0 = 0; ax1 = 2; axF = 1; break;
+    default:                 ax0 = 0; ax1 = 1; axF = 2; break;
+    }
+}
+
+// ============================================================
 //  构造 / 析构
 // ============================================================
 
@@ -84,22 +103,21 @@ void SimpleROIManager::OnSliceChanged(vtkImageViewer2* viewer,
     viewer->GetInput()->GetSpacing(spacing);
     viewer->GetInput()->GetOrigin(origin);
 
+    int ax0, ax1, axF;
+    GetPlaneAxes(viewType, ax0, ax1, axF);
+
     for (auto& [id, roi] : m_rois) {
         if (!roi.isComplete || roi.viewType != viewType) continue;
 
-        // 更新法线方向坐标到新切片
-        const int axF = (viewType == ViewType::Axial) ? 2 :
-            (viewType == ViewType::Sagittal) ? 0 : 1;
+        // 更新法线方向坐标
         const double newVal = origin[axF] + slice * spacing[axF];
         roi.corner1[axF] = newVal;
         roi.corner2[axF] = newVal;
         roi.slice = slice;
 
-        // 重算统计
         roi.stats = ComputeStats(viewer, roi.corner1, roi.corner2,
             roi.viewType, slice);
 
-        // 重绘所有图元
         std::array<double, 3> corners[4];
         ComputeRectCorners(roi.corner1, roi.corner2, roi.viewType, corners);
         auto anchor = ComputeLabelAnchor(corners, roi.viewType);
@@ -128,7 +146,6 @@ void SimpleROIManager::UpdatePreview(const std::array<double, 3>& oppositeCorner
     std::array<double, 3> corners[4];
     ComputeRectCorners(m_drawCorner1, oppositeCorner, m_drawView, corners);
 
-    // 懒初始化预览线（虚线黄色）
     if (!m_previewInitialized) {
         for (int i = 0; i < 4; ++i) {
             m_previewLines[i].source = vtkSmartPointer<vtkLineSource>::New();
@@ -158,19 +175,16 @@ void SimpleROIManager::CommitROI(const std::array<double, 3>& oppositeCorner,
 {
     if (!m_initialized || !m_isDrawing) return;
 
-    // 隐藏预览线
     for (auto& pl : m_previewLines) {
         if (pl.actor) pl.actor->SetVisibility(false);
     }
     m_isDrawing = false;
 
-    // 拖拽距离过小则忽略
     const auto& c1 = m_drawCorner1;
     const auto& c2 = oppositeCorner;
     const double dx = c2[0] - c1[0], dy = c2[1] - c1[1], dz = c2[2] - c1[2];
     if (std::sqrt(dx * dx + dy * dy + dz * dz) < 2.0) return;
 
-    // 创建记录
     int id = NextId();
     m_lastId = id;
 
@@ -180,30 +194,32 @@ void SimpleROIManager::CommitROI(const std::array<double, 3>& oppositeCorner,
     roi.slice = m_drawSlice;
     roi.isComplete = true;
 
-    // 存储轴对齐的 min/max 角
-    const int axF = (m_drawView == ViewType::Axial) ? 2 :
-        (m_drawView == ViewType::Sagittal) ? 0 : 1;
+    int ax0, ax1, axF;
+    GetPlaneAxes(m_drawView, ax0, ax1, axF);
+
     for (int i = 0; i < 3; ++i) {
-        roi.corner1[i] = (i == axF) ? c1[i] : std::min(c1[i], c2[i]);
-        roi.corner2[i] = (i == axF) ? c1[i] : std::max(c1[i], c2[i]);
+        if (i == axF) {
+            roi.corner1[i] = c1[i];
+            roi.corner2[i] = c1[i];
+        }
+        else {
+            roi.corner1[i] = std::min(c1[i], c2[i]);
+            roi.corner2[i] = std::max(c1[i], c2[i]);
+        }
     }
 
-    // 计算统计
     roi.stats = ComputeStats(viewer, roi.corner1, roi.corner2,
         roi.viewType, roi.slice);
 
-    // 计算角点
     std::array<double, 3> corners[4];
     ComputeRectCorners(roi.corner1, roi.corner2, roi.viewType, corners);
     auto anchor = ComputeLabelAnchor(corners, roi.viewType);
 
-    // 初始化所有图元
     InitBorderLines(roi);
     UpdateBorderLines(roi, corners);
     InitFillActor(roi, corners);
-    InitCornerActors(roi, corners);
+    InitCornerActors(roi, corners);   // 内部调用 CreateCornerSquare(... roi.viewType)
 
-    // 初始化多行标签
     roi.label.scale = kLabelScale;
     roi.label.lineSpacingMm = kLineSpacingMm;
     roi.label.Initialize(m_overlayRenderer);
@@ -235,7 +251,7 @@ RoiHitResult SimpleROIManager::HitTest(int screenX, int screenY) const
         std::array<double, 3> corners[4];
         ComputeRectCorners(roi.corner1, roi.corner2, roi.viewType, corners);
 
-        // 角点类型映射（与 corners 顺序对应：[0]左下 [1]右下 [2]右上 [3]左上）
+        // 角点顺序：[0]左下 [1]右下 [2]右上 [3]左上
         constexpr RoiHitType kCornerTypes[4] = {
             RoiHitType::CornerBL,
             RoiHitType::CornerBR,
@@ -243,7 +259,7 @@ RoiHitResult SimpleROIManager::HitTest(int screenX, int screenY) const
             RoiHitType::CornerTL,
         };
 
-        // 先检测角点（优先级高）
+        // 先检测四角（优先级高）
         for (int i = 0; i < 4; ++i) {
             double sx, sy;
             if (!WorldToScreen(corners[i], sx, sy)) continue;
@@ -253,13 +269,13 @@ RoiHitResult SimpleROIManager::HitTest(int screenX, int screenY) const
             }
         }
 
-        // 再检测矩形包围盒
+        // 再检测矩形包围盒内部
         double minSX = std::numeric_limits<double>::max();
         double minSY = std::numeric_limits<double>::max();
         double maxSX = -std::numeric_limits<double>::max();
         double maxSY = -std::numeric_limits<double>::max();
-
         bool allValid = true;
+
         for (int i = 0; i < 4; ++i) {
             double sx, sy;
             if (!WorldToScreen(corners[i], sx, sy)) { allValid = false; break; }
@@ -285,14 +301,12 @@ void SimpleROIManager::MoveROI(int roiId,
     if (it == m_rois.end()) return;
     auto& roi = it->second;
 
-    const int axF = (roi.viewType == ViewType::Axial) ? 2 :
-        (roi.viewType == ViewType::Sagittal) ? 0 : 1;
+    int ax0, ax1, axF;
+    GetPlaneAxes(roi.viewType, ax0, ax1, axF);
 
-    for (int i = 0; i < 3; ++i) {
-        if (i == axF) continue;
-        roi.corner1[i] += delta[i];
-        roi.corner2[i] += delta[i];
-    }
+    // 只在自由轴上平移，法线轴不动
+    roi.corner1[ax0] += delta[ax0];  roi.corner2[ax0] += delta[ax0];
+    roi.corner1[ax1] += delta[ax1];  roi.corner2[ax1] += delta[ax1];
 
     roi.stats = ComputeStats(viewer, roi.corner1, roi.corner2,
         roi.viewType, roi.slice);
@@ -312,37 +326,21 @@ void SimpleROIManager::ResizeROI(int roiId,
     if (it == m_rois.end()) return;
     auto& roi = it->second;
 
-    const int axF = (roi.viewType == ViewType::Axial) ? 2 :
-        (roi.viewType == ViewType::Sagittal) ? 0 : 1;
-    const int ax0 = (axF == 0) ? 1 : 0;
-    const int ax1 = (axF == 2) ? 1 : 2;
+    int ax0, ax1, axF;
+    GetPlaneAxes(roi.viewType, ax0, ax1, axF);
 
+    // corner1 = [ax0_min, ax1_min]，corner2 = [ax0_max, ax1_max]
     switch (hitType) {
-    case RoiHitType::CornerBL:
-        roi.corner1[ax0] = newCornerWorld[ax0];
-        roi.corner1[ax1] = newCornerWorld[ax1];
-        break;
-    case RoiHitType::CornerBR:
-        roi.corner2[ax0] = newCornerWorld[ax0];
-        roi.corner1[ax1] = newCornerWorld[ax1];
-        break;
-    case RoiHitType::CornerTR:
-        roi.corner2[ax0] = newCornerWorld[ax0];
-        roi.corner2[ax1] = newCornerWorld[ax1];
-        break;
-    case RoiHitType::CornerTL:
-        roi.corner1[ax0] = newCornerWorld[ax0];
-        roi.corner2[ax1] = newCornerWorld[ax1];
-        break;
+    case RoiHitType::CornerBL: roi.corner1[ax0] = newCornerWorld[ax0]; roi.corner1[ax1] = newCornerWorld[ax1]; break;
+    case RoiHitType::CornerBR: roi.corner2[ax0] = newCornerWorld[ax0]; roi.corner1[ax1] = newCornerWorld[ax1]; break;
+    case RoiHitType::CornerTR: roi.corner2[ax0] = newCornerWorld[ax0]; roi.corner2[ax1] = newCornerWorld[ax1]; break;
+    case RoiHitType::CornerTL: roi.corner1[ax0] = newCornerWorld[ax0]; roi.corner2[ax1] = newCornerWorld[ax1]; break;
     default: return;
     }
 
     // 防止翻转
-    for (int i = 0; i < 3; ++i) {
-        if (i == axF) continue;
-        if (roi.corner1[i] > roi.corner2[i])
-            std::swap(roi.corner1[i], roi.corner2[i]);
-    }
+    if (roi.corner1[ax0] > roi.corner2[ax0]) std::swap(roi.corner1[ax0], roi.corner2[ax0]);
+    if (roi.corner1[ax1] > roi.corner2[ax1]) std::swap(roi.corner1[ax1], roi.corner2[ax1]);
 
     roi.stats = ComputeStats(viewer, roi.corner1, roi.corner2,
         roi.viewType, roi.slice);
@@ -378,9 +376,7 @@ void SimpleROIManager::DeleteLastROI()
 
 void SimpleROIManager::ClearAllROI()
 {
-    for (auto& [id, roi] : m_rois) {
-        RemoveRoiActors(roi);
-    }
+    for (auto& [id, roi] : m_rois) RemoveRoiActors(roi);
     m_rois.clear();
     m_lastId = -1;
 
@@ -411,7 +407,7 @@ RoiStats SimpleROIManager::GetStats(int roiId) const
 }
 
 // ============================================================
-//  私有 —— 标签文字构建
+//  私有 —— 标签文字
 // ============================================================
 
 std::vector<std::string> SimpleROIManager::BuildLabelLines(const RoiStats& stats)
@@ -419,15 +415,13 @@ std::vector<std::string> SimpleROIManager::BuildLabelLines(const RoiStats& stats
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(1);
 
-    std::vector<std::string> lines;
-    lines.reserve(6);
-
-    auto fmt = [&](const char* label, double val, const char* unit = "") -> std::string {
+    auto fmt = [&](const char* lbl, double val, const char* unit = "") -> std::string {
         oss.str(""); oss.clear();
-        oss << label << val << unit;
+        oss << lbl << val << unit;
         return oss.str();
         };
 
+    std::vector<std::string> lines;
     lines.push_back(fmt("Mean:  ", stats.mean, " HU"));
     lines.push_back(fmt("SD:    ", stats.stdDev, ""));
     lines.push_back(fmt("Min:   ", stats.minVal, " HU"));
@@ -453,13 +447,8 @@ void SimpleROIManager::ComputeRectCorners(const std::array<double, 3>& c1,
     ViewType viewType,
     std::array<double, 3> out[4]) const
 {
-    int ax0 = 0, ax1 = 1, axF = 2;
-    switch (viewType) {
-    case ViewType::Axial:    ax0 = 0; ax1 = 1; axF = 2; break;
-    case ViewType::Sagittal: ax0 = 1; ax1 = 2; axF = 0; break;
-    case ViewType::Coronal:  ax0 = 0; ax1 = 2; axF = 1; break;
-    default: break;
-    }
+    int ax0, ax1, axF;
+    GetPlaneAxes(viewType, ax0, ax1, axF);
 
     const double minA = std::min(c1[ax0], c2[ax0]);
     const double maxA = std::max(c1[ax0], c2[ax0]);
@@ -468,6 +457,7 @@ void SimpleROIManager::ComputeRectCorners(const std::array<double, 3>& c1,
     const double fixV = c1[axF];
 
     // [0]左下  [1]右下  [2]右上  [3]左上
+    out[0] = {}; out[1] = {}; out[2] = {}; out[3] = {};
     out[0][ax0] = minA; out[0][ax1] = minB; out[0][axF] = fixV;
     out[1][ax0] = maxA; out[1][ax1] = minB; out[1][axF] = fixV;
     out[2][ax0] = maxA; out[2][ax1] = maxB; out[2][axF] = fixV;
@@ -478,14 +468,17 @@ std::array<double, 3> SimpleROIManager::ComputeLabelAnchor(
     const std::array<double, 3> corners[4],
     ViewType viewType) const
 {
-    // 下边中点 = corners[0] 和 corners[1] 的中点
+    // 下边中点（corners[0] 和 corners[1] 中点）
     std::array<double, 3> mid = {
         (corners[0][0] + corners[1][0]) * 0.5,
         (corners[0][1] + corners[1][1]) * 0.5,
         (corners[0][2] + corners[1][2]) * 0.5,
     };
 
-    // 向"下"方向再偏移 kLabelOffsetMm，避免标签与边框重叠
+    // 各视图"屏幕向下"方向：
+    //   Axial    → Y 轴负方向（ax1=Y，屏幕下方）
+    //   Sagittal → Z 轴负方向（ax1=Z，屏幕下方）
+    //   Coronal  → Z 轴负方向（ax1=Z，屏幕下方）
     switch (viewType) {
     case ViewType::Axial:    mid[1] -= kLabelOffsetMm; break;
     case ViewType::Sagittal: mid[2] -= kLabelOffsetMm; break;
@@ -499,7 +492,6 @@ bool SimpleROIManager::WorldToScreen(const std::array<double, 3>& world,
     double& outX, double& outY) const
 {
     if (!m_overlayRenderer) return false;
-
     vtkNew<vtkCoordinate> coord;
     coord->SetCoordinateSystemToWorld();
     coord->SetViewport(m_overlayRenderer);
@@ -544,7 +536,7 @@ void SimpleROIManager::InitFillActor(RoiRecord& roi,
     auto pts = vtkSmartPointer<vtkPoints>::New();
     auto poly = vtkSmartPointer<vtkPolygon>::New();
     auto cells = vtkSmartPointer<vtkCellArray>::New();
-    auto polyData = vtkSmartPointer<vtkPolyData>::New();
+    auto pd = vtkSmartPointer<vtkPolyData>::New();
 
     pts->SetNumberOfPoints(4);
     poly->GetPointIds()->SetNumberOfIds(4);
@@ -553,11 +545,11 @@ void SimpleROIManager::InitFillActor(RoiRecord& roi,
         poly->GetPointIds()->SetId(i, i);
     }
     cells->InsertNextCell(poly);
-    polyData->SetPoints(pts);
-    polyData->SetPolys(cells);
+    pd->SetPoints(pts);
+    pd->SetPolys(cells);
 
     auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    mapper->SetInputData(polyData);
+    mapper->SetInputData(pd);
 
     roi.fillActor = vtkSmartPointer<vtkActor>::New();
     roi.fillActor->SetMapper(mapper);
@@ -572,20 +564,21 @@ void SimpleROIManager::UpdateFillActor(RoiRecord& roi,
     if (!roi.fillActor) return;
     auto* mapper = dynamic_cast<vtkPolyDataMapper*>(roi.fillActor->GetMapper());
     if (!mapper) return;
-    auto* polyData = dynamic_cast<vtkPolyData*>(mapper->GetInput());
-    if (!polyData) return;
+    auto* pd = dynamic_cast<vtkPolyData*>(mapper->GetInput());
+    if (!pd) return;
 
-    vtkPoints* pts = polyData->GetPoints();
+    vtkPoints* pts = pd->GetPoints();
     for (int i = 0; i < 4; ++i) pts->SetPoint(i, corners[i].data());
     pts->Modified();
-    polyData->Modified();
+    pd->Modified();
 }
 
 void SimpleROIManager::InitCornerActors(RoiRecord& roi,
     const std::array<double, 3> corners[4])
 {
     for (int i = 0; i < 4; ++i) {
-        roi.cornerActors[i] = CreateCornerSquare(corners[i]);
+        // 传入 roi.viewType，确保方块在正确平面内生成
+        roi.cornerActors[i] = CreateCornerSquare(corners[i], roi.viewType);
         m_overlayRenderer->AddActor(roi.cornerActors[i]);
     }
 }
@@ -598,29 +591,55 @@ void SimpleROIManager::UpdateCornerActors(RoiRecord& roi,
             m_overlayRenderer->RemoveActor(roi.cornerActors[i]);
             roi.cornerActors[i] = nullptr;
         }
-        roi.cornerActors[i] = CreateCornerSquare(corners[i]);
+        // 同样传入 roi.viewType
+        roi.cornerActors[i] = CreateCornerSquare(corners[i], roi.viewType);
         m_overlayRenderer->AddActor(roi.cornerActors[i]);
     }
 }
 
+// ================================================================
+//  CreateCornerSquare —— 核心修正
+//
+//  根据 viewType 确定矩形所在平面的两个自由轴（ax0, ax1）：
+//    Axial    → ax0=X(0)  ax1=Y(1)  axF=Z(2)
+//    Sagittal → ax0=Y(1)  ax1=Z(2)  axF=X(0)
+//    Coronal  → ax0=X(0)  ax1=Z(2)  axF=Y(1)
+//
+//  方块四个角点在 ax0/ax1 上各偏移 ±halfSize，
+//  axF（法线方向）保持与 center 相同，确保方块始终在视图平面内可见。
+// ================================================================
+
 vtkSmartPointer<vtkActor> SimpleROIManager::CreateCornerSquare(
-    const std::array<double, 3>& center, double halfSize)
+    const std::array<double, 3>& center,
+    ViewType                     viewType,
+    double                       halfSize)
 {
-    auto pts = vtkSmartPointer<vtkPoints>::New();
+    int ax0, ax1, axF;
+    GetPlaneAxes(viewType, ax0, ax1, axF);
+
+    // 在视图平面内生成 4 个角点（顺时针：左下 → 右下 → 右上 → 左上）
+    std::array<double, 3> pts[4];
+    for (auto& p : pts) p = center;    // 先初始化为 center，法线方向自动正确
+
+    pts[0][ax0] -= halfSize;  pts[0][ax1] -= halfSize;  // 左下
+    pts[1][ax0] += halfSize;  pts[1][ax1] -= halfSize;  // 右下
+    pts[2][ax0] += halfSize;  pts[2][ax1] += halfSize;  // 右上
+    pts[3][ax0] -= halfSize;  pts[3][ax1] += halfSize;  // 左上
+    // pts[i][axF] = center[axF]（已由初始化保证，无需额外赋值）
+
+    auto vtkPts = vtkSmartPointer<vtkPoints>::New();
     auto poly = vtkSmartPointer<vtkPolygon>::New();
     auto cells = vtkSmartPointer<vtkCellArray>::New();
-
-    pts->InsertNextPoint(center[0] - halfSize, center[1] - halfSize, center[2]);
-    pts->InsertNextPoint(center[0] + halfSize, center[1] - halfSize, center[2]);
-    pts->InsertNextPoint(center[0] + halfSize, center[1] + halfSize, center[2]);
-    pts->InsertNextPoint(center[0] - halfSize, center[1] + halfSize, center[2]);
-
-    poly->GetPointIds()->SetNumberOfIds(4);
-    for (int i = 0; i < 4; ++i) poly->GetPointIds()->SetId(i, i);
-    cells->InsertNextCell(poly);
-
     auto pd = vtkSmartPointer<vtkPolyData>::New();
-    pd->SetPoints(pts);
+
+    vtkPts->SetNumberOfPoints(4);
+    poly->GetPointIds()->SetNumberOfIds(4);
+    for (int i = 0; i < 4; ++i) {
+        vtkPts->SetPoint(i, pts[i].data());
+        poly->GetPointIds()->SetId(i, i);
+    }
+    cells->InsertNextCell(poly);
+    pd->SetPoints(vtkPts);
     pd->SetPolys(cells);
 
     auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -643,9 +662,7 @@ void SimpleROIManager::RedrawROI(RoiRecord& roi,
 {
     UpdateBorderLines(roi, corners);
     UpdateFillActor(roi, corners);
-    UpdateCornerActors(roi, corners);
-
-    // 更新多行标签：内容 + 锚点位置
+    UpdateCornerActors(roi, corners);   // 内部传 roi.viewType，三视图均正确
     roi.label.SetLines(BuildLabelLines(roi.stats));
     roi.label.SetAnchor(anchor, static_cast<int>(roi.viewType));
 }
@@ -669,13 +686,8 @@ RoiStats SimpleROIManager::ComputeStats(vtkImageViewer2* viewer,
     img->GetOrigin(origin);
     img->GetDimensions(dims);
 
-    int ax0 = 0, ax1 = 1, axF = 2;
-    switch (viewType) {
-    case ViewType::Axial:    ax0 = 0; ax1 = 1; axF = 2; break;
-    case ViewType::Sagittal: ax0 = 1; ax1 = 2; axF = 0; break;
-    case ViewType::Coronal:  ax0 = 0; ax1 = 2; axF = 1; break;
-    default: break;
-    }
+    int ax0, ax1, axF;
+    GetPlaneAxes(viewType, ax0, ax1, axF);
 
     auto toIdx = [&](double world, int axis) -> int {
         int idx = static_cast<int>((world - origin[axis]) / spacing[axis] + 0.5);
@@ -686,7 +698,6 @@ RoiStats SimpleROIManager::ComputeStats(vtkImageViewer2* viewer,
     const int maxI0 = toIdx(std::max(c1[ax0], c2[ax0]), ax0);
     const int minI1 = toIdx(std::min(c1[ax1], c2[ax1]), ax1);
     const int maxI1 = toIdx(std::max(c1[ax1], c2[ax1]), ax1);
-    const int fixedIdx = slice;
 
     double sum = 0, sumSq = 0;
     double minV = std::numeric_limits<double>::max();
@@ -694,7 +705,7 @@ RoiStats SimpleROIManager::ComputeStats(vtkImageViewer2* viewer,
     int count = 0;
 
     int ijk[3];
-    ijk[axF] = fixedIdx;
+    ijk[axF] = slice;
     for (int i = minI0; i <= maxI0; ++i) {
         ijk[ax0] = i;
         for (int j = minI1; j <= maxI1; ++j) {
@@ -744,6 +755,5 @@ void SimpleROIManager::RemoveRoiActors(RoiRecord& roi)
     for (auto& ca : roi.cornerActors) {
         if (ca) { m_overlayRenderer->RemoveActor(ca); ca = nullptr; }
     }
-    // RoiLabel 的 Shutdown 会自行从渲染器移除所有行
     roi.label.Shutdown();
 }

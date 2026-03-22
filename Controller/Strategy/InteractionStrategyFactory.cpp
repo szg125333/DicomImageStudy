@@ -5,8 +5,10 @@
 #include "AngleMeasureStrategy.h"
 #include "RegistrationROIStrategy.h"
 #include "CheckboardStrategy.h"
-#include "ManualMoveStrategy.h"
+//#include "ManualMoveStrategy.h"
 #include "ContourMeasureStrategy.h"
+#include "FreehandROIStrategy.h"    // 新增
+#include "ImageDragStrategy.h"    // 新增
 
 std::map<InteractionMode, std::unique_ptr<IInteractionStrategy>>
 InteractionStrategyFactory::CreateStrategies(IViewController* controller)
@@ -28,11 +30,14 @@ InteractionStrategyFactory::CreateStrategies(IViewController* controller)
     strategies[InteractionMode::Checkboard]
         = std::make_unique<CheckboardStrategy>(controller);
 
-    strategies[InteractionMode::ManualMove]
-        = std::make_unique<ManualMoveStrategy>(controller);
+    strategies[InteractionMode::ImageDrag]
+        = std::make_unique<ImageDragStrategy>(controller);
 
     strategies[InteractionMode::ContourMeasure]
         = std::make_unique<ContourMeasureStrategy>(controller);
+
+    strategies[InteractionMode::FreehandROI]
+        = std::make_unique<FreehandROIStrategy>(controller);
 
     return strategies;
 }

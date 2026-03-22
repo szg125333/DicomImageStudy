@@ -5,6 +5,7 @@
 #include "AngleMeasureManager/SimpleAngleMeasureManager.h"
 #include "OverlayInfoManager/SimpleOverlayInfoManager.h"
 #include "ROIManager/SimpleROIManager.h"           // 新增
+#include "FreehandROIManager/SimpleFreehandROIManager.h"   // 新增
 
 std::unique_ptr<IOverlayManager> OverlayFactory::CreateDefault()
 {
@@ -15,7 +16,8 @@ std::unique_ptr<IOverlayManager> OverlayFactory::CreateDefault()
     manager->RegisterFeature(std::make_unique<SimpleDistanceMeasureManager>());
     manager->RegisterFeature(std::make_unique<SimpleAngleMeasureManager>());
     manager->RegisterFeature(std::make_unique<SimpleOverlayInfoManager>());
-    manager->RegisterFeature(std::make_unique<SimpleROIManager>());     // 新增
+    manager->RegisterFeature(std::make_unique<SimpleROIManager>());
+    manager->RegisterFeature(std::make_unique<SimpleFreehandROIManager>());
 
     return manager;
 }

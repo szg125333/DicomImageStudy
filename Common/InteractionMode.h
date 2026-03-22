@@ -9,12 +9,12 @@
 enum class InteractionMode :int{
     Normal = 0,           // 普通浏览 / 拾取
     Checkboard,           // 棋盘格对比模式
-    ManualMove,           // 手动平移/旋转（移动对象）
+    ImageDrag,           // 手动平移/旋转（移动对象）
     DistanceMeasure,      // 距离测量工具
     AngleMeasure,         // 角度测量工具
     ContourMeasure,       // 轮廓测量 / 手绘轮廓
     RegistrationROI,      // 配准 ROI（盒子）模式
-    HandIrregularContour, // 手工不规则轮廓
+    FreehandROI,          // 手工不规则轮廓
     None                  // 无交互（占位，用于计数或禁用）
 };
 
@@ -26,12 +26,12 @@ inline std::string ToString(InteractionMode m) {
     switch (m) {
     case InteractionMode::Normal: return "Normal";
     case InteractionMode::Checkboard: return "Checkboard";
-    case InteractionMode::ManualMove: return "ManualMove";
+    case InteractionMode::ImageDrag: return "ImageDrag";
     case InteractionMode::DistanceMeasure: return "DistanceMeasure";
     case InteractionMode::AngleMeasure: return "AngleMeasure";
     case InteractionMode::ContourMeasure: return "ContourMeasure";
     case InteractionMode::RegistrationROI: return "RegistrationROI";
-    case InteractionMode::HandIrregularContour: return "HandIrregularContour";
+    case InteractionMode::FreehandROI: return "FreehandROI";
     case InteractionMode::None: return "None";
     default: return "Unknown";
     }

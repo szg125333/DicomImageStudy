@@ -122,7 +122,9 @@
     <ClCompile Include="Controller\Strategy\CheckboardStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\ContourMeasureStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\DistanceMeasureStrategy.cpp" />
+    <ClCompile Include="Controller\Strategy\FreehandROIStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\HandIrregularContourStrategy.cpp" />
+    <ClCompile Include="Controller\Strategy\ImageDragStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\ManualMoveStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\NormalStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\RegistrationROIStrategy.cpp" />
@@ -136,6 +138,7 @@
     <ClCompile Include="Renderer\OverlayManager\ContourMeasureManager\SimpleContourMeasureManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\CrosshairManager\SimpleCrosshairManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\DistanceMeasureManager\SimpleDistanceMeasureManager.cpp" />
+    <ClCompile Include="Renderer\OverlayManager\FreehandROIManager\SimpleFreehandROIManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\HandIrregularContourManager\SimpleHandIrregularContourManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\OverlayFactory.cpp" />
     <ClCompile Include="Renderer\OverlayManager\ROIManager\RoiLabel.cpp" />
@@ -167,8 +170,10 @@
     <ClInclude Include="Controller\Strategy\CheckboardStrategy.h" />
     <ClInclude Include="Controller\Strategy\ContourMeasureStrategy.h" />
     <ClInclude Include="Controller\Strategy\DistanceMeasureStrategy.h" />
+    <ClInclude Include="Controller\Strategy\FreehandROIStrategy.h" />
     <ClInclude Include="Controller\Strategy\HandIrregularContourStrategy.h" />
     <ClInclude Include="Controller\Strategy\IInteractionStrategy.h" />
+    <ClInclude Include="Controller\Strategy\ImageDragStrategy.h" />
     <ClInclude Include="Controller\Strategy\ManualMoveStrategy.h" />
     <ClInclude Include="Controller\Strategy\NormalStrategy.h" />
     <ClInclude Include="Controller\Strategy\RegistrationROIStrategy.h" />
@@ -188,6 +193,8 @@
     <ClInclude Include="Renderer\OverlayManager\CrosshairManager\SimpleCrosshairManager.h" />
     <ClInclude Include="Renderer\OverlayManager\DistanceMeasureManager\IDistanceMeasureManager.h" />
     <ClInclude Include="Renderer\OverlayManager\DistanceMeasureManager\SimpleDistanceMeasureManager.h" />
+    <ClInclude Include="Renderer\OverlayManager\FreehandROIManager\FreehandStats.h" />
+    <ClInclude Include="Renderer\OverlayManager\FreehandROIManager\SimpleFreehandROIManager.h" />
     <ClInclude Include="Renderer\OverlayManager\HandIrregularContourManager\IHandIrregularContourManager.h" />
     <ClInclude Include="Renderer\OverlayManager\HandIrregularContourManager\SimpleHandIrregularContourManager.h" />
     <ClInclude Include="Renderer\OverlayManager\IOverlayFeature.h" />

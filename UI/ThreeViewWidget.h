@@ -28,6 +28,7 @@ public:
 
 public slots:
     void setModeToMeasurement(InteractionMode mode, bool state);
+    void ResetAllViews();
 
 signals:
     // 对外暴露切片变化信号（由 controller 转发）

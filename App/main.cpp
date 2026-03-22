@@ -84,7 +84,15 @@ int main(int argc, char* argv[])
     QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableAngleMeasurement, threeViewWidget,&ThreeViewWidget::setModeToMeasurement);
     QObject::connect(titleBarWidget,&TitleBarWidget::requestEnableNormalMode, threeViewWidget,&ThreeViewWidget::setModeToMeasurement);
     QObject::connect(titleBarWidget,&TitleBarWidget::requestRoiNormalMode, threeViewWidget,&ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget,&TitleBarWidget::requestResetViews, threeViewWidget,&ThreeViewWidget::ResetAllViews);
+    QObject::connect(titleBarWidget,&TitleBarWidget::requestFreehandROIMode, threeViewWidget,&ThreeViewWidget::setModeToMeasurement);
+    
+    QObject::connect(titleBarWidget,&TitleBarWidget::requestMode, threeViewWidget,&ThreeViewWidget::setModeToMeasurement);
+      //connect(threeViewWidget, &ThreeViewWidget::imageDragUpdated,
+      //    leftToolWidget, &LeftToolWidget::OnDragUpdated);
 
+  //connect(threeViewWidget, &ThreeViewWidget::imageDragReset,
+  //    leftToolWidget, &LeftToolWidget::OnDragReset);
     QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);
     leftToolWidget->SetDicomMetadata(metadata);
 

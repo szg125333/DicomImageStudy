@@ -128,3 +128,8 @@ void ThreeViewWidget::setModeToMeasurement(InteractionMode mode, bool state)
     }
 	m_controller->SetInteractionMode(mode);
 }
+
+void ThreeViewWidget::ResetAllViews()
+{
+	m_controller->ResetAllViews();
+}

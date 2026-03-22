@@ -62,11 +62,14 @@ void TitleBarWidget::initUI()
     ui.AngleMeasurement->setStyleSheet(buttonStyle);
     ui.AngleMeasurement->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Angle.png"));
 
-    ui.toolButton_5->setStyleSheet(buttonStyle);
-    ui.toolButton_5->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Calibration.png"));
+    ui.ResetView->setStyleSheet(buttonStyle);
+    ui.ResetView->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Calibration.png"));
 
     ui.RoiMeasurement->setStyleSheet(buttonStyle);
     ui.RoiMeasurement->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Frame.png"));
+
+    ui.FreehandROI->setStyleSheet(buttonStyle);
+    ui.FreehandROI->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Lasso.png"));
 
     ui.toolButton_7->setStyleSheet(buttonStyle);
     ui.toolButton_7->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Menu.png"));
@@ -74,8 +77,8 @@ void TitleBarWidget::initUI()
     ui.toolButton_10->setStyleSheet(buttonStyle);
     ui.toolButton_10->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Squares.png"));
 
-    ui.toolButton_8->setStyleSheet(buttonStyle);
-    ui.toolButton_8->setIcon(QIcon(":/DicomImageStudy/images/move.png"));
+    ui.ImageDrag->setStyleSheet(buttonStyle);
+    ui.ImageDrag->setIcon(QIcon(":/DicomImageStudy/images/move.png"));
 
 }
 
@@ -85,6 +88,9 @@ void TitleBarWidget::initConnections()
 	connect(ui.DistanceMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_DistanceMeasurement_toggled);
 	connect(ui.AngleMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_AngleMeasurement_toggled);
 	connect(ui.RoiMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_RoiMeasurement_toggled);
+	connect(ui.ResetView, &QToolButton::clicked, this, &TitleBarWidget::on_ResetView_clicked);
+	connect(ui.FreehandROI, &QToolButton::toggled, this, &TitleBarWidget::on_FreehandROI_toggled);
+	connect(ui.ImageDrag, &QToolButton::toggled, this, &TitleBarWidget::on_ToolButton_toggled);
 }
 
 
@@ -106,5 +112,21 @@ void TitleBarWidget::on_AngleMeasurement_toggled(bool state)
 void TitleBarWidget::on_RoiMeasurement_toggled(bool state)
 {
     emit requestRoiNormalMode(InteractionMode::RegistrationROI, state);
+}
+
+void TitleBarWidget::on_ResetView_clicked()
+{
+	emit requestResetViews();
+}
+
+void TitleBarWidget::on_FreehandROI_toggled(bool state)
+{
+    emit requestFreehandROIMode(InteractionMode::FreehandROI, state);
+
+}
+
+void TitleBarWidget::on_ToolButton_toggled(bool state)
+{
+	emit requestMode(InteractionMode::ImageDrag, state);
 }
 

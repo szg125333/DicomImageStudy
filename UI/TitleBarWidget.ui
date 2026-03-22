@@ -116,7 +116,7 @@
       </widget>
      </item>
      <item row="0" column="10">
-      <widget class="QToolButton" name="toolButton_8">
+      <widget class="QToolButton" name="ImageDrag">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -212,7 +212,7 @@
       </widget>
      </item>
      <item row="0" column="6">
-      <widget class="QToolButton" name="toolButton_5">
+      <widget class="QToolButton" name="ResetView">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -369,15 +369,21 @@
       </widget>
      </item>
      <item row="0" column="11">
-      <widget class="QToolButton" name="toolButton_9">
+      <widget class="QToolButton" name="FreehandROI">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="styleSheet">
+        <string notr="true">border-image: url(:/DicomImageStudy/images/FlatStyle-Lasso.png);</string>
+       </property>
        <property name="text">
         <string/>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

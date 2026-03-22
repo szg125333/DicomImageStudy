@@ -43,17 +43,14 @@ struct RoiHitResult {
  *
  * 功能：
  *   - 左键拖拽绘制矩形框，释放后固定并计算统计
- *   - 统计标签以多行形式显示在矩形框正下方（每行独立 vtkFollower）
- *   - 支持整体拖动（命中边框/内部）和角点缩放（命中四角）
+ *   - 统计标签以多行形式显示在矩形框正下方
+ *   - 支持整体拖动和角点缩放
  *   - 切片切换后坐标自动投影，统计值重算
+ *   - 三视图（Axial/Sagittal/Coronal）均正确显示
  *
- * 统计标签格式（6 行）：
- *   第1行  Mean: 45.2 HU
- *   第2行  SD: 12.1
- *   第3行  Min: -500.0 HU
- *   第4行  Max: 120.0 HU
- *   第5行  Area: 1234.5 mm2
- *   第6行  Pixels: 512
+ * 修正记录：
+ *   - CreateCornerSquare 增加 ViewType 参数，根据视图平面确定
+ *     方块的偏移方向，修复 Sagittal/Coronal 视图中角点不可见的问题
  */
 class SimpleROIManager : public IOverlayFeature {
 public:
@@ -116,15 +113,13 @@ private:
         ViewType viewType = ViewType::None;
         int      slice = 0;
 
-        /// 轴对齐最小角点（世界坐标）
-        std::array<double, 3> corner1 = { 0, 0, 0 };
-        /// 轴对齐最大角点（世界坐标）
-        std::array<double, 3> corner2 = { 0, 0, 0 };
+        std::array<double, 3> corner1 = { 0, 0, 0 };   ///< 轴对齐最小角
+        std::array<double, 3> corner2 = { 0, 0, 0 };   ///< 轴对齐最大角
 
         RoiStats stats;
         bool     isComplete = false;
 
-        // 边框：4 条 LineSource（支持零重建更新）
+        // 边框：4 条 LineSource
         struct BorderLine {
             vtkSmartPointer<vtkLineSource>     source;
             vtkSmartPointer<vtkPolyDataMapper> mapper;
@@ -132,13 +127,13 @@ private:
         };
         BorderLine borderLines[4];
 
-        // 半透明填充面
+        // 半透明填充
         vtkSmartPointer<vtkActor> fillActor;
 
-        // 四个角点方块（命中测试视觉提示）
+        // 四个角点方块（用于拖动命中提示）
         vtkSmartPointer<vtkActor> cornerActors[4];
 
-        // 多行统计标签（框正下方，每行独立 vtkFollower）
+        // 多行统计标签
         RoiLabel label;
     };
 
@@ -151,15 +146,12 @@ private:
         ViewType viewType,
         std::array<double, 3> out[4]) const;
 
-    /// 计算标签第一行锚点（矩形下边中点再向下偏移 kLabelOffsetMm）
     std::array<double, 3> ComputeLabelAnchor(
         const std::array<double, 3> corners[4],
         ViewType viewType) const;
 
-    /// 根据 RoiStats 生成每行文字内容（6 行）
     static std::vector<std::string> BuildLabelLines(const RoiStats& stats);
 
-    // --- 图元初始化 / 更新 ---
     void InitBorderLines(RoiRecord& roi);
     void UpdateBorderLines(RoiRecord& roi,
         const std::array<double, 3> corners[4]);
@@ -172,10 +164,23 @@ private:
     void UpdateCornerActors(RoiRecord& roi,
         const std::array<double, 3> corners[4]);
 
+    /**
+     * @brief 创建角点小方块 Actor
+     *
+     * @param center    方块中心世界坐标
+     * @param viewType  视图方向（决定偏移在哪两个轴上进行）
+     * @param halfSize  方块半边长（默认 2.0 mm）
+     *
+     * 三视图平面轴对应：
+     *   Axial    → X/Y 平面偏移，Z 固定
+     *   Sagittal → Y/Z 平面偏移，X 固定
+     *   Coronal  → X/Z 平面偏移，Y 固定
+     */
     vtkSmartPointer<vtkActor> CreateCornerSquare(
-        const std::array<double, 3>& center, double halfSize = 2.0);
+        const std::array<double, 3>& center,
+        ViewType viewType,
+        double halfSize = 2.0);
 
-    /// 全量重绘（移动/缩放后调用）
     void RedrawROI(RoiRecord& roi,
         const std::array<double, 3> corners[4],
         const std::array<double, 3>& anchor);
@@ -193,7 +198,7 @@ private:
     int NextId() { return ++m_nextId; }
 
     // ----------------------------------------------------------------
-    //  预览线（懒初始化）
+    //  预览线
     // ----------------------------------------------------------------
     struct PreviewLine {
         vtkSmartPointer<vtkLineSource>     source;
@@ -221,7 +226,7 @@ private:
 
     static constexpr double kCornerTolerancePx = 8.0;
     static constexpr double kEdgeTolerancePx = 5.0;
-    static constexpr double kLabelOffsetMm = 6.0;  ///< 标签第一行距矩形下边的偏移
-    static constexpr double kLabelScale = 6.5;  ///< 文字缩放比例
-    static constexpr double kLineSpacingMm = 9.0;  ///< 行间距（mm）
+    static constexpr double kLabelOffsetMm = 6.0;
+    static constexpr double kLabelScale = 6.5;
+    static constexpr double kLineSpacingMm = 9.0;
 };

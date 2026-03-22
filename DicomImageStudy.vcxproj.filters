@@ -139,6 +139,15 @@
     <ClCompile Include="Renderer\OverlayManager\ROIManager\RoiLabel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Controller\Strategy\FreehandROIStrategy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\OverlayManager\FreehandROIManager\SimpleFreehandROIManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Controller\Strategy\ImageDragStrategy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\InteractionMode.h">
@@ -277,6 +286,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\OverlayManager\ROIManager\RoiLabel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller\Strategy\FreehandROIStrategy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\OverlayManager\FreehandROIManager\FreehandStats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\OverlayManager\FreehandROIManager\SimpleFreehandROIManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller\Strategy\ImageDragStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

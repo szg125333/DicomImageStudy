@@ -12,6 +12,7 @@
 #include <vtkImageViewer2.h>
 
 #include <cmath>
+#include <algorithm>
 
 // ============================================================
 //  构造 / 析构
@@ -21,11 +22,7 @@ ThreeViewController::ThreeViewController(QObject* parent)
     : QObject(parent)
 {
     m_renderers.fill(nullptr);
-
-    // 预先创建所有策略（策略生命周期与控制器一致）
     m_strategies = InteractionStrategyFactory::CreateStrategies(this);
-
-    // 初始模式设为普通浏览
     m_currentMode = InteractionMode::Normal;
 }
 
@@ -45,25 +42,32 @@ void ThreeViewController::SetImageData(vtkImageData* image)
     if (!image) return;
     m_image = image;
 
-    // 将图像数据绑定到三个渲染器
     for (auto* r : m_renderers) {
         if (r) r->SetInputData(image);
     }
 
     ComputeSliceRanges();
 
-    // 初始切片定位到图像中心
+    // 初始切片：图像各方向中心
     int dims[3];
     m_image->GetDimensions(dims);
-    SetSliceInternal(ViewType::Axial, dims[2] / 2);
-    SetSliceInternal(ViewType::Sagittal, dims[0] / 2);
-    SetSliceInternal(ViewType::Coronal, dims[1] / 2);
 
-    // 根据图像灰度范围初始化窗宽窗位
+    m_initialSlice[static_cast<int>(ViewType::Axial)] = dims[2] / 2;
+    m_initialSlice[static_cast<int>(ViewType::Sagittal)] = dims[0] / 2;
+    m_initialSlice[static_cast<int>(ViewType::Coronal)] = dims[1] / 2;
+
+    SetSliceInternal(ViewType::Axial, m_initialSlice[static_cast<int>(ViewType::Axial)]);
+    SetSliceInternal(ViewType::Sagittal, m_initialSlice[static_cast<int>(ViewType::Sagittal)]);
+    SetSliceInternal(ViewType::Coronal, m_initialSlice[static_cast<int>(ViewType::Coronal)]);
+
+    // 初始窗宽窗位：根据图像灰度范围推算
     double range[2];
     m_image->GetScalarRange(range);
-    m_windowWidth = range[1] - range[0];
-    m_windowLevel = (range[0] + range[1]) / 2.0;
+    m_initialWindowWidth = range[1] - range[0];
+    m_initialWindowLevel = (range[0] + range[1]) / 2.0;
+
+    m_windowWidth = m_initialWindowWidth;
+    m_windowLevel = m_initialWindowLevel;
 
     for (auto* r : m_renderers) {
         if (r) {
@@ -72,7 +76,7 @@ void ThreeViewController::SetImageData(vtkImageData* image)
         }
     }
 
-    // 使用正交投影（医学影像切片标准显示方式）
+    // 正交投影并复位相机
     for (auto* r : m_renderers) {
         if (!r) continue;
         auto viewer = r->GetViewer();
@@ -82,12 +86,11 @@ void ThreeViewController::SetImageData(vtkImageData* image)
         }
     }
 
-    // 注册事件回调（图像就绪后才有意义）
     RegisterEventCallbacks();
 }
 
 // ============================================================
-//  IViewController 接口实现
+//  IViewController 接口
 // ============================================================
 
 IViewRenderer* ThreeViewController::GetRenderer(int viewIndex)
@@ -106,38 +109,31 @@ void ThreeViewController::ChangeSlice(int viewIndex, int delta)
     if (viewIndex < 0 || viewIndex >= 3) return;
 
     const ViewType view = static_cast<ViewType>(viewIndex);
-    const int idx = viewIndex;
+    int newSlice = m_renderers[viewIndex]
+        ? m_renderers[viewIndex]->GetSlice() + delta
+        : 0;
 
-    int newSlice = m_renderers[idx] ? m_renderers[idx]->GetSlice() + delta : 0;
-
-    // 夹紧到有效范围
-    newSlice = std::max(newSlice, m_minSlice[idx]);
-    newSlice = std::min(newSlice, m_maxSlice[idx]);
+    newSlice = std::max(newSlice, m_minSlice[viewIndex]);
+    newSlice = std::min(newSlice, m_maxSlice[viewIndex]);
 
     RequestSetSlice(view, newSlice);
 
-    // 通知 Overlay Feature 更新坐标（测量标注随切片移动）
-    if (m_renderers[idx]) {
-        auto* mgr = m_renderers[idx]->GetOverlayManager();
-        if (mgr) {
-            mgr->OnSliceChanged(view, newSlice);
-        }
-        m_renderers[idx]->RequestRender();
+    if (m_renderers[viewIndex]) {
+        auto* mgr = m_renderers[viewIndex]->GetOverlayManager();
+        if (mgr) mgr->OnSliceChanged(view, newSlice);
+        m_renderers[viewIndex]->RequestRender();
     }
 }
 
 void ThreeViewController::UpdateSliceByWorldPoint(std::array<double, 3> worldPoint)
 {
     if (!m_image || m_isUpdatingSlice) return;
-
     m_isUpdatingSlice = true;
 
-    // 将世界坐标转换为体素索引（连续值）
     double ijk[3];
     double picked[3] = { worldPoint[0], worldPoint[1], worldPoint[2] };
     m_image->TransformPhysicalPointToContinuousIndex(picked, ijk);
 
-    // 分别更新三个方向的切片
     SetSliceInternal(ViewType::Axial, static_cast<int>(std::round(ijk[2])));
     SetSliceInternal(ViewType::Sagittal, static_cast<int>(std::round(ijk[0])));
     SetSliceInternal(ViewType::Coronal, static_cast<int>(std::round(ijk[1])));
@@ -161,41 +157,34 @@ void ThreeViewController::SetWindowLevel(double window, double level)
 void ThreeViewController::Zoom(int viewIndex, double factor,
     std::array<double, 3> focalWorldPoint)
 {
-    auto renderer = GetRenderer(viewIndex);
+    auto* renderer = GetRenderer(viewIndex);
     if (!renderer) return;
 
-    auto camera = renderer->GetViewer()->GetRenderer()->GetActiveCamera();
+    auto viewer = renderer->GetViewer();
+    if (!viewer || !viewer->GetRenderer()) return;
+
+    auto* camera = viewer->GetRenderer()->GetActiveCamera();
     if (!camera || !camera->GetParallelProjection()) return;
 
-    auto windowSize = renderer->GetViewer()->GetRenderWindow()->GetSize();
+    auto* windowSize = viewer->GetRenderWindow()->GetSize();
     if (windowSize[0] <= 0 || windowSize[1] <= 0) return;
 
-    // 当前相机参数
-    double oldFocal[3];
+    double oldFocal[3], oldPos[3];
     camera->GetFocalPoint(oldFocal);
-
-    double oldPos[3];
     camera->GetPosition(oldPos);
 
-    // 计算缩放前后焦点与点击点的偏移
-    double shift[3];
-    for (int i = 0; i < 3; ++i) {
-        shift[i] = focalWorldPoint[i] - oldFocal[i];
-    }
-
-    // 更新相机焦点和位置，让点击点保持在屏幕上不动
     double newFocal[3], newPos[3];
     for (int i = 0; i < 3; ++i) {
-        newFocal[i] = oldFocal[i] + shift[i] * (1.0 - 1.0 / factor);
-        newPos[i] = oldPos[i] + shift[i] * (1.0 - 1.0 / factor);
+        const double shift = focalWorldPoint[i] - oldFocal[i];
+        const double offset = shift * (1.0 - 1.0 / factor);
+        newFocal[i] = oldFocal[i] + offset;
+        newPos[i] = oldPos[i] + offset;
     }
 
     camera->SetFocalPoint(newFocal);
     camera->SetPosition(newPos);
-
-    double newScale = camera->GetParallelScale() / factor;
-    camera->SetParallelScale(newScale);
-    renderer->GetViewer()->GetRenderer()->ResetCameraClippingRange();
+    camera->SetParallelScale(camera->GetParallelScale() / factor);
+    viewer->GetRenderer()->ResetCameraClippingRange();
 
     renderer->RequestRender();
 }
@@ -207,7 +196,6 @@ void ThreeViewController::Zoom(int viewIndex, double factor,
 void ThreeViewController::SetInteractionMode(InteractionMode mode)
 {
     if (m_currentMode == mode) return;
-
     UnregisterEventCallbacks();
     m_currentMode = mode;
     RegisterEventCallbacks();
@@ -222,7 +210,6 @@ void ThreeViewController::RequestSetSlice(ViewType view, int slice)
     const int idx = static_cast<int>(view);
     if (!m_renderers[idx]) return;
 
-    // 夹紧到有效范围
     slice = std::max(slice, m_minSlice[idx]);
     slice = std::min(slice, m_maxSlice[idx]);
 
@@ -244,7 +231,6 @@ int ThreeViewController::GetSlice(ViewType view) const
 std::array<double, 6> ThreeViewController::GetImageBounds() const
 {
     if (!m_image) return {};
-
     double raw[6];
     const_cast<vtkImageData*>(m_image.Get())->GetBounds(raw);
     return { raw[0], raw[1], raw[2], raw[3], raw[4], raw[5] };
@@ -257,10 +243,56 @@ void ThreeViewController::ClearAllStrategyDrawings()
 
     for (int i = 0; i < 3; ++i) {
         it->second->Clear(i);
-        if (m_renderers[i]) {
-            m_renderers[i]->RequestRender();
-        }
+        if (m_renderers[i]) m_renderers[i]->RequestRender();
     }
+}
+
+// ============================================================
+//  视图重置
+// ============================================================
+
+void ThreeViewController::ResetAllViews()
+{
+    if (!m_image) return;
+
+    // ── 第一步：恢复窗宽窗位 ──────────────────────────────────
+    m_windowWidth = m_initialWindowWidth;
+    m_windowLevel = m_initialWindowLevel;
+
+    // ── 第二步：恢复中心切片 ──────────────────────────────────
+    // 先设置切片（ResetCamera 需要图像在正确位置上才能计算边界）
+    SetSliceInternal(ViewType::Axial, m_initialSlice[static_cast<int>(ViewType::Axial)]);
+    SetSliceInternal(ViewType::Sagittal, m_initialSlice[static_cast<int>(ViewType::Sagittal)]);
+    SetSliceInternal(ViewType::Coronal, m_initialSlice[static_cast<int>(ViewType::Coronal)]);
+
+    // ── 第三步：逐视图重置相机并同步窗宽窗位 ────────────────────
+    for (auto* r : m_renderers) {
+        if (!r) continue;
+
+        // 窗宽窗位
+        r->SetColorWindow(m_windowWidth);
+        r->SetColorLevel(m_windowLevel);
+
+        // 相机：让 VTK 根据当前 Actor 包围盒自动计算最优视角
+        auto viewer = r->GetViewer();
+        if (viewer && viewer->GetRenderer()) {
+            auto* camera = viewer->GetRenderer()->GetActiveCamera();
+            // 确保仍为正交投影（缩放过程中不应改变，保险起见再设一次）
+            camera->SetParallelProjection(true);
+            // ResetCamera 会重置焦点、位置、平行缩放比，使图像充满视口
+            viewer->GetRenderer()->ResetCamera();
+        }
+
+        r->RequestRender();
+    }
+
+    // ── 第四步：同步发出切片变化信号（更新 UI 滑块等）────────────
+    emit sliceChanged(static_cast<int>(ViewType::Axial),
+        m_initialSlice[static_cast<int>(ViewType::Axial)]);
+    emit sliceChanged(static_cast<int>(ViewType::Sagittal),
+        m_initialSlice[static_cast<int>(ViewType::Sagittal)]);
+    emit sliceChanged(static_cast<int>(ViewType::Coronal),
+        m_initialSlice[static_cast<int>(ViewType::Coronal)]);
 }
 
 // ============================================================
@@ -290,7 +322,6 @@ void ThreeViewController::SetSliceInternal(ViewType view, int slice)
     if (!m_renderers[idx]) return;
 
     m_renderers[idx]->SetSlice(slice);
-    // 传入最大切片数供 Overlay 信息层显示"当前/总数"
     m_renderers[idx]->SetMaxSlice(m_maxSlice[static_cast<int>(ViewType::Axial)]);
     m_renderers[idx]->RequestRender();
 }
@@ -300,7 +331,6 @@ void ThreeViewController::RegisterEventCallbacks()
     for (int i = 0; i < 3; ++i) {
         if (!m_renderers[i]) continue;
 
-        // 若此视图尚未创建 Overlay 管理器，现在创建并初始化
         if (!m_renderers[i]->GetOverlayManager()) {
             auto overlayMgr = OverlayFactory::CreateDefault();
             overlayMgr->SetImageWorldBounds(GetImageBounds());
@@ -311,23 +341,19 @@ void ThreeViewController::RegisterEventCallbacks()
 
         const int idx = i;
 
-        // 滚轮事件：始终由 Normal 策略处理（切片导航不受模式影响）
         auto wheelHandler = [this, idx](EventType type) {
             return [this, idx, type](const EventData& data) {
                 auto it = m_strategies.find(InteractionMode::Normal);
-                if (it != m_strategies.end() && it->second) {
+                if (it != m_strategies.end() && it->second)
                     it->second->HandleEvent(type, idx, data);
-                }
                 };
             };
 
-        // 其他事件：由当前激活模式的策略处理
         auto modeHandler = [this, idx](EventType type) {
             return [this, idx, type](const EventData& data) {
                 auto it = m_strategies.find(m_currentMode);
-                if (it != m_strategies.end() && it->second) {
+                if (it != m_strategies.end() && it->second)
                     it->second->HandleEvent(type, idx, data);
-                }
                 };
             };
 
