@@ -34,6 +34,11 @@ signals:
     // 对外暴露切片变化信号（由 controller 转发）
     void sliceChanged(int viewIndex, int slice);
 
+    void imageDragUpdated(int viewIndex,
+        double dx, double dy, double dz,
+        double totalDist);
+    void imageDragReset();
+
 private:
     void setupUi();
     void setupRenderersAndController();

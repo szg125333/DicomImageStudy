@@ -5,26 +5,27 @@
 #include <functional>
 
 /**
- * @brief 图像平移拖动策略
+ * @brief 图像平移拖动策略（无抖动版）
  *
- * 激活后左键按住拖动即可平移视图中的图像（移动相机焦点）。
- * 使用 std::function 回调代替 Qt 信号，避免继承 QObject 与
- * unique_ptr<IInteractionStrategy> 的生命周期冲突。
+ * 修正说明：
+ *   原版用 PickWorldPosition 计算帧间世界坐标增量，因为 Picker
+ *   依赖上一帧的深度缓冲区，在相机移动后渲染未及时刷新时会读到
+ *   旧深度数据，导致坐标偏差累积 → 果冻抖动。
+ *
+ *   修正：改用屏幕像素增量 + ParallelScale 换算为世界坐标增量，
+ *   完全不依赖深度缓冲，每帧结果稳定。
+ *
+ *   换算公式（正交投影）：
+ *     worldPerPixel = (2 × ParallelScale) / viewportHeightPixels
+ *     worldDelta    = pixelDelta × worldPerPixel
  *
  * 操作：
- *   左键按下 + 拖动 → 平移图像，实时上报累计物理位移
+ *   左键按下 + 拖动 → 平移图像
  *   右键单击        → 累计位移清零
- *   切换模式        → Clear() 自动清零
- *
- * 集成：
- *   创建策略后调用 SetDragCallback / SetResetCallback 注入回调，
- *   由 ThreeViewController 转发为 Qt 信号供 LeftToolWidget 使用。
  */
 class ImageDragStrategy : public IInteractionStrategy {
 public:
-    /// 拖动帧回调：(viewIndex, totalDx, totalDy, totalDz, totalDist_mm)
     using DragCallback = std::function<void(int, double, double, double, double)>;
-    /// 清零回调
     using ResetCallback = std::function<void()>;
 
     explicit ImageDragStrategy(IViewController* controller);
@@ -32,10 +33,7 @@ public:
     void HandleEvent(EventType type, int viewIndex, const EventData& data) override;
     void Clear(int viewIndex) override;
 
-    /// @brief 注册拖动更新回调
     void SetDragCallback(DragCallback cb) { m_dragCb = std::move(cb); }
-
-    /// @brief 注册清零回调
     void SetResetCallback(ResetCallback cb) { m_resetCb = std::move(cb); }
 
 private:
@@ -44,8 +42,11 @@ private:
     bool m_isDragging = false;
     int  m_activeViewIndex = -1;
 
-    std::array<double, 3> m_lastWorldPos = { 0.0, 0.0, 0.0 };
+    /// 上一帧的屏幕像素坐标（注意：不再是世界坐标）
+    int m_lastScreenX = 0;
+    int m_lastScreenY = 0;
 
+    /// 累计物理位移（mm）
     double m_totalDx = 0.0;
     double m_totalDy = 0.0;
     double m_totalDz = 0.0;

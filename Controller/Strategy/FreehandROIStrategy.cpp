@@ -21,9 +21,6 @@ void FreehandROIStrategy::HandleEvent(EventType        type,
 {
     if (!m_controller) return;
 
-    // 视图锁定：一次操作只在一个视图内
-    if (!TryLockView(viewIndex)) return;
-
     const int screenX = data.mousePosX;
     const int screenY = data.mousePosY;
 
@@ -46,6 +43,10 @@ void FreehandROIStrategy::HandleEvent(EventType        type,
         //  左键按下：判断是开始新绘制还是拖动已有 ROI
         // ================================================================
     case EventType::LeftPress: {
+
+        // 视图锁定：一次操作只在一个视图内
+        if (!TryLockView(viewIndex)) return;
+
         // 先做命中测试
         auto hit = freehandMgr->HitTest(screenX, screenY);
 

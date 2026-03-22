@@ -19,9 +19,13 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
+
+     <!-- ============================================================ -->
+     <!-- Tab 1：DICOM 信息                                            -->
+     <!-- ============================================================ -->
      <widget class="QWidget" name="tab">
       <attribute name="title">
-       <string>Tab 1</string>
+       <string>DICOM 信息</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
        <item row="0" column="0">
@@ -33,11 +37,234 @@
        </item>
       </layout>
      </widget>
+
+     <!-- ============================================================ -->
+     <!-- Tab 2：图像拖动信息                                          -->
+     <!-- ============================================================ -->
      <widget class="QWidget" name="tab_2">
       <attribute name="title">
-       <string>Tab 2</string>
+       <string>拖动信息</string>
       </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_drag">
+       <property name="spacing">
+        <number>10</number>
+       </property>
+       <property name="leftMargin">
+        <number>8</number>
+       </property>
+       <property name="topMargin">
+        <number>8</number>
+       </property>
+       <property name="rightMargin">
+        <number>8</number>
+       </property>
+       <property name="bottomMargin">
+        <number>8</number>
+       </property>
+
+       <!-- ── 分组框：当前操作视图 ── -->
+       <item>
+        <widget class="QGroupBox" name="groupBoxView">
+         <property name="title">
+          <string>当前操作视图</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_view">
+          <property name="leftMargin"><number>8</number></property>
+          <property name="topMargin"><number>8</number></property>
+          <property name="rightMargin"><number>8</number></property>
+          <property name="bottomMargin"><number>8</number></property>
+          <item>
+           <widget class="QLabel" name="labelViewTitle">
+            <property name="text">
+             <string>视图：</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelViewName">
+            <property name="text">
+             <string>—</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-weight: bold; color: #007ACC;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_view">
+            <property name="orientation"><enum>Qt::Horizontal</enum></property>
+            <property name="sizeHint" stdset="0">
+             <size><width>40</width><height>20</height></size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+
+       <!-- ── 分组框：累计位移 ── -->
+       <item>
+        <widget class="QGroupBox" name="groupBoxDisplacement">
+         <property name="title">
+          <string>累计位移（mm）</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_disp">
+          <property name="leftMargin"><number>8</number></property>
+          <property name="topMargin"><number>10</number></property>
+          <property name="rightMargin"><number>8</number></property>
+          <property name="bottomMargin"><number>10</number></property>
+          <property name="verticalSpacing"><number>8</number></property>
+
+          <!-- 表头 -->
+          <item row="0" column="0">
+           <widget class="QLabel" name="labelHeaderAxis">
+            <property name="text"><string>轴</string></property>
+            <property name="styleSheet">
+             <string notr="true">color: #888888; font-size: 9pt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="labelHeaderValue">
+            <property name="text"><string>位移</string></property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignVCenter</set>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: #888888; font-size: 9pt;</string>
+            </property>
+           </widget>
+          </item>
+
+          <!-- 分隔线 -->
+          <item row="1" column="0" colspan="2">
+           <widget class="QFrame" name="lineTop">
+            <property name="frameShape"><enum>QFrame::HLine</enum></property>
+            <property name="frameShadow"><enum>QFrame::Sunken</enum></property>
+           </widget>
+          </item>
+
+          <!-- X 轴 -->
+          <item row="2" column="0">
+           <widget class="QLabel" name="labelAxisX">
+            <property name="text"><string>X 轴（左右）</string></property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="labelDx">
+            <property name="text"><string>0.00 mm</string></property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignVCenter</set>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-family: Consolas, monospace; font-size: 11pt; font-weight: bold;</string>
+            </property>
+           </widget>
+          </item>
+
+          <!-- Y 轴 -->
+          <item row="3" column="0">
+           <widget class="QLabel" name="labelAxisY">
+            <property name="text"><string>Y 轴（前后）</string></property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLabel" name="labelDy">
+            <property name="text"><string>0.00 mm</string></property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignVCenter</set>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-family: Consolas, monospace; font-size: 11pt; font-weight: bold;</string>
+            </property>
+           </widget>
+          </item>
+
+          <!-- Z 轴 -->
+          <item row="4" column="0">
+           <widget class="QLabel" name="labelAxisZ">
+            <property name="text"><string>Z 轴（上下）</string></property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLabel" name="labelDz">
+            <property name="text"><string>0.00 mm</string></property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignVCenter</set>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-family: Consolas, monospace; font-size: 11pt; font-weight: bold;</string>
+            </property>
+           </widget>
+          </item>
+
+          <!-- 分隔线 -->
+          <item row="5" column="0" colspan="2">
+           <widget class="QFrame" name="lineBottom">
+            <property name="frameShape"><enum>QFrame::HLine</enum></property>
+            <property name="frameShadow"><enum>QFrame::Sunken</enum></property>
+           </widget>
+          </item>
+
+          <!-- 总位移 -->
+          <item row="6" column="0">
+           <widget class="QLabel" name="labelTotalTitle">
+            <property name="text"><string>总位移（3D）</string></property>
+            <property name="styleSheet">
+             <string notr="true">font-weight: bold;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLabel" name="labelTotal">
+            <property name="text"><string>0.00 mm</string></property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignVCenter</set>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-family: Consolas, monospace; font-size: 13pt; font-weight: bold; color: #007ACC;</string>
+            </property>
+           </widget>
+          </item>
+
+         </layout>
+        </widget>
+       </item>
+
+       <!-- ── 操作提示 ── -->
+       <item>
+        <widget class="QLabel" name="labelHint">
+         <property name="text">
+          <string>提示：左键拖动平移图像，右键单击清零位移</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignLeft|Qt::AlignTop</set>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color: #888888; font-size: 9pt;</string>
+         </property>
+        </widget>
+       </item>
+
+       <!-- ── 底部弹性填充 ── -->
+       <item>
+        <spacer name="verticalSpacer_drag">
+         <property name="orientation"><enum>Qt::Vertical</enum></property>
+         <property name="sizeHint" stdset="0">
+          <size><width>20</width><height>40</height></size>
+         </property>
+        </spacer>
+       </item>
+
+      </layout>
      </widget>
+
     </widget>
    </item>
   </layout>
