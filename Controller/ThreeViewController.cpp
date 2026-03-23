@@ -6,6 +6,9 @@
 #include "Controller/Strategy/IInteractionStrategy.h"
 #include "Controller/Strategy/ImageDragStrategy/ImageDragStrategy.h"
 
+#include "Dicom/ContourData.h"                                              // 新增
+#include "Renderer/OverlayManager/ContourOverlayManager/SimpleContourOverlayManager.h"  // 新增
+
 #include <vtkImageData.h>
 #include <vtkRenderer.h>
 #include <vtkCamera.h>
@@ -398,5 +401,31 @@ void ThreeViewController::UnregisterEventCallbacks()
 		m_renderers[i]->OnEvent(EventType::RightPress, nullptr);
 		m_renderers[i]->OnEvent(EventType::KeyPress, nullptr);
 		m_renderers[i]->OnEvent(EventType::KeyRelease, nullptr);
+	}
+}
+
+/**
+ * @brief 将 RS 轮廓数据分发到三个视图的 ContourOverlayManager
+ *
+ * 在 SetImageData() 之后调用（确保 OverlayManager 已初始化）。
+ */
+void ThreeViewController::LoadContourData(std::vector<RtRoi> rois)
+{
+	for (int i = 0; i < 3; ++i) {
+		if (!m_renderers[i]) continue;
+		auto* overlayMgr = m_renderers[i]->GetOverlayManager();
+		if (!overlayMgr) continue;
+
+		auto* contourMgr = overlayMgr->GetFeature<SimpleContourOverlayManager>();
+		if (!contourMgr) continue;
+		if (contourMgr) {
+			contourMgr->SetRois(rois);
+			// 立即刷新当前切片
+			contourMgr->OnSliceChanged(
+				m_renderers[i]->GetViewer().Get(),
+				m_renderers[i]->GetSlice(),
+				m_renderers[i]->GetCurrentViewType());
+		}
+		m_renderers[i]->RequestRender();
 	}
 }

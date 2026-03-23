@@ -245,7 +245,7 @@ void VtkViewRenderer::RequestRender()
 void VtkViewRenderer::OnRenderTimerTimeout()
 {
     if (m_viewer) {
-        m_viewer->Render();
+        m_viewer->GetRenderWindow()->Render();
     }
 }
 

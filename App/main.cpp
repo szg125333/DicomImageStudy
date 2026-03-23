@@ -22,7 +22,8 @@ int main(int argc, char* argv[])
 	std::wstring wlog = logPath.toStdWString();
 	VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, wlog.c_str());
 
-	QString path = "C:\\Workspace\\testData\\registrationData\\Head1\\CBCT";
+	//QString path = "C:\\Workspace\\testData\\PositionTest\\HFS\\CT";
+	QString path = "C:\\Workspace\\testData\\FZJ";
 
 	ImageOrientationResampler resampler;
 	std::vector<std::string> dicomFiles = resampler.loadDicomSeries(path);

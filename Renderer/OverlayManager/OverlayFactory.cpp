@@ -7,6 +7,7 @@
 #include "ROIManager/SimpleROIManager.h"           // 新增
 #include "FreehandROIManager/SimpleFreehandROIManager.h"   // 新增
 #include "RulerLineManager/SimpleRulerLineManager.h"
+#include "ContourOverlayManager/SimpleContourOverlayManager.h"   // 新增
 
 std::unique_ptr<IOverlayManager> OverlayFactory::CreateDefault()
 {
@@ -20,6 +21,7 @@ std::unique_ptr<IOverlayManager> OverlayFactory::CreateDefault()
     manager->RegisterFeature(std::make_unique<SimpleROIManager>());
     manager->RegisterFeature(std::make_unique<SimpleFreehandROIManager>());
     manager->RegisterFeature(std::make_unique<SimpleRulerLineManager>());
+    manager->RegisterFeature(std::make_unique<SimpleContourOverlayManager>());
 
     return manager;
 }

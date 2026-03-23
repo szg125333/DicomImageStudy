@@ -18,6 +18,17 @@
 #include <gdcmUIDGenerator.h>
 #include "itkExtractImageFilter.h"
 #include <regex>
+
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <QDir>
+#include <QFileInfo>
+#include <QString>
+#include <QDebug>
+
+#include <dcmtk/dcmdata/dctk.h> 
+
 ImageOrientationResampler::ImageOrientationResampler() {}
 
 ImageOrientationResampler::ImageType::Pointer
@@ -135,21 +146,41 @@ void ImageOrientationResampler::WriteDicomSeries(ImageType::Pointer image,
     }
 }
 
-std::vector<std::string>
-ImageOrientationResampler::loadDicomSeries(const QString& folderPath)
+
+
+std::vector<std::string> ImageOrientationResampler::loadDicomSeries(const QString& folderPath)
 {
     QDir dir(folderPath);
-    QStringList filters;
-    filters << "*.dcm" << "*.DCM";
-    QFileInfoList fileList = dir.entryInfoList(filters, QDir::Files);
+    if (!dir.exists()) {
+        qWarning() << "Folder does not exist:" << folderPath;
+        return {};
+    }
 
+    // 1. 获取所有潜在文件
+    QStringList filters;
+    filters << "*.dcm" << "*.DCM" << "*"; // 有些 DICOM 文件没有后缀
+    QFileInfoList fileList = dir.entryInfoList(filters, QDir::Files | QDir::NoDotAndDotDot);
+
+    if (fileList.isEmpty()) {
+        return {};
+    }
+
+    // 2. 排序逻辑 (保持原有的基于索引的排序，增加容错)
     std::sort(fileList.begin(), fileList.end(),
         [](const QFileInfo& a, const QFileInfo& b) {
-            auto getIndex = [](const QString& name) {
+            auto getIndex = [](const QString& name) -> int {
                 int underscorePos = name.lastIndexOf('_');
                 int dotPos = name.lastIndexOf('.');
+
+                // 容错处理：如果没有找到下划线或点，或者格式不对，返回 -1 或 0
+                if (underscorePos == -1 || dotPos == -1 || dotPos <= underscorePos) {
+                    return 0;
+                }
+
                 QString numStr = name.mid(underscorePos + 1, dotPos - underscorePos - 1);
-                return numStr.toInt();
+                bool ok = false;
+                int val = numStr.toInt(&ok);
+                return ok ? val : 0;
                 };
             return getIndex(a.fileName()) < getIndex(b.fileName());
         });
@@ -157,13 +188,79 @@ ImageOrientationResampler::loadDicomSeries(const QString& folderPath)
     std::vector<std::string> dicomFiles;
     dicomFiles.reserve(fileList.size());
 
+    // 定义需要排除的放疗 SOP Class UID 前缀 (根据 DICOM 标准)
+    // RT Plan: 1.2.840.10008.5.1.4.34.1
+    // RT Structure Set: 1.2.840.10008.5.1.4.34.2
+    // RT Dose: 1.2.840.10008.5.1.4.34.3
+    // RT Image: 1.2.840.10008.5.1.4.34.4
+    const std::vector<std::string> rtPrefixes = {
+        "1.2.840.10008.5.1.4.34.1",
+        "1.2.840.10008.5.1.4.34.2",
+        "1.2.840.10008.5.1.4.34.3",
+        "1.2.840.10008.5.1.4.34.4"
+    };
+
     for (const QFileInfo& fi : fileList)
     {
-        QString fileName = fi.fileName();
-        if (fileName.contains("RTPLAN", Qt::CaseInsensitive)) continue;
-        if (fileName.contains("RS", Qt::CaseInsensitive)) continue;
+        const QString fileName = fi.fileName();
+        const QString fullPath = fi.absoluteFilePath();
 
-        dicomFiles.push_back(fi.absoluteFilePath().toStdString());
+        // --- 快速预过滤 (基于文件名，减少不必要的文件读取) ---
+        // 如果文件名明显包含这些关键词，直接跳过，节省 I/O
+        if (fileName.contains("RTPLAN", Qt::CaseInsensitive) ||
+            fileName.contains("RTSTRUCT", Qt::CaseInsensitive) ||
+            fileName.contains("RSDOSE", Qt::CaseInsensitive) ||
+            fileName.contains("RS.", Qt::CaseInsensitive) && fileName.contains("STRUCT", Qt::CaseInsensitive))
+        {
+            continue;
+        }
+
+        // --- 核心过滤：读取 DICOM 标签 ---
+        DcmFileFormat fileFormat;
+        // 读取文件头，仅读取到顶层数据集，不加载像素数据 (速度快)
+        OFCondition status = fileFormat.loadFile(fullPath.toStdString().c_str());
+
+        if (status.bad()) {
+            // 不是有效的 DICOM 文件，跳过
+            continue;
+        }
+
+        DcmDataset* dataset = fileFormat.getDataset();
+        if (!dataset) {
+            continue;
+        }
+
+        // 1. 检查 Modality (0008,0060)
+        OFString modality;
+        if (dataset->findAndGetOFString(DCM_Modality, modality).bad()) {
+            // 没有模态标签，可能是非图像文件，保守起见跳过，或者根据需要保留
+            continue;
+        }
+
+        // 只保留 CT 数据
+        if (modality != "CT") {
+            continue;
+        }
+
+        // 2. 双重检查：排除放疗对象 (通过 SOP Class UID)
+        // 有些厂商可能把 RT 文件标记为错误的 Modality，所以检查 UID 更安全
+        OFString sopClassUID;
+        if (dataset->findAndGetOFString(DCM_SOPClassUID, sopClassUID).good()) {
+            std::string uidStr(sopClassUID.c_str());
+            bool isRT = false;
+            for (const auto& prefix : rtPrefixes) {
+                if (uidStr.find(prefix) == 0) {
+                    isRT = true;
+                    break;
+                }
+            }
+            if (isRT) {
+                continue; // 确认为放疗文件，跳过
+            }
+        }
+
+        // 通过所有检查，加入列表
+        dicomFiles.push_back(fullPath.toStdString());
     }
 
     return dicomFiles;

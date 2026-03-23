@@ -3,11 +3,14 @@
 #include "Interface/IViewController.h"
 #include "Common/InteractionMode.h"
 #include "Common/ViewTypes.h"
+#include "Dicom/ContourData.h"   // 新增
+#include "Utils/RtStructReader.h"
 
 #include <QObject>
 #include <array>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
@@ -40,6 +43,7 @@ public:
 
     void SetRenderers(std::array<IViewRenderer*, 3> renderers);
     void SetImageData(vtkImageData* image);
+    void LoadContourData(std::vector<RtRoi> rois);
 
     // ----------------------------------------------------------------
     //  IViewController 接口

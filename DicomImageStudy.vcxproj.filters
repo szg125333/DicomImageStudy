@@ -148,6 +148,12 @@
     <ClCompile Include="Renderer\OverlayManager\RulerLineManager\SimpleRulerLineManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\OverlayManager\ContourOverlayManager\SimpleContourOverlayManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\RtStructReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\InteractionMode.h">
@@ -301,6 +307,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Utils\ViewportUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dicom\ContourData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\OverlayManager\ContourOverlayManager\SimpleContourOverlayManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\RtStructReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

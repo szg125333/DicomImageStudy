@@ -6,10 +6,12 @@
 #include <QVBoxLayout>
 #include <QSizePolicy>
 #include <QSplitter>
+#include <QDebug>
 
 #include "Renderer/VtkViewRenderer.h"        // 你的 VTK 后端实现
 #include "Controller/ThreeViewController.h"    // 控制器实现
 #include "Interface/IViewRenderer.h"
+#include "Utils/RtStructReader.h"
 
 #include <vtkImageData.h>
 
@@ -116,6 +118,23 @@ void ThreeViewWidget::SetImageData(vtkImageData* image)
 {
 	if (!m_controller) return;
 	m_controller->SetImageData(image);
+
+	// 1. 查找 RS 文件
+	//std::string rsPath = RtStructReader::FindRsFile(path);
+	std::string rsPath = "C:\\Workspace\\testData\\FZJ\\RS.FZJ.CT_1.dcm";
+	//std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+
+	if (!rsPath.empty()) {
+		 //2. 读取轮廓数据
+		RtStructReader reader;
+		auto rois = reader.Read(rsPath);
+
+		// 3. 传给 Controller（分发到三视图）
+		if (!rois.empty()) {
+			m_controller->LoadContourData(rois);
+			qDebug() << "Loaded" << rois.size() << "ROIs from RS file.";
+		}
+	}
 }
 
 void ThreeViewWidget::RequestSetSlice(ViewType view, int slice)
