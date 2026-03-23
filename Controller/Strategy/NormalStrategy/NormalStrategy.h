@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IInteractionStrategy.h"
+#include "../IInteractionStrategy.h"
 #include <array>
 
 /**

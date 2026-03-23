@@ -37,31 +37,25 @@
     <ClCompile Include="App\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\AngleMeasureStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\AngleMeasureStrategy\AngleMeasureStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\CheckboardStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\CheckboardStrategy\CheckboardStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\ContourMeasureStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\ContourMeasureStrategy\ContourMeasureStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\DistanceMeasureStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\DistanceMeasureStrategy\DistanceMeasureStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\HandIrregularContourStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\NormalStrategy\NormalStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\ManualMoveStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\RegistrationROIStrategy\RegistrationROIStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\NormalStrategy.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Controller\Strategy\RegistrationROIStrategy.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Controller\Strategy\WindowLevelStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\WindowLevelStrategy\WindowLevelStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Controller\ThreeViewController.cpp">
@@ -139,16 +133,16 @@
     <ClCompile Include="Renderer\OverlayManager\ROIManager\RoiLabel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\FreehandROIStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\FreehandROIStrategy\FreehandROIStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\OverlayManager\FreehandROIManager\SimpleFreehandROIManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\ImageDragStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\ImageDragStrategy\ImageDragStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Controller\Strategy\RulerLineStrategy.cpp">
+    <ClCompile Include="Controller\Strategy\RulerLineStrategy\RulerLineStrategy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\OverlayManager\RulerLineManager\SimpleRulerLineManager.cpp">
@@ -162,34 +156,28 @@
     <ClInclude Include="Common\ViewTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\AngleMeasureStrategy.h">
+    <ClInclude Include="Controller\Strategy\AngleMeasureStrategy\AngleMeasureStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\CheckboardStrategy.h">
+    <ClInclude Include="Controller\Strategy\CheckboardStrategy\CheckboardStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\ContourMeasureStrategy.h">
+    <ClInclude Include="Controller\Strategy\ContourMeasureStrategy\ContourMeasureStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\DistanceMeasureStrategy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Controller\Strategy\HandIrregularContourStrategy.h">
+    <ClInclude Include="Controller\Strategy\DistanceMeasureStrategy\DistanceMeasureStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Controller\Strategy\IInteractionStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\ManualMoveStrategy.h">
+    <ClInclude Include="Controller\Strategy\NormalStrategy\NormalStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\NormalStrategy.h">
+    <ClInclude Include="Controller\Strategy\RegistrationROIStrategy\RegistrationROIStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\RegistrationROIStrategy.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Controller\Strategy\WindowLevelStrategy.h">
+    <ClInclude Include="Controller\Strategy\WindowLevelStrategy\WindowLevelStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Interface\IViewController.h">
@@ -294,7 +282,7 @@
     <ClInclude Include="Renderer\OverlayManager\ROIManager\RoiLabel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\FreehandROIStrategy.h">
+    <ClInclude Include="Controller\Strategy\FreehandROIStrategy\FreehandROIStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\OverlayManager\FreehandROIManager\FreehandStats.h">
@@ -303,10 +291,10 @@
     <ClInclude Include="Renderer\OverlayManager\FreehandROIManager\SimpleFreehandROIManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\ImageDragStrategy.h">
+    <ClInclude Include="Controller\Strategy\ImageDragStrategy\ImageDragStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Controller\Strategy\RulerLineStrategy.h">
+    <ClInclude Include="Controller\Strategy\RulerLineStrategy\RulerLineStrategy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\OverlayManager\RulerLineManager\SimpleRulerLineManager.h">

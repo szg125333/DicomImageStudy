@@ -1,5 +1,5 @@
 #pragma once
-#include "IInteractionStrategy.h"
+#include "../IInteractionStrategy.h"
 
 class IViewController;
 

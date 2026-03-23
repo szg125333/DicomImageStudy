@@ -4,7 +4,7 @@
 #include "Renderer/OverlayManager/OverlayFactory.h"
 #include "Controller/Strategy/InteractionStrategyFactory.h"
 #include "Controller/Strategy/IInteractionStrategy.h"
-#include "Controller/Strategy/ImageDragStrategy.h"
+#include "Controller/Strategy/ImageDragStrategy/ImageDragStrategy.h"
 
 #include <vtkImageData.h>
 #include <vtkRenderer.h>

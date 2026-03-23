@@ -1,4 +1,4 @@
-﻿#include "Controller/Strategy/NormalStrategy.h"
+﻿#include "Controller/Strategy/NormalStrategy/NormalStrategy.h"
 #include "Interface/IViewController.h"
 #include "Interface/IViewRenderer.h"
 #include "Renderer/OverlayManager/IOverlayManager.h"

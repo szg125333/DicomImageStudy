@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "AbstractMeasureStrategy.h"
+#include "../AbstractMeasureStrategy.h"
 #include "Common/ViewTypes.h"
 #include "Renderer/OverlayManager/ROIManager/SimpleROIManager.h"
 
