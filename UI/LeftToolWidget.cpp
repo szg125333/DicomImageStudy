@@ -33,8 +33,8 @@ void LeftToolWidget::InitDicomInfoTab()
     m_dicomTable = new QTableWidget(ui->tab);
     m_dicomTable->setColumnCount(2);
     m_dicomTable->setHorizontalHeaderLabels({
-        tr("属性"),
-        tr("值")
+        tr("key"),
+        tr("value")
         });
     m_dicomTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_dicomTable->setSelectionMode(QAbstractItemView::NoSelection);
@@ -66,8 +66,8 @@ void LeftToolWidget::SetDicomMetadata(const QMap<QString, QString>& metadata)
     m_dicomTable->clearContents();
     m_dicomTable->setRowCount(metadata.size());
     m_dicomTable->setHorizontalHeaderLabels({
-        tr("属性"),
-        tr("值")
+        tr("key"),
+        tr("value")
         });
 
     int row = 0;

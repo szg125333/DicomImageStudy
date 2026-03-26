@@ -153,6 +153,7 @@
     <ClCompile Include="UI\StartWidget.cpp" />
     <ClCompile Include="UI\ThreeViewWidget.cpp" />
     <ClCompile Include="UI\TitleBarWidget.cpp" />
+    <ClCompile Include="Utils\DicomLoader.cpp" />
     <ClCompile Include="Utils\ImageOrientationResampler.cpp" />
     <ClCompile Include="Utils\MyInteractorStyle.cpp" />
     <ClCompile Include="Utils\RtStructReader.cpp" />
@@ -215,9 +216,11 @@
     <QtMoc Include="UI\StartWidget.h" />
     <QtMoc Include="UI\TitleBarWidget.h" />
     <QtMoc Include="UI\LeftToolWidget.h" />
+    <ClInclude Include="Utils\DicomLoader.h" />
     <ClInclude Include="Utils\ImageOrientationResampler.h" />
     <ClInclude Include="Utils\MyInteractorStyle.h" />
     <ClInclude Include="Utils\RtStructReader.h" />
+    <ClInclude Include="Utils\Rtstructuredata.h" />
     <ClInclude Include="Utils\ViewportUtils.h" />
     <ClInclude Include="Viewer\CTViewer.h" />
   </ItemGroup>

@@ -12,6 +12,7 @@
 #include "UI/TitleBarWidget.h"
 #include "UI/LeftToolWidget.h"
 #include "Dicom/DicomMetadataExtractor.h"
+#include "Utils/DicomLoader.h"
 
 int main(int argc, char* argv[])
 {
@@ -23,17 +24,32 @@ int main(int argc, char* argv[])
 	VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, wlog.c_str());
 
 	//QString path = "C:\\Workspace\\testData\\PositionTest\\HFS\\CT";
-	QString path = "C:\\Workspace\\testData\\FZJ";
+	//QString path = "C:\\Workspace\\testData\\FZJ";
+	QString path = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT";
+
+	DicomLoader loader;
+	auto vtkImage = loader.Load(path.toStdString());
 
 	ImageOrientationResampler resampler;
 	std::vector<std::string> dicomFiles = resampler.loadDicomSeries(path);
 	dicomFiles = resampler.SortDicomFiles(dicomFiles);
 	auto cbctImage = resampler.ReadDicomSeries(dicomFiles);    // 读取 CBCT 序列
 
+	double  origin1[3];
+	origin1[0] = cbctImage->GetOrigin()[0];
+	origin1[1] = cbctImage->GetOrigin()[1];
+	origin1[2] = cbctImage->GetOrigin()[2];
+
+
 	using ITKToVTKFilterType = itk::ImageToVTKImageFilter<itk::Image<short, 3>>;
 	auto itkToVtk = ITKToVTKFilterType::New();
 	itkToVtk->SetInput(cbctImage);
 	itkToVtk->Update();
+
+	double  origin2[3];
+	origin2[0] = itkToVtk->GetOutput()->GetOrigin()[0];
+	origin2[1] = itkToVtk->GetOutput()->GetOrigin()[1];
+	origin2[2] = itkToVtk->GetOutput()->GetOrigin()[2];
 
 	StartWidget startWidget;
 
@@ -42,7 +58,8 @@ int main(int argc, char* argv[])
 	TitleBarWidget* titleBarWidget = new TitleBarWidget(&startWidget);
 	LeftToolWidget* leftToolWidget = new LeftToolWidget(&startWidget);
 
-	threeViewWidget->SetImageData(itkToVtk->GetOutput());
+	threeViewWidget->SetImageData(vtkImage);
+	//threeViewWidget->SetImageData(itkToVtk->GetOutput());
 
 	// === 使用 QSplitter 实现可拖拽分栏 ===
 	QSplitter* centralSplitter = new QSplitter(Qt::Horizontal, &startWidget);

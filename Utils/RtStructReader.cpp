@@ -1,221 +1,215 @@
 #include "RtStructReader.h"
 
-// ── DCMTK 头文件 ──────────────────────────────────────────────
-#include <dcmtk/config/osconfig.h>
-#include <dcmtk/dcmdata/dctk.h>          // DcmFileFormat, DcmDataset, DcmSequenceOfItems...
-#include <dcmtk/dcmdata/dcuid.h>         // UID_RTStructureSetStorage
-#include <dcmtk/ofstd/ofstring.h>        // OFString
+#include <gdcmReader.h>
+#include <gdcmDataSet.h>
+#include <gdcmSequenceOfItems.h>
+#include <gdcmAttribute.h>
+#include <gdcmSmartPointer.h>
+#include <gdcmMediaStorage.h>
 
+#include <iostream>
 #include <sstream>
-#include <QDebug>
 
 // ============================================================
-//  颜色解析："255\\0\\0" → {1.0, 0.0, 0.0}
+//  辅助：从字符串 "r\\g\\b" 解析 RGB 颜色（0~255 → 0~1）
 // ============================================================
-
-std::array<double, 3> RtStructReader::ParseColor(const std::string& s)
-{
-    std::array<double, 3> c = { 1.0, 0.0, 0.0 };
-    if (s.empty()) return c;
-    std::istringstream ss(s);
-    std::string t; int i = 0;
-    while (std::getline(ss, t, '\\') && i < 3) {
-        while (!t.empty() && (t.front() == ' ' || t.front() == '\0')) t.erase(t.begin());
-        while (!t.empty() && (t.back() == ' ' || t.back() == '\0')) t.pop_back();
-        try { c[i++] = std::stod(t) / 255.0; }
+static std::array<double, 3> ParseColor(const std::string& colorStr) {
+    std::array<double, 3> color = { 1.0, 0.0, 0.0 }; // 默认红色
+    std::istringstream iss(colorStr);
+    std::string token;
+    int idx = 0;
+    while (std::getline(iss, token, '\\') && idx < 3) {
+        try {
+            color[idx] = std::stod(token) / 255.0;
+        }
         catch (...) {}
+        idx++;
     }
-    return c;
+    return color;
 }
 
-// ============================================================
-//  轮廓点解析："x1\\y1\\z1\\x2\\y2\\z2\\..."
-// ============================================================
-
-std::vector<std::array<double, 3>> RtStructReader::ParseContourData(
-    const std::string& s)
+std::shared_ptr<RTStructureData> RtStructReader::Read(const std::string& filename)
 {
-    std::vector<std::array<double, 3>> pts;
-    if (s.empty()) return pts;
-    std::istringstream ss(s);
-    std::string t;
-    std::vector<double> vals;
-    while (std::getline(ss, t, '\\')) {
-        while (!t.empty() && (t.front() == ' ' || t.front() == '\0')) t.erase(t.begin());
-        while (!t.empty() && (t.back() == ' ' || t.back() == '\0')) t.pop_back();
-        if (t.empty()) continue;
-        try { vals.push_back(std::stod(t)); }
-        catch (...) {}
-    }
-    for (size_t i = 0; i + 2 < vals.size(); i += 3)
-        pts.push_back({ vals[i], vals[i + 1], vals[i + 2] });
-    return pts;
-}
-
-// ============================================================
-//  主读取函数
-//
-//  DCMTK Tag 常量对照：
-//    DCM_StructureSetROISequence      = (3006,0020)
-//    DCM_ROINumber                    = (3006,0022)
-//    DCM_ROIName                      = (3006,0026)
-//    DCM_ROIContourSequence           = (3006,0039)
-//    DCM_ReferencedROINumber          = (3006,0084)
-//    DCM_ROIDisplayColor              = (3006,002A)
-//    DCM_ContourSequence              = (3006,0040)
-//    DCM_ContourData                  = (3006,0050)
-// ============================================================
-
-std::vector<RtRoi> RtStructReader::Read(const std::string& filePath)
-{
-    std::vector<RtRoi> result;
-
-    // ── 1. 加载文件 ───────────────────────────────────────────
-    DcmFileFormat ff;
-    OFCondition status = ff.loadFile(filePath.c_str());
-    if (status.bad()) {
-        qWarning() << "[RtStructReader] DCMTK 无法加载文件："
-            << QString::fromStdString(filePath)
-            << status.text();
-        return result;
+    // 1. 读取 DICOM 文件
+    gdcm::Reader reader;
+    reader.SetFileName(filename.c_str());
+    if (!reader.Read()) {
+        std::cerr << "[RtStructReader] Failed to read file: " << filename << std::endl;
+        return nullptr;
     }
 
-    DcmDataset* ds = ff.getDataset();
-    if (!ds) {
-        qWarning() << "[RtStructReader] DcmDataset 为空";
-        return result;
+    const gdcm::DataSet& ds = reader.GetFile().GetDataSet();
+
+    // 2. 验证必要的 Sequence 是否存在
+    // (3006,0020) Structure Set ROI Sequence
+    gdcm::Tag tagSSROISeq(0x3006, 0x0020);
+    // (3006,0039) ROI Contour Sequence
+    gdcm::Tag tagROIContourSeq(0x3006, 0x0039);
+
+    if (!ds.FindDataElement(tagSSROISeq)) {
+        std::cerr << "[RtStructReader] Missing (3006,0020) Structure Set ROI Sequence" << std::endl;
+        return nullptr;
+    }
+    if (!ds.FindDataElement(tagROIContourSeq)) {
+        std::cerr << "[RtStructReader] Missing (3006,0039) ROI Contour Sequence" << std::endl;
+        return nullptr;
     }
 
-    // 打印 Modality 做验证
-    OFString modality;
-    if (ds->findAndGetOFString(DCM_Modality, modality).good()) {
-        qDebug() << "[RtStructReader] Modality =" << modality.c_str();
+    auto result = std::make_shared<RTStructureData>();
+
+    // 读取全局标签
+    if (ds.FindDataElement(gdcm::Tag(0x3006, 0x0002))) {
+        gdcm::Attribute<0x3006, 0x02> label;
+        label.SetFromDataSet(ds);
+        result->label = label.GetValue();
+    }
+    if (ds.FindDataElement(gdcm::Tag(0x3006, 0x0004))) {
+        gdcm::Attribute<0x3006, 0x04> atname;
+        atname.SetFromDataSet(ds);
+        result->name = atname.GetValue();
     }
 
-    // ── 2. Structure Set ROI Sequence (3006,0020) ─────────────
-    std::map<int, RtRoi> roiMap;
-
-    DcmSequenceOfItems* roiSeq = nullptr;
-    if (ds->findAndGetSequence(DCM_StructureSetROISequence, roiSeq).bad()
-        || !roiSeq) {
-        qWarning() << "[RtStructReader] 未找到 StructureSetROISequence (3006,0020)";
-        return result;
+    // ============================================================
+    //  3. 解析 Structure Set ROI Sequence → ROI 名称和编号
+    // ============================================================
+    const gdcm::DataElement& ssroiDE = ds.GetDataElement(tagSSROISeq);
+    gdcm::SmartPointer<gdcm::SequenceOfItems> ssroiSQ = ssroiDE.GetValueAsSQ();
+    if (!ssroiSQ || ssroiSQ->GetNumberOfItems() == 0) {
+        std::cerr << "[RtStructReader] Empty Structure Set ROI Sequence" << std::endl;
+        return nullptr;
     }
 
-    qDebug() << "[RtStructReader] ROI Sequence 条目数：" << roiSeq->card();
+    // 建立 ROI Number → ROI Name 映射
+    for (unsigned int i = 0; i < ssroiSQ->GetNumberOfItems(); ++i) {
+        const gdcm::Item& item = ssroiSQ->GetItem(i + 1); // GDCM Item 从 1 开始
+        const gdcm::DataSet& nestedDS = item.GetNestedDataSet();
 
-    for (unsigned long i = 0; i < roiSeq->card(); ++i) {
-        DcmItem* item = roiSeq->getItem(i);
-        if (!item) continue;
+        // ROI Number (3006,0022)
+        gdcm::Attribute<0x3006, 0x0022> roiNumAttr;
+        roiNumAttr.SetFromDataSet(nestedDS);
+        int roiNum = roiNumAttr.GetValue();
 
-        OFString numStr, nameStr;
-        item->findAndGetOFString(DCM_ROINumber, numStr);
-        item->findAndGetOFString(DCM_ROIName, nameStr);
+        // ROI Name (3006,0026)
+        gdcm::Attribute<0x3006, 0x0026> roiNameAttr;
+        roiNameAttr.SetFromDataSet(nestedDS);
+        std::string roiName = roiNameAttr.GetValue();
 
-        qDebug() << "  ROI" << i
-            << "Number='" << numStr.c_str()
-            << "' Name='" << nameStr.c_str() << "'";
-
-        int roiNum = -1;
-        try { roiNum = std::stoi(numStr.c_str()); }
-        catch (...) { qWarning() << "  ROI Number 解析失败"; continue; }
-
-        RtRoi roi;
+        RTStructureROI roi;
         roi.roiNumber = roiNum;
-        roi.roiName = nameStr.c_str();
-        roiMap[roiNum] = roi;
+        roi.name = roiName;
+        result->rois[roiNum] = roi;
     }
 
-    qDebug() << "[RtStructReader] 解析到" << roiMap.size() << "个 ROI 定义";
-
-    // ── 3. ROI Contour Sequence (3006,0039) ───────────────────
-    DcmSequenceOfItems* rcSeq = nullptr;
-    if (ds->findAndGetSequence(DCM_ROIContourSequence, rcSeq).bad()
-        || !rcSeq) {
-        qWarning() << "[RtStructReader] 未找到 ROIContourSequence (3006,0039)";
-        return result;
+    // ============================================================
+    //  4. 解析 ROI Contour Sequence → 轮廓数据和颜色
+    // ============================================================
+    const gdcm::DataElement& roiContourDE = ds.GetDataElement(tagROIContourSeq);
+    gdcm::SmartPointer<gdcm::SequenceOfItems> roiContourSQ = roiContourDE.GetValueAsSQ();
+    if (!roiContourSQ || roiContourSQ->GetNumberOfItems() == 0) {
+        std::cerr << "[RtStructReader] Empty ROI Contour Sequence" << std::endl;
+        return result; // 有 ROI 信息但没有轮廓也可以返回
     }
 
-    qDebug() << "[RtStructReader] ROI Contour Sequence 条目数：" << rcSeq->card();
-
-    for (unsigned long i = 0; i < rcSeq->card(); ++i) {
-        DcmItem* rcItem = rcSeq->getItem(i);
-        if (!rcItem) continue;
+    for (unsigned int i = 0; i < roiContourSQ->GetNumberOfItems(); ++i) {
+        const gdcm::Item& item = roiContourSQ->GetItem(i + 1);
+        const gdcm::DataSet& nestedDS = item.GetNestedDataSet();
 
         // Referenced ROI Number (3006,0084)
-        OFString refNumStr;
-        rcItem->findAndGetOFString(DCM_ReferencedROINumber, refNumStr);
+        gdcm::Attribute<0x3006, 0x0084> refROINum;
+        refROINum.SetFromDataSet(nestedDS);
+        int roiNum = refROINum.GetValue();
 
-        int refNum = -1;
-        try { refNum = std::stoi(refNumStr.c_str()); }
-        catch (...) { qWarning() << "  RefROINumber 解析失败"; continue; }
-
-        auto it = roiMap.find(refNum);
-        if (it == roiMap.end()) {
-            qWarning() << "  未找到对应 ROI =" << refNum;
+        // 确保该 ROI 在 map 中
+        if (result->rois.find(roiNum) == result->rois.end()) {
             continue;
         }
 
-        // ROI Display Color (3006,002A)
-        OFString colorStr;
-        if (rcItem->findAndGetOFString(DCM_ROIDisplayColor, colorStr).good()) {
-            it->second.color = ParseColor(colorStr.c_str());
+        RTStructureROI& roi = result->rois[roiNum];
+
+        // ROI Display Color (3006,002A) — 可选
+        gdcm::Tag tagColor(0x3006, 0x002A);
+        if (nestedDS.FindDataElement(tagColor)) {
+            const gdcm::DataElement& colorDE = nestedDS.GetDataElement(tagColor);
+            if (colorDE.GetByteValue()) {
+                std::string colorStr(colorDE.GetByteValue()->GetPointer(),
+                    colorDE.GetByteValue()->GetLength());
+                roi.color = ParseColor(colorStr);
+            }
         }
 
-        // Contour Sequence (3006,0040)
-        DcmSequenceOfItems* cSeq = nullptr;
-        if (rcItem->findAndGetSequence(DCM_ContourSequence, cSeq).bad()
-            || !cSeq) {
-            qWarning() << "  ROI" << refNum << "无 ContourSequence";
+        // Contour Sequence (3006,0040) — 包含各切片的轮廓
+        gdcm::Tag tagContourSeq(0x3006, 0x0040);
+        if (!nestedDS.FindDataElement(tagContourSeq)) {
+            continue; // 该 ROI 没有轮廓数据
+        }
+
+        const gdcm::DataElement& contourSeqDE = nestedDS.GetDataElement(tagContourSeq);
+        gdcm::SmartPointer<gdcm::SequenceOfItems> contourSQ = contourSeqDE.GetValueAsSQ();
+        if (!contourSQ || contourSQ->GetNumberOfItems() == 0) {
             continue;
         }
 
-        qDebug() << "  ROI" << refNum << "轮廓条目：" << cSeq->card();
+        // 遍历每一条轮廓
+        for (unsigned int c = 0; c < contourSQ->GetNumberOfItems(); ++c) {
+            const gdcm::Item& contourItem = contourSQ->GetItem(c + 1);
+            const gdcm::DataSet& contourDS = contourItem.GetNestedDataSet();
 
-        for (unsigned long j = 0; j < cSeq->card(); ++j) {
-            DcmItem* cItem = cSeq->getItem(j);
-            if (!cItem) continue;
-
-            // Contour Data (3006,0050)
-            // 注意：ContourData 是 DS 类型，可能有多个值
-            // 用 findAndGetOFStringArray 一次读取所有值拼成字符串
-            OFString dataStr;
-            DcmElement* dataElem = nullptr;
-            if (cItem->findAndGetElement(DCM_ContourData, dataElem).bad()
-                || !dataElem) {
-                qWarning() << "    轮廓" << j << "无 ContourData";
-                continue;
+            // Contour Geometric Type (3006,0042)
+            gdcm::Tag tagGeomType(0x3006, 0x0042);
+            if (contourDS.FindDataElement(tagGeomType)) {
+                const gdcm::DataElement& geomDE = contourDS.GetDataElement(tagGeomType);
+                if (geomDE.GetByteValue()) {
+                    std::string geomType(geomDE.GetByteValue()->GetPointer(),
+                        geomDE.GetByteValue()->GetLength());
+                    // 去掉末尾空格
+                    while (!geomType.empty() && geomType.back() == ' ')
+                        geomType.pop_back();
+                    // 只处理 CLOSED_PLANAR
+                    if (geomType != "CLOSED_PLANAR") {
+                        continue;
+                    }
+                }
             }
 
-            // DS 类型：用 getOFStringArray 读取所有值（DCMTK 用 '\\' 连接）
-            dataElem->getOFStringArray(dataStr);
-            if (dataStr.empty()) {
-                qWarning() << "    轮廓" << j << "ContourData 为空";
-                continue;
+            // Number of Contour Points (3006,0046)
+            gdcm::Attribute<0x3006, 0x0046> numPtsAttr;
+            numPtsAttr.SetFromDataSet(contourDS);
+            int numPts = numPtsAttr.GetValue();
+
+            if (numPts <= 0) continue;
+
+            // Contour Data (3006,0050) — 核心坐标数据
+            gdcm::Tag tagContourData(0x3006, 0x0050);
+            if (!contourDS.FindDataElement(tagContourData)) continue;
+
+            const gdcm::DataElement& contourDataDE = contourDS.GetDataElement(tagContourData);
+            gdcm::Attribute<0x3006, 0x0050> contourDataAttr;
+            contourDataAttr.SetFromDataElement(contourDataDE);
+            const double* values = contourDataAttr.GetValues();
+            unsigned int numValues = contourDataAttr.GetNumberOfValues();
+
+            if (numValues < static_cast<unsigned int>(numPts) * 3) continue;
+
+            RTContour contour;
+            contour.points.resize(numPts);
+
+            for (int p = 0; p < numPts; ++p) {
+                contour.points[p][0] = values[p * 3 + 0]; // X
+                contour.points[p][1] = values[p * 3 + 1]; // Y
+                contour.points[p][2] = values[p * 3 + 2]; // Z
             }
 
-            auto pts = ParseContourData(dataStr.c_str());
-            if (pts.empty()) continue;
+            // Z 坐标取第一个点的 Z
+            if (numPts > 0) {
+                contour.z = contour.points[0][2];
+            }
 
-            RtContour contour;
-            contour.points = std::move(pts);
-            contour.sliceZ = contour.points.front()[2];
-            it->second.contours.push_back(std::move(contour));
+            roi.contours.push_back(std::move(contour));
         }
-    }
 
-    // ── 4. 过滤空 ROI，输出结果 ──────────────────────────────
-    for (auto& [num, roi] : roiMap) {
-        if (!roi.contours.empty())
-            result.push_back(std::move(roi));
-    }
-
-    qDebug() << "[RtStructReader] ===== 读取完成 =====";
-    qDebug() << "[RtStructReader] 有效 ROI 数：" << result.size();
-    for (const auto& roi : result) {
-        qDebug() << "  ROI" << roi.roiNumber
-            << QString::fromStdString(roi.roiName)
-            << "轮廓数：" << roi.contours.size();
+        std::cout << "[RtStructReader] ROI \"" << roi.name
+            << "\" (num=" << roiNum << "): "
+            << roi.contours.size() << " contours loaded" << std::endl;
     }
 
     return result;

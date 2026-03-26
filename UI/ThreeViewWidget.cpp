@@ -121,20 +121,9 @@ void ThreeViewWidget::SetImageData(vtkImageData* image)
 
 	// 1. 查找 RS 文件
 	//std::string rsPath = RtStructReader::FindRsFile(path);
-	std::string rsPath = "C:\\Workspace\\testData\\FZJ\\RS.FZJ.CT_1.dcm";
-	//std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
-
-	if (!rsPath.empty()) {
-		 //2. 读取轮廓数据
-		RtStructReader reader;
-		auto rois = reader.Read(rsPath);
-
-		// 3. 传给 Controller（分发到三视图）
-		if (!rois.empty()) {
-			m_controller->LoadContourData(rois);
-			qDebug() << "Loaded" << rois.size() << "ROIs from RS file.";
-		}
-	}
+	//std::string rsPath = "C:\\Workspace\\testData\\FZJ\\RS.FZJ.CT_1.dcm";
+	std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+	m_controller->LoadRtStruct(rsPath);
 }
 
 void ThreeViewWidget::RequestSetSlice(ViewType view, int slice)

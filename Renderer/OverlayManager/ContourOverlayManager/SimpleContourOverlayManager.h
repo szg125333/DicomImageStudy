@@ -1,79 +1,70 @@
 #pragma once
 
 #include "Renderer/OverlayManager/IOverlayFeature.h"
-#include "Utils/RtStructReader.h"
+#include "Utils/RTStructureData.h"
+#include "Common/ViewTypes.h"
+
+#include <vtkSmartPointer.h>
+#include <vtkActor.h>
+#include <vtkRenderer.h>
 
 #include <vector>
-#include <vtkSmartPointer.h>
+#include <map>
+#include <memory>
 
-class vtkRenderer;
 class vtkImageViewer2;
-class vtkActor;
 
-/**
- * @brief RT Structure 轮廓叠加显示 Feature
- *
- * 功能：
- *   - 接收 RtStructReader 读取的 ROI 数据
- *   - 预先为每条轮廓创建 vtkActor（初始隐藏）
- *   - 切片切换时：隐藏所有轮廓，只显示 Z 坐标与当前切片匹配的轮廓
- *   - 颜色来自 RT-S 文件的 ROI Display Color（3006|002A）
- *
- * 注意：
- *   RT-S 坐标系为 LPS（mm）。如果 CT 图像经过 vtkImageReslice 重采样，
- *   坐标已对齐，直接使用世界坐标即可。
- *   若未重采样，需要在 GetSliceWorldZ 中做坐标变换（本实现假设已对齐）。
- */
+/// @brief RT Structure 轮廓叠加显示管理器
+///
+/// 三个视图统一用几何切割方式：
+/// - Axial：匹配 Z 坐标，直接用原始轮廓点画闭合折线
+/// - Sagittal/Coronal：用切割平面与每条轮廓多边形求交，
+///   每条轮廓产生若干交点，同一层的交点按排序后两两配对画短线段，
+///   层与层之间不连接，彻底避免飞线
 class SimpleContourOverlayManager : public IOverlayFeature {
 public:
     SimpleContourOverlayManager();
     ~SimpleContourOverlayManager() override;
 
-    void Initialize(vtkRenderer* overlayRenderer)   override;
-    void SetVisible(bool visible)                   override;
-    void SetColor(double r, double g, double b)     override;
-    void Shutdown()                                 override;
-    void OnSliceChanged(vtkImageViewer2* viewer,
-        int slice,
-        ViewType viewType)           override;
+    void Initialize(vtkRenderer* overlayRenderer) override;
+    void SetVisible(bool visible) override;
+    void SetColor(double r, double g, double b) override;
+    void Shutdown() override;
+    void OnSliceChanged(vtkImageViewer2* viewer, int slice, ViewType viewType) override;
 
-    /// @brief 设置 ROI 数据，预先创建所有 Actor
-    void SetRois(const std::vector<RtRoi>& rois);
-
-    /// @brief 清除所有数据和 Actor
-    void ClearAll();
-
-    /// @brief 设置切片 Z 匹配公差（mm，默认 0.5）
-    void SetSliceMatchTolerance(double mm) { m_tolerance = mm; }
-
-    bool HasData() const { return !m_rois.empty(); }
+    void SetRTStructureData(std::shared_ptr<RTStructureData> data);
+    void SetROIVisible(int roiNumber, bool visible);
+    void ClearAllContours();
 
 private:
-    struct ContourRecord {
-        vtkSmartPointer<vtkActor> actor;
-        double   sliceZ = 0.0;
-        ViewType viewType = ViewType::None;
-    };
+    /// Axial：原始点画闭合折线
+    void updateAxialContours(double sliceZ, double tolerance);
 
-    void BuildActors();
-    void RemoveAllActors();
-    void UpdateVisibleContours(double sliceZ, ViewType viewType);
+    /// Sagittal/Coronal：切割每条轮廓多边形，每层独立画线段
+    void updateNonAxialContours(int cutAxis, double slicePos, double tolerance);
 
-    vtkSmartPointer<vtkActor> CreateContourActor(
-        const std::vector<std::array<double, 3>>& pts,
-        const std::array<double, 3>& color,
-        double fixedZ
-        /*int    fixedAxisIndex*/);   // 0=X(Sagittal) 1=Y(Coronal) 2=Z(Axial)
+    /// 计算闭合多边形与平面 axis=slicePos 的交点
+    void computeIntersections(const RTContour& contour, int axis, double slicePos,
+        std::vector<std::array<double, 3>>& outPoints);
 
-    double GetSliceWorldZ(vtkImageViewer2* viewer,
-        int slice, ViewType viewType) const;
+    /// 创建闭合/开放折线 Actor
+    vtkSmartPointer<vtkActor> createLineActor(
+        const std::vector<std::array<double, 3>>& points,
+        const std::array<double, 3>& color, bool closed);
 
-    vtkRenderer* m_overlayRenderer = nullptr;
-    bool         m_initialized = false;
-    bool         m_visible = true;
+    /// 创建一条线段 Actor（两个点）
+    vtkSmartPointer<vtkActor> createSegmentActor(
+        const std::array<double, 3>& p1, const std::array<double, 3>& p2,
+        const std::array<double, 3>& color);
 
-    std::vector<RtRoi>          m_rois;
-    std::vector<ContourRecord>  m_records;
+    void removeAllActors();
 
-    double m_tolerance = 0.5;
+    vtkSmartPointer<vtkRenderer> m_overlayRenderer;
+    bool m_initialized = false;
+    bool m_visible = true;
+
+    std::shared_ptr<RTStructureData> m_rtData;
+    std::map<int, bool> m_roiVisibility;
+
+    std::vector<vtkSmartPointer<vtkActor>> m_currentActors;
 };

@@ -1,156 +1,261 @@
 #include "SimpleContourOverlayManager.h"
 
-#include <vtkRenderer.h>
-#include <vtkImageViewer2.h>
-#include <vtkImageData.h>
-#include <vtkActor.h>
 #include <vtkPolyData.h>
-#include <vtkPolyDataMapper.h>
 #include <vtkPoints.h>
 #include <vtkCellArray.h>
-#include <vtkPolyLine.h>
+#include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
-#include <vtkNew.h>
+#include <vtkImageViewer2.h>
+#include <vtkImageData.h>
 
 #include <cmath>
-#include <limits>
-#include <QDebug>
+#include <algorithm>
 
 SimpleContourOverlayManager::SimpleContourOverlayManager() = default;
 SimpleContourOverlayManager::~SimpleContourOverlayManager() { Shutdown(); }
 
-void SimpleContourOverlayManager::Initialize(vtkRenderer* renderer)
-{
-    if (m_initialized || !renderer) return;
-    m_overlayRenderer = renderer;
+void SimpleContourOverlayManager::Initialize(vtkRenderer* r) {
+    if (m_initialized || !r) return;
+    m_overlayRenderer = r;
     m_initialized = true;
-    if (!m_rois.empty() && m_records.empty()) BuildActors();
 }
 
-void SimpleContourOverlayManager::Shutdown()
-{
-    if (!m_initialized) return;
-    RemoveAllActors();
-    m_rois.clear();
-    m_overlayRenderer = nullptr;
-    m_initialized = false;
-}
-
-void SimpleContourOverlayManager::SetVisible(bool visible)
-{
-    m_visible = visible;
-    for (auto& rec : m_records)
-        if (rec.actor) rec.actor->SetVisibility(false);
+void SimpleContourOverlayManager::SetVisible(bool v) {
+    m_visible = v;
+    for (auto& a : m_currentActors) if (a) a->SetVisibility(v ? 1 : 0);
 }
 
 void SimpleContourOverlayManager::SetColor(double, double, double) {}
 
-void SimpleContourOverlayManager::OnSliceChanged(vtkImageViewer2* viewer,
-    int slice, ViewType viewType)
-{
-    if (!m_initialized || m_records.empty()) return;
-    if (!viewer || !viewer->GetInput()) return;
-
-    double sliceZ = GetSliceWorldZ(viewer, slice, viewType);
-    UpdateVisibleContours(sliceZ, viewType);
+void SimpleContourOverlayManager::Shutdown() {
+    if (!m_initialized) return;
+    removeAllActors();
+    m_overlayRenderer = nullptr;
+    m_initialized = false;
 }
 
-void SimpleContourOverlayManager::SetRois(const std::vector<RtRoi>& rois)
+void SimpleContourOverlayManager::OnSliceChanged(
+    vtkImageViewer2* viewer, int slice, ViewType viewType)
 {
-    RemoveAllActors();
-    m_rois = rois;
-    m_records.clear();
-    if (m_initialized) BuildActors();
+    if (!m_initialized || !viewer || !m_rtData || !m_visible) return;
+
+    auto* v = const_cast<vtkImageViewer2*>(viewer);
+    vtkImageData* image = v->GetInput();
+    if (!image) return;
+
+    removeAllActors();
+
+    double spacing[3], origin[3];
+    image->GetSpacing(spacing);
+    image->GetOrigin(origin);
+
+    switch (viewType) {
+    case ViewType::Axial: {
+        double sliceZ = origin[2] + slice * spacing[2];
+        updateAxialContours(sliceZ, spacing[2] / 2.0);
+        break;
+    }
+    case ViewType::Sagittal: {
+        double sliceX = origin[0] + slice * spacing[0];
+        updateNonAxialContours(0, sliceX, spacing[0] / 2.0);
+        break;
+    }
+    case ViewType::Coronal: {
+        double sliceY = origin[1] + slice * spacing[1];
+        updateNonAxialContours(1, sliceY, spacing[1] / 2.0);
+        break;
+    }
+    default: break;
+    }
 }
 
-void SimpleContourOverlayManager::ClearAll()
-{
-    RemoveAllActors();
-    m_rois.clear();
-    m_records.clear();
+void SimpleContourOverlayManager::SetRTStructureData(std::shared_ptr<RTStructureData> data) {
+    m_rtData = data;
+    if (data) {
+        for (auto& kv : data->rois) m_roiVisibility[kv.first] = true;
+    }
 }
+
+void SimpleContourOverlayManager::SetROIVisible(int n, bool v) { m_roiVisibility[n] = v; }
+
+void SimpleContourOverlayManager::ClearAllContours() { removeAllActors(); }
 
 // ============================================================
-//  预建所有轮廓 Actor（初始全隐藏）
-//
-//  RT-S 的轮廓坐标已经是世界坐标（LPS，mm）。
-//  由于 CTViewer 用 vtkImageReslice 做了重采样（方向矩阵对齐），
-//  VTK 世界坐标与 DICOM LPS 坐标对齐，可以直接使用。
-//
-//  每条轮廓对应一条切片上的闭合折线，sliceZ 用第三个坐标（Z轴）标记。
+//  Axial：直接用原始轮廓点画闭合折线
 // ============================================================
 
-void SimpleContourOverlayManager::BuildActors()
-{
-    if (!m_overlayRenderer) return;
+void SimpleContourOverlayManager::updateAxialContours(double sliceZ, double tolerance) {
+    for (const auto& roiPair : m_rtData->rois) {
+        const RTStructureROI& roi = roiPair.second;
+        auto visIt = m_roiVisibility.find(roiPair.first);
+        if (visIt != m_roiVisibility.end() && !visIt->second) continue;
 
-    for (const auto& roi : m_rois) {
         for (const auto& contour : roi.contours) {
-            if (contour.points.size() < 2) continue;
+            if (std::abs(contour.z - sliceZ) > tolerance) continue;
+            if (contour.points.size() < 3) continue;
 
-            // 用轮廓点的 Z 值作为该切片的世界 Z 坐标
-            // CreateContourActor 会把所有点的 Z 强制对齐到 sliceZ，
-            // 消除轮廓与切片平面之间的微小深度偏差（防止被 CT 图像遮挡）
-            auto actor = CreateContourActor(contour.points, roi.color, contour.sliceZ);
-            if (!actor) continue;
+            std::vector<std::array<double, 3>> pts = contour.points;
+            for (auto& p : pts) p[2] = sliceZ;
 
-            actor->SetVisibility(true);
-            m_overlayRenderer->AddActor(actor);
-
-            ContourRecord rec;
-            rec.actor = actor;
-            rec.sliceZ = contour.sliceZ;
-            rec.viewType = ViewType::Axial;
-            m_records.push_back(rec);
+            auto actor = createLineActor(pts, roi.color, true);
+            if (actor) {
+                m_overlayRenderer->AddActor(actor);
+                m_currentActors.push_back(actor);
+            }
         }
     }
-
-    qDebug() << "[ContourOverlay] 共建立" << m_records.size() << "条轮廓 Actor";
 }
 
 // ============================================================
-//  创建闭合折线 Actor
+//  Sagittal/Coronal：构建左右边界线
 //
-//  关键：把所有点的 Z 坐标强制对齐到 sliceZ。
-//  原因：
-//    vtkImageViewer2 的 Axial 切片渲染器开启了深度测试，
-//    如果轮廓点 Z 与切片图像 Z 有哪怕 0.001mm 的偏差，
-//    轮廓就会被切片图像遮挡而不可见。
-//    强制对齐后轮廓与图像共面（或微小正偏移），确保可见。
+//  逻辑：
+//  1. 每层轮廓与切面求交，得到若干交点
+//  2. 每层所有交点中，取 sortAxis 最小的 → left 边界点
+//                      取 sortAxis 最大的 → right 边界点
+//  3. 所有层的 left 点按 Z 排序，连成左边界折线
+//     所有层的 right 点按 Z 排序，连成右边界折线
+//  4. 顶层 left-right、底层 left-right 各连一条封口线
+//
+//  因为每层只取最外侧的两个点，不管中间有多少对交点，
+//  left 永远是最左边，right 永远是最右边，不会跳跃 → 无飞线
 // ============================================================
 
-vtkSmartPointer<vtkActor> SimpleContourOverlayManager::CreateContourActor(
-    const std::vector<std::array<double, 3>>& pts,
-    const std::array<double, 3>& color,
-    double                                    sliceZ)
+void SimpleContourOverlayManager::updateNonAxialContours(
+    int cutAxis, double slicePos, double tolerance)
 {
-    const vtkIdType n = static_cast<vtkIdType>(pts.size());
-    if (n < 2) return nullptr;
+    int sortAxis = (cutAxis == 0) ? 1 : 0;
+
+    for (const auto& roiPair : m_rtData->rois) {
+        const RTStructureROI& roi = roiPair.second;
+        auto visIt = m_roiVisibility.find(roiPair.first);
+        if (visIt != m_roiVisibility.end() && !visIt->second) continue;
+
+        // 收集每层的最左和最右交点
+        // key = Z, value = {left, right}
+        struct LeftRight {
+            std::array<double, 3> left, right;
+        };
+        std::map<double, LeftRight> borderByZ;
+
+        for (const auto& contour : roi.contours) {
+            if (contour.points.size() < 3) continue;
+
+            std::vector<std::array<double, 3>> intersections;
+            computeIntersections(contour, cutAxis, slicePos, intersections);
+            if (intersections.empty()) continue;
+
+            for (auto& pt : intersections) pt[cutAxis] = slicePos;
+
+            // 找该轮廓交点中 sortAxis 最小和最大的
+            auto minIt = std::min_element(intersections.begin(), intersections.end(),
+                [sortAxis](const auto& a, const auto& b) { return a[sortAxis] < b[sortAxis]; });
+            auto maxIt = std::max_element(intersections.begin(), intersections.end(),
+                [sortAxis](const auto& a, const auto& b) { return a[sortAxis] < b[sortAxis]; });
+
+            double z = contour.z;
+            auto it = borderByZ.find(z);
+            if (it == borderByZ.end()) {
+                // 该 Z 层首次出现
+                borderByZ[z] = { *minIt, *maxIt };
+            }
+            else {
+                // 该 Z 层已有记录（同一层可能有多条轮廓），取更外侧的
+                if ((*minIt)[sortAxis] < it->second.left[sortAxis])
+                    it->second.left = *minIt;
+                if ((*maxIt)[sortAxis] > it->second.right[sortAxis])
+                    it->second.right = *maxIt;
+            }
+        }
+
+        if (borderByZ.size() < 2) continue;
+
+        // Z 排序
+        std::vector<double> sortedZ;
+        for (auto& kv : borderByZ) sortedZ.push_back(kv.first);
+        std::sort(sortedZ.begin(), sortedZ.end());
+
+        // 构建闭合轮廓：left 从下到上 → right 从上到下 → 闭合
+        std::vector<std::array<double, 3>> contourPts;
+
+        // left 边界：Z 从小到大
+        for (double z : sortedZ) {
+            contourPts.push_back(borderByZ[z].left);
+        }
+
+        // right 边界：Z 从大到小（反序）
+        for (int i = static_cast<int>(sortedZ.size()) - 1; i >= 0; --i) {
+            contourPts.push_back(borderByZ[sortedZ[i]].right);
+        }
+
+        // 画闭合轮廓
+        auto actor = createLineActor(contourPts, roi.color, true);
+        if (actor) {
+            m_overlayRenderer->AddActor(actor);
+            m_currentActors.push_back(actor);
+        }
+    }
+}
+
+// ============================================================
+//  计算闭合多边形与平面的交点
+// ============================================================
+
+void SimpleContourOverlayManager::computeIntersections(
+    const RTContour& contour, int axis, double slicePos,
+    std::vector<std::array<double, 3>>& outPoints)
+{
+    int n = static_cast<int>(contour.points.size());
+
+    for (int i = 0; i < n; ++i) {
+        int j = (i + 1) % n;
+
+        double v0 = contour.points[i][axis];
+        double v1 = contour.points[j][axis];
+
+        // 线段是否跨越 slicePos
+        if ((v0 <= slicePos && v1 > slicePos) || (v1 <= slicePos && v0 > slicePos)) {
+            double dv = v1 - v0;
+            if (std::abs(dv) < 1e-10) continue;
+
+            double t = (slicePos - v0) / dv;
+            t = std::max(0.0, std::min(1.0, t));
+
+            std::array<double, 3> pt;
+            for (int d = 0; d < 3; ++d) {
+                pt[d] = contour.points[i][d] + t * (contour.points[j][d] - contour.points[i][d]);
+            }
+            outPoints.push_back(pt);
+        }
+    }
+}
+
+// ============================================================
+//  创建 Actor
+// ============================================================
+
+vtkSmartPointer<vtkActor> SimpleContourOverlayManager::createLineActor(
+    const std::vector<std::array<double, 3>>& points,
+    const std::array<double, 3>& color, bool closed)
+{
+    if (points.size() < 2) return nullptr;
 
     auto vtkPts = vtkSmartPointer<vtkPoints>::New();
-    vtkPts->SetNumberOfPoints(n);
+    auto lines = vtkSmartPointer<vtkCellArray>::New();
+    int n = static_cast<int>(points.size());
 
-    for (vtkIdType i = 0; i < n; ++i) {
-        // 强制 Z 对齐：使用 sliceZ 而不是原始点的 Z 值
-        // 注意：这里假设 Axial 视图，Z 轴是切片方向
-        // 如需支持 Sagittal/Coronal，需要按视图选择对应轴
-        double p[3] = { pts[i][0], pts[i][1], sliceZ };
-        vtkPts->SetPoint(i, p);
+    for (int i = 0; i < n; ++i)
+        vtkPts->InsertNextPoint(points[i][0], points[i][1], points[i][2]);
+
+    int numLines = closed ? n : (n - 1);
+    for (int i = 0; i < numLines; ++i) {
+        vtkIdType ids[2] = { i, (i + 1) % n };
+        lines->InsertNextCell(2, ids);
     }
-
-    // 闭合折线
-    auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
-    polyLine->GetPointIds()->SetNumberOfIds(n + 1);
-    for (vtkIdType i = 0; i < n; ++i)
-        polyLine->GetPointIds()->SetId(i, i);
-    polyLine->GetPointIds()->SetId(n, 0);   // 闭合
-
-    auto cells = vtkSmartPointer<vtkCellArray>::New();
-    cells->InsertNextCell(polyLine);
 
     auto pd = vtkSmartPointer<vtkPolyData>::New();
     pd->SetPoints(vtkPts);
-    pd->SetLines(cells);
+    pd->SetLines(lines);
 
     auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputData(pd);
@@ -158,52 +263,20 @@ vtkSmartPointer<vtkActor> SimpleContourOverlayManager::CreateContourActor(
     auto actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     actor->GetProperty()->SetColor(color[0], color[1], color[2]);
-    actor->GetProperty()->SetLineWidth(2.0f);
-    actor->GetProperty()->BackfaceCullingOff();
-
+    actor->GetProperty()->SetLineWidth(2.0);
     return actor;
 }
 
-void SimpleContourOverlayManager::UpdateVisibleContours(double sliceZ, ViewType viewType)
+vtkSmartPointer<vtkActor> SimpleContourOverlayManager::createSegmentActor(
+    const std::array<double, 3>& p1, const std::array<double, 3>& p2,
+    const std::array<double, 3>& color)
 {
-    if (!m_visible) return;
-
-    // 只在 Axial 视图显示（RT-S 轮廓坐标与 Axial Z 对应）
-    if (viewType != ViewType::Axial) {
-        for (auto& rec : m_records)
-            if (rec.actor) rec.actor->SetVisibility(false);
-        return;
-    }
-
-    for (auto& rec : m_records) {
-        if (!rec.actor) continue;
-        bool match = (std::fabs(rec.sliceZ - sliceZ) <= m_tolerance);
-        rec.actor->SetVisibility(match ? 1 : 0);
-    }
+    std::vector<std::array<double, 3>> pts = { p1, p2 };
+    return createLineActor(pts, color, false);
 }
 
-double SimpleContourOverlayManager::GetSliceWorldZ(vtkImageViewer2* viewer,
-    int slice,
-    ViewType viewType) const
-{
-    if (!viewer || !viewer->GetInput()) return 0.0;
-
-    double spacing[3], origin[3];
-    viewer->GetInput()->GetSpacing(spacing);
-    viewer->GetInput()->GetOrigin(origin);
-
-    switch (viewType) {
-    case ViewType::Axial:
-        return origin[2] + slice * spacing[2];
-    default:
-        return std::numeric_limits<double>::max();
-    }
-}
-
-void SimpleContourOverlayManager::RemoveAllActors()
-{
+void SimpleContourOverlayManager::removeAllActors() {
     if (!m_overlayRenderer) return;
-    for (auto& rec : m_records)
-        if (rec.actor) m_overlayRenderer->RemoveActor(rec.actor);
-    m_records.clear();
+    for (auto& a : m_currentActors) if (a) m_overlayRenderer->RemoveActor(a);
+    m_currentActors.clear();
 }
