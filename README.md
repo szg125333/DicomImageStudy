@@ -179,3 +179,5 @@ ThreeViewController
 
 Controller 层只依赖接口，不依赖 Renderer 层的具体实现类。数据传递（如 RT Structure 数据）通过 IOverlayManager 的通用接口完成，Controller 不需要知道哪个 Feature 在操作数据。
 
+<img width="940" height="1327" alt="image" src="https://github.com/user-attachments/assets/b912867f-0fa0-499e-b4d1-eb1e7e465218" />
+
