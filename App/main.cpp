@@ -26,6 +26,7 @@ int main(int argc, char* argv[])
 	//QString path = "C:\\Workspace\\testData\\PositionTest\\HFS\\CT";
 	//QString path = "C:\\Workspace\\testData\\FZJ";
 	QString path = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT";
+	std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
 
 	DicomLoader loader;
 	auto vtkImage = loader.Load(path.toStdString());
@@ -59,7 +60,7 @@ int main(int argc, char* argv[])
 	LeftToolWidget* leftToolWidget = new LeftToolWidget(&startWidget);
 
 	threeViewWidget->SetImageData(vtkImage);
-	//threeViewWidget->SetImageData(itkToVtk->GetOutput());
+	threeViewWidget->LoadRtStruct(rsPath);
 
 	// === 使用 QSplitter 实现可拖拽分栏 ===
 	QSplitter* centralSplitter = new QSplitter(Qt::Horizontal, &startWidget);

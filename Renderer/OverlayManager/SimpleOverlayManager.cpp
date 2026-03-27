@@ -1,5 +1,6 @@
 ﻿#include "Renderer/OverlayManager/SimpleOverlayManager.h"
 #include "Renderer/OverlayManager/OverlayInfoManager/SimpleOverlayInfoManager.h"
+#include "ContourOverlayManager/SimpleContourOverlayManager.h"
 
 #include <vtkRenderer.h>
 #include <vtkImageViewer2.h>
@@ -138,5 +139,12 @@ void SimpleOverlayManager::UpdateBasicInfoActor(const RenderViewState& state)
     if (infoFeature) {
         infoFeature->SetVisible(true);
         infoFeature->Update(state);
+    }
+}
+
+void SimpleOverlayManager::SetRTStructureData(std::shared_ptr<RTStructureData> data) {
+    auto* feature = GetFeature<SimpleContourOverlayManager>();
+    if (feature) {
+        feature->SetRTStructureData(data);
     }
 }

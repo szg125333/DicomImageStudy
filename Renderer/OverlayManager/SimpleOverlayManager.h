@@ -25,6 +25,7 @@ public:
     bool Update(const EventData& event)                                      override;
     bool OnSliceChanged(ViewType viewType, int slice)                        override;
     void UpdateBasicInfoActor(const RenderViewState& state)                  override;
+    void SetRTStructureData(std::shared_ptr<RTStructureData> data)           override;
 
     /**
      * @brief ×¢²áÒ»¸ö Overlay Feature

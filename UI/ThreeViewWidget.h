@@ -22,7 +22,7 @@ public:
 
     // 将图像数据传入控制器（由控制器分发到各 renderer）
     void SetImageData(vtkImageData* image);
-
+	void LoadRtStruct(const std::string& rsPath);
     // 直接请求设置某视图切片（转发到 controller）
     void RequestSetSlice(ViewType view, int slice);
 

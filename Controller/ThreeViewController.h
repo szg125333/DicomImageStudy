@@ -3,7 +3,6 @@
 #include "Interface/IViewController.h"
 #include "Common/InteractionMode.h"
 #include "Common/ViewTypes.h"
-//#include "Dicom/ContourData.h"   // 新增
 #include "Utils/RtStructReader.h"
 
 #include <QObject>
@@ -98,9 +97,6 @@ public:
 
     // 加载 RTSTRUCT 文件并在三视图中显示轮廓
     void LoadRtStruct(const std::string& rtStructFilePath);
-
-    // 从 DICOM 文件夹自动查找并加载 RTSTRUCT
-    void AutoLoadRtStruct(const std::string& dicomFolder);
 signals:
     void sliceChanged(int viewIndex, int slice);
     // 新增：图像拖动信号，转发给 UI 层

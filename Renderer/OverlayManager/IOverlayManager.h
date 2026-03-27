@@ -3,9 +3,11 @@
 #include "IOverlayFeature.h"
 #include "Common/EventData.h"
 #include "Common/RenderViewState.h"
+#include "Utils/RTStructureData.h"  // 只依赖数据结构，不依赖具体 Feature
 
 #include <typeinfo>
 #include <array>
+#include <memory> // 必须包含
 
 class vtkRenderer;
 class vtkImageViewer2;
@@ -81,6 +83,9 @@ public:
      * @param state 当前视图状态快照
      */
     virtual void UpdateBasicInfoActor(const RenderViewState& state) = 0;
+
+    /// @brief 设置 RT Structure 数据（通用接口）
+    virtual void SetRTStructureData(std::shared_ptr<RTStructureData> data) = 0;
 
     // ----------------------------------------------------------------
     //  Feature 访问（模板，不需要虚函数）

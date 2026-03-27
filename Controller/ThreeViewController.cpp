@@ -7,9 +7,6 @@
 #include "Controller/Strategy/ImageDragStrategy/ImageDragStrategy.h"
 #include "Utils/RtStructReader.h"
 
-//#include "Dicom/ContourData.h"                                              // 新增
-#include "Renderer/OverlayManager/ContourOverlayManager/SimpleContourOverlayManager.h"  // 新增
-
 #include <vtkImageData.h>
 #include <vtkRenderer.h>
 #include <vtkCamera.h>
@@ -145,6 +142,14 @@ void ThreeViewController::UpdateSliceByWorldPoint(std::array<double, 3> worldPoi
 	SetSliceInternal(ViewType::Coronal, static_cast<int>(std::round(ijk[1])));
 
 	m_isUpdatingSlice = false;
+
+	for (int i = 0; i < 3; ++i) {
+		if (!m_renderers[i]) continue;
+		ViewType vt = static_cast<ViewType>(i);
+		int currentSlice = m_renderers[i]->GetSlice();
+		m_renderers[i]->GetOverlayManager()->OnSliceChanged(vt, currentSlice);
+		m_renderers[i]->RequestRender();
+	}
 }
 
 void ThreeViewController::SetWindowLevel(double window, double level)
@@ -406,56 +411,23 @@ void ThreeViewController::UnregisterEventCallbacks()
 	}
 }
 
-///**
-// * @brief 将 RS 轮廓数据分发到三个视图的 ContourOverlayManager
-// *
-// * 在 SetImageData() 之后调用（确保 OverlayManager 已初始化）。
-// */
-//void ThreeViewController::LoadContourData(std::vector<RtRoi> rois)
-//{
-//	for (int i = 0; i < 3; ++i) {
-//		if (!m_renderers[i]) continue;
-//		auto* overlayMgr = m_renderers[i]->GetOverlayManager();
-//		if (!overlayMgr) continue;
-//
-//		auto* contourMgr = overlayMgr->GetFeature<SimpleContourOverlayManager>();
-//		if (!contourMgr) continue;
-//		if (contourMgr) {
-//			contourMgr->SetRois(rois);
-//			// 立即刷新当前切片
-//			contourMgr->OnSliceChanged(
-//				m_renderers[i]->GetViewer().Get(),
-//				m_renderers[i]->GetSlice(),
-//				m_renderers[i]->GetCurrentViewType());
-//		}
-//		m_renderers[i]->RequestRender();
-//	}
-//}
-
-
 void ThreeViewController::LoadRtStruct(const std::string& rtStructFilePath) {
 	RtStructReader reader;
 	auto rtData = reader.Read(rtStructFilePath);
 	if (!rtData) return;
 
+	// 通过 IOverlayManager 接口传递数据
+	for (int i = 0; i < 3; ++i) {
+		if (!m_renderers[i] || !m_renderers[i]->GetOverlayManager()) continue;
+		m_renderers[i]->GetOverlayManager()->SetRTStructureData(rtData);
+	}
+
 	for (int i = 0; i < 3; ++i) {
 		if (!m_renderers[i]) continue;
-		auto* feature = m_renderers[i]->GetOverlayManager()
-			->GetFeature<SimpleContourOverlayManager>();
-		if (feature) {
-			feature->SetRTStructureData(rtData);
-		}
+		ViewType vt = static_cast<ViewType>(i);
+		int currentSlice = m_renderers[i]->GetSlice();
+		m_renderers[i]->GetOverlayManager()->OnSliceChanged(vt, currentSlice);
+		m_renderers[i]->RequestRender();
 	}
-}
-
-void ThreeViewController::AutoLoadRtStruct(const std::string& dicomFolder) {
-	//std::string rtStructPath = RtStructReader::FindRtStructFile(dicomFolder);
-	//if (rtStructPath.empty()) {
-	//	qDebug() << "No RTSTRUCT file found in:" << QString::fromStdString(dicomFolder);
-	//	return;
-	//}
-
-	//qDebug() << "Found RTSTRUCT file:" << QString::fromStdString(rtStructPath);
-	//LoadRtStruct(rtStructPath);
 }
 

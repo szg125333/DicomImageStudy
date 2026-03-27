@@ -119,11 +119,8 @@ void ThreeViewWidget::SetImageData(vtkImageData* image)
 	if (!m_controller) return;
 	m_controller->SetImageData(image);
 
-	// 1. ²éÕÒ RS ÎÄ¼þ
-	//std::string rsPath = RtStructReader::FindRsFile(path);
-	//std::string rsPath = "C:\\Workspace\\testData\\FZJ\\RS.FZJ.CT_1.dcm";
-	std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
-	m_controller->LoadRtStruct(rsPath);
+	//std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+	//m_controller->LoadRtStruct(rsPath);
 }
 
 void ThreeViewWidget::RequestSetSlice(ViewType view, int slice)
@@ -148,4 +145,10 @@ void ThreeViewWidget::setModeToMeasurement(InteractionMode mode, bool state)
 void ThreeViewWidget::ResetAllViews()
 {
 	m_controller->ResetAllViews();
+}
+
+void ThreeViewWidget::LoadRtStruct(const std::string& rtStructFilePath) {
+	if (m_controller) {
+		m_controller->LoadRtStruct(rtStructFilePath);
+	}
 }
