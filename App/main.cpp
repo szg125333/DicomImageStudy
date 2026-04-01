@@ -25,8 +25,11 @@ int main(int argc, char* argv[])
 
 	//QString path = "C:\\Workspace\\testData\\PositionTest\\HFS\\CT";
 	//QString path = "C:\\Workspace\\testData\\FZJ";
-	QString path = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT";
-	std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+	//QString path = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT";
+	//std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+
+	QString path = "Chest1\\CT";
+	std::string rsPath = "Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
 
 	DicomLoader loader;
 	auto vtkImage = loader.Load(path.toStdString());

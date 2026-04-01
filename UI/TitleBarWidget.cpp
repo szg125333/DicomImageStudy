@@ -74,8 +74,8 @@ void TitleBarWidget::initUI()
     ui.toolButton_7->setStyleSheet(buttonStyle);
     ui.toolButton_7->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Menu.png"));
 
-    ui.toolButton_10->setStyleSheet(buttonStyle);
-    ui.toolButton_10->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Squares.png"));
+    ui.ContourOverlay->setStyleSheet(buttonStyle);
+    ui.ContourOverlay->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Squares.png"));
 
     ui.ImageDrag->setStyleSheet(buttonStyle);
     ui.ImageDrag->setIcon(QIcon(":/DicomImageStudy/images/move.png"));
