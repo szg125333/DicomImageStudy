@@ -1,52 +1,43 @@
 #pragma once
 
 #include <QWidget>
+#include <functional>
+#include <vector>
 #include "ui_TitleBarWidget.h"
 #include "Common/InteractionMode.h"
-#include "ContourListPopup.h"
+#include "Common/ROIDisplayInfo.h"
+
+class ContourListPopup;
 
 class TitleBarWidget : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	TitleBarWidget(QWidget *parent = nullptr);
-	~TitleBarWidget();
-	void SetContourListProvider(std::function<std::vector<ROIDisplayInfo>()> provider);
+    TitleBarWidget(QWidget* parent = nullptr);
+    ~TitleBarWidget();
+
+    /// @brief 注入轮廓列表数据提供者（解耦，不依赖具体实现）
+    void SetContourListProvider(std::function<std::vector<ROIDisplayInfo>()> provider);
 
 signals:
-	void requestOpenFolder();
-	void requestEnableDistanceMeasurement(InteractionMode mode,bool state);
-	void requestEnableAngleMeasurement(InteractionMode mode, bool state);
-	void requestEnableNormalMode(InteractionMode mode, bool state);
-	void requestRoiNormalMode(InteractionMode mode, bool state);
-	void requestResetViews();
-	void requestFreehandROIMode(InteractionMode mode, bool state);
-	void requestCrosshairRulerMode(InteractionMode mode, bool state);
+    /// @brief 统一的模式切换信号（所有模式按钮共用）
+    void requestMode(InteractionMode mode, bool state);
 
-	void requestMode(InteractionMode mode, bool state);
+    /// @brief 重置视图（独立功能，不是模式切换）
+    void requestResetViews();
 
-	void roiVisibilityChanged(int roiNumber, bool visible);
-
-private slots:
-	void on_NormalMode_toggled(bool state);
-	void on_DistanceMeasurement_toggled(bool state);
-	void on_AngleMeasurement_toggled(bool state);
-	void on_RoiMeasurement_toggled(bool state);
-	void on_ResetView_clicked();
-	void on_FreehandROI_toggled(bool state);
-	void on_CrosshairRuler_toggled(bool state);
-
-	void on_ToolButton_toggled(bool state);
+    /// @brief ROI 可见性变化
+    void roiVisibilityChanged(int roiNumber, bool visible);
 
 private:
-	void initUI();          // ← 新增：初始化 UI 外观
-	void initConnections(); // ← 新增：初始化信号槽
+    void initUI();
+    void initConnections();
 
-	Ui::TitleBarWidgetClass ui;
+    /// @brief 批量绑定工具：按钮 toggled → 发 requestMode 信号
+    void bindModeButton(QToolButton* button, InteractionMode mode);
 
-	ContourListPopup* m_contourPopup = nullptr;
-	std::function<std::vector<ROIDisplayInfo>()> m_contourListProvider;
-
+    Ui::TitleBarWidgetClass ui;
+    ContourListPopup* m_contourPopup = nullptr;
+    std::function<std::vector<ROIDisplayInfo>()> m_contourListProvider;
 };
-

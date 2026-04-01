@@ -1,15 +1,15 @@
 #include "TitleBarWidget.h"
+#include "ContourListPopup.h"
 
-TitleBarWidget::TitleBarWidget(QWidget *parent)
-	: QWidget(parent)
+TitleBarWidget::TitleBarWidget(QWidget* parent)
+    : QWidget(parent)
 {
-	ui.setupUi(this);
-	initUI();
-	initConnections();
+    ui.setupUi(this);
+    initUI();
+    initConnections();
 }
 
-TitleBarWidget::~TitleBarWidget()
-{}
+TitleBarWidget::~TitleBarWidget() {}
 
 void TitleBarWidget::SetContourListProvider(
     std::function<std::vector<ROIDisplayInfo>()> provider)
@@ -17,6 +17,61 @@ void TitleBarWidget::SetContourListProvider(
     m_contourListProvider = std::move(provider);
 }
 
+// ============================================================
+//  核心：一行绑定一个按钮和一个模式
+// ============================================================
+
+void TitleBarWidget::bindModeButton(QToolButton* button, InteractionMode mode) {
+    connect(button, &QToolButton::toggled, this, [this, mode](bool state) {
+        emit requestMode(mode, state);
+        });
+}
+
+// ============================================================
+//  信号连接
+// ============================================================
+
+void TitleBarWidget::initConnections()
+{
+    // 模式按钮：以后加新模式只需加一行
+    bindModeButton(ui.NormalMode, InteractionMode::Normal);
+    bindModeButton(ui.DistanceMeasurement, InteractionMode::DistanceMeasure);
+    bindModeButton(ui.AngleMeasurement, InteractionMode::AngleMeasure);
+    bindModeButton(ui.RoiMeasurement, InteractionMode::RegistrationROI);
+    bindModeButton(ui.FreehandROI, InteractionMode::FreehandROI);
+    bindModeButton(ui.CrosshairRuler, InteractionMode::CrosshairRuler);
+    bindModeButton(ui.ImageDrag, InteractionMode::ImageDrag);
+
+    // 重置视图（click，不是 toggle）
+    connect(ui.ResetView, &QToolButton::clicked, this, &TitleBarWidget::requestResetViews);
+
+    // 轮廓列表弹窗
+    connect(ui.ContourOverlay, &QToolButton::toggled, this, [this](bool state) {
+        if (state) {
+            if (!m_contourPopup) {
+                m_contourPopup = new ContourListPopup(this);
+                connect(m_contourPopup, &ContourListPopup::roiVisibilityChanged,
+                    this, &TitleBarWidget::roiVisibilityChanged);
+            }
+            if (m_contourListProvider) {
+                m_contourPopup->SetROIList(m_contourListProvider());
+            }
+            QPoint pos = ui.ContourOverlay->mapToGlobal(
+                QPoint(0, ui.ContourOverlay->height()));
+            m_contourPopup->move(pos);
+            m_contourPopup->show();
+            m_contourPopup->raise();
+            m_contourPopup->setFocus();
+        }
+        else {
+            if (m_contourPopup) m_contourPopup->hide();
+        }
+        });
+}
+
+// ============================================================
+//  UI 外观初始化
+// ============================================================
 
 void TitleBarWidget::initUI()
 {
@@ -53,7 +108,7 @@ void TitleBarWidget::initUI()
     }
 )";
 
-	this->setStyleSheet(buttonStyle);
+    this->setStyleSheet(buttonStyle);
 
     ui.OpenFolder->setStyleSheet(buttonStyle);
     ui.OpenFolder->setIcon(QIcon(":/DicomImageStudy/images/FlatStyle-Folder.png"));
@@ -88,85 +143,3 @@ void TitleBarWidget::initUI()
     ui.CrosshairRuler->setStyleSheet(buttonStyle);
     ui.CrosshairRuler->setIcon(QIcon(":/DicomImageStudy/images/crosshair1.png"));
 }
-
-void TitleBarWidget::initConnections()
-{
-	connect(ui.NormalMode, &QToolButton::toggled, this, &TitleBarWidget::on_NormalMode_toggled);
-	connect(ui.DistanceMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_DistanceMeasurement_toggled);
-	connect(ui.AngleMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_AngleMeasurement_toggled);
-	connect(ui.RoiMeasurement, &QToolButton::toggled, this, &TitleBarWidget::on_RoiMeasurement_toggled);
-	connect(ui.ResetView, &QToolButton::clicked, this, &TitleBarWidget::on_ResetView_clicked);
-	connect(ui.FreehandROI, &QToolButton::toggled, this, &TitleBarWidget::on_FreehandROI_toggled);
-	connect(ui.ImageDrag, &QToolButton::toggled, this, &TitleBarWidget::on_ToolButton_toggled);
-	connect(ui.CrosshairRuler, &QToolButton::toggled, this, &TitleBarWidget::on_CrosshairRuler_toggled);
-
-    connect(ui.ContourOverlay, &QToolButton::toggled, this, [this](bool state) {
-        if (state) {
-            // 【true】显示弹窗：没有就创建，有就显示
-            if (!m_contourPopup) {
-                m_contourPopup = new ContourListPopup(this);
-                connect(m_contourPopup, &ContourListPopup::roiVisibilityChanged,
-                    this, &TitleBarWidget::roiVisibilityChanged);
-            }
-
-            if (m_contourListProvider) {
-                m_contourPopup->SetROIList(m_contourListProvider());
-            }
-
-            // 弹出位置
-            QPoint pos = ui.ContourOverlay->mapToGlobal(QPoint(0, ui.ContourOverlay->height()));
-            m_contourPopup->move(pos);
-            m_contourPopup->show();
-            m_contourPopup->raise();
-            m_contourPopup->setFocus();
-        }
-        else {
-            if (m_contourPopup) {
-                m_contourPopup->hide();
-            }
-        }
-        });
-}
-
-
-void TitleBarWidget::on_DistanceMeasurement_toggled(bool state)
-{
-    emit requestEnableDistanceMeasurement(InteractionMode::DistanceMeasure, state);
-}
-
-void TitleBarWidget::on_NormalMode_toggled(bool state)
-{
-    emit requestEnableNormalMode(InteractionMode::Normal, state);
-}
-
-void TitleBarWidget::on_AngleMeasurement_toggled(bool state)
-{
-	emit requestEnableAngleMeasurement(InteractionMode::AngleMeasure, state);
-}
-
-void TitleBarWidget::on_RoiMeasurement_toggled(bool state)
-{
-    emit requestRoiNormalMode(InteractionMode::RegistrationROI, state);
-}
-
-void TitleBarWidget::on_ResetView_clicked()
-{
-	emit requestResetViews();
-}
-
-void TitleBarWidget::on_FreehandROI_toggled(bool state)
-{
-    emit requestFreehandROIMode(InteractionMode::FreehandROI, state);
-
-}
-
-void TitleBarWidget::on_CrosshairRuler_toggled(bool state)
-{
-	emit requestCrosshairRulerMode(InteractionMode::CrosshairRuler, state);
-}
-
-void TitleBarWidget::on_ToolButton_toggled(bool state)
-{
-	emit requestMode(InteractionMode::ImageDrag, state);
-}
-

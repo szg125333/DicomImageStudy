@@ -18,11 +18,13 @@ int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
 
+    // ===== 内存泄漏检测 =====
     QString exeDir = QCoreApplication::applicationDirPath();
     QString logPath = exeDir + "/memory_leak_report.txt";
     std::wstring wlog = logPath.toStdWString();
     VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, wlog.c_str());
 
+    // ===== 数据路径 =====
     QString path = "Chest1\\CT";
     std::string rsPath = "Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
 
@@ -71,25 +73,13 @@ int main(int argc, char* argv[])
 
     startWidget.showMaximized();
 
-    // ===== 信号连接（只做连接，不做逻辑） =====
+    // ===== 信号连接 =====
 
-    // 工具栏 → 交互模式
-    QObject::connect(titleBarWidget, &TitleBarWidget::requestEnableDistanceMeasurement,
-        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-    QObject::connect(titleBarWidget, &TitleBarWidget::requestEnableAngleMeasurement,
-        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-    QObject::connect(titleBarWidget, &TitleBarWidget::requestEnableNormalMode,
-        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-    QObject::connect(titleBarWidget, &TitleBarWidget::requestRoiNormalMode,
-        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-    QObject::connect(titleBarWidget, &TitleBarWidget::requestFreehandROIMode,
-        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-    QObject::connect(titleBarWidget, &TitleBarWidget::requestCrosshairRulerMode,
-        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
+    // 工具栏模式切换 → 三视图（一行搞定所有模式）
     QObject::connect(titleBarWidget, &TitleBarWidget::requestMode,
         threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
 
-    // 工具栏 → 重置视图
+    // 重置视图
     QObject::connect(titleBarWidget, &TitleBarWidget::requestResetViews,
         threeViewWidget, &ThreeViewWidget::ResetAllViews);
 
@@ -103,11 +93,10 @@ int main(int argc, char* argv[])
     QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);
     leftToolWidget->SetDicomMetadata(metadata);
 
-    // ★ 轮廓列表：注入数据提供者 + 连接可见性变化
+    // 轮廓列表：注入数据提供者 + 连接可见性变化
     titleBarWidget->SetContourListProvider([threeViewWidget]() {
         return threeViewWidget->GetROIList();
         });
-
     QObject::connect(titleBarWidget, &TitleBarWidget::roiVisibilityChanged,
         threeViewWidget, &ThreeViewWidget::SetROIVisible);
 
