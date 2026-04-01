@@ -1,3 +1,6 @@
+项目可执行实例在https://github.com/szg125333/exe
+进行下载，下载解压直接运行，实例中包含一组dicom数据。注意不要有中文路径
+
 # DicomImageStudy 项目介绍
 
 ## 1. 项目概述
