@@ -280,3 +280,19 @@ void SimpleContourOverlayManager::removeAllActors() {
     for (auto& a : m_currentActors) if (a) m_overlayRenderer->RemoveActor(a);
     m_currentActors.clear();
 }
+
+std::vector<ROIDisplayInfo> SimpleContourOverlayManager::GetROIList() const {
+    std::vector<ROIDisplayInfo> list;
+    if (!m_rtData) return list;
+
+    for (const auto& kv : m_rtData->rois) {
+        ROIDisplayInfo info;
+        info.roiNumber = kv.first;
+        info.name = kv.second.name;
+        info.color = kv.second.color;
+        auto visIt = m_roiVisibility.find(kv.first);
+        info.visible = (visIt == m_roiVisibility.end()) || visIt->second;
+        list.push_back(info);
+    }
+    return list;
+}

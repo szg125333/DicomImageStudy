@@ -16,17 +16,18 @@ public:
     ~SimpleOverlayManager() override;
 
     // IOverlayManager 接口
-    void Initialize(vtkRenderer* overlayRenderer, vtkImageViewer2* viewer) override;
+    void Initialize(vtkRenderer* overlayRenderer, vtkImageViewer2* viewer)   override;
     void Shutdown()                                                          override;
     void SetVisible(bool visible)                                            override;
-    void SetColor(double r, double g, double b)                             override;
-    void SetImageWorldBounds(const std::array<double, 6>& bounds)           override;
-    bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const override;
+    void SetColor(double r, double g, double b)                              override;
+    void SetImageWorldBounds(const std::array<double, 6>& bounds)            override;
+    bool IsWorldPointInImage(const std::array<double, 3>& worldPoint) const  override;
     bool Update(const EventData& event)                                      override;
     bool OnSliceChanged(ViewType viewType, int slice)                        override;
     void UpdateBasicInfoActor(const RenderViewState& state)                  override;
     void SetRTStructureData(std::shared_ptr<RTStructureData> data)           override;
-
+    std::vector<ROIDisplayInfo> GetROIList() const                           override;
+    void SetROIVisible(int roiNumber, bool visible)                          override;
     /**
      * @brief 注册一个 Overlay Feature
      *

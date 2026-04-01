@@ -157,6 +157,9 @@
     <ClCompile Include="Utils\DicomLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UI\ContourListPopup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common\InteractionMode.h">
@@ -327,6 +330,9 @@
     <ClInclude Include="Utils\Rtstructuredata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Common\ROIDisplayInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="UI\DicomImageStudy.h">
@@ -348,6 +354,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="UI\LeftToolWidget.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="UI\ContourListPopup.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

@@ -3,6 +3,7 @@
 #include "Renderer/OverlayManager/IOverlayFeature.h"
 #include "Utils/RTStructureData.h"
 #include "Common/ViewTypes.h"
+#include "Common/ROIDisplayInfo.h"
 
 #include <vtkSmartPointer.h>
 #include <vtkActor.h>
@@ -35,6 +36,7 @@ public:
     void SetRTStructureData(std::shared_ptr<RTStructureData> data);
     void SetROIVisible(int roiNumber, bool visible);
     void ClearAllContours();
+    std::vector<ROIDisplayInfo> GetROIList() const;
 
 private:
     /// Axial：原始点画闭合折线

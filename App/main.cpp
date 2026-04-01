@@ -13,6 +13,9 @@
 #include "UI/LeftToolWidget.h"
 #include "Dicom/DicomMetadataExtractor.h"
 #include "Utils/DicomLoader.h"
+#include "Controller/ThreeViewController.h"    // 控制器实现
+#include "Interface/IViewRenderer.h"
+#include "Renderer/OverlayManager/IOverlayManager.h"
 
 int main(int argc, char* argv[])
 {
@@ -118,6 +121,30 @@ int main(int argc, char* argv[])
 		leftToolWidget, &LeftToolWidget::OnDragReset);
 	QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);
 	leftToolWidget->SetDicomMetadata(metadata);
+
+
+	// TitleBarWidget 请求列表 → 从 ThreeViewWidget 获取
+	QObject::connect(titleBarWidget, &TitleBarWidget::requestContourList, [threeViewWidget, titleBarWidget]() {
+		auto* mgr = threeViewWidget->getController()->GetRenderer(0)->GetOverlayManager();
+		if (mgr) {
+			titleBarWidget->UpdateContourList(mgr->GetROIList());
+		}
+		});
+
+	// TitleBarWidget 可见性变化 → 更新所有视图
+	QObject::connect(titleBarWidget, &TitleBarWidget::roiVisibilityChanged,
+		[threeViewWidget](int roiNumber, bool visible) {
+			auto* controller = threeViewWidget->getController();
+			for (int i = 0; i < 3; ++i) {
+				auto* mgr = controller->GetRenderer(i)->GetOverlayManager();
+				if (mgr) mgr->SetROIVisible(roiNumber, visible);
+			}
+			for (int i = 0; i < 3; ++i) {
+				auto vt = static_cast<ViewType>(i);
+				controller->GetRenderer(i)->GetOverlayManager()->OnSliceChanged(vt, controller->GetSlice(vt));
+				controller->GetRenderer(i)->RequestRender();
+			}
+		});
 
 	return app.exec();
 }

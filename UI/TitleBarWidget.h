@@ -3,6 +3,7 @@
 #include <QWidget>
 #include "ui_TitleBarWidget.h"
 #include "Common/InteractionMode.h"
+#include "ContourListPopup.h"
 
 class TitleBarWidget : public QWidget
 {
@@ -11,6 +12,7 @@ class TitleBarWidget : public QWidget
 public:
 	TitleBarWidget(QWidget *parent = nullptr);
 	~TitleBarWidget();
+	void UpdateContourList(const std::vector<ROIDisplayInfo>& roiList);
 
 signals:
 	void requestOpenFolder();
@@ -23,6 +25,9 @@ signals:
 	void requestCrosshairRulerMode(InteractionMode mode, bool state);
 
 	void requestMode(InteractionMode mode, bool state);
+
+	void roiVisibilityChanged(int roiNumber, bool visible);
+	void requestContourList();  // 请求 Controller 提供 ROI 列表
 
 private slots:
 	void on_NormalMode_toggled(bool state);
@@ -40,5 +45,8 @@ private:
 	void initConnections(); // ← 新增：初始化信号槽
 
 	Ui::TitleBarWidgetClass ui;
+
+	ContourListPopup* m_contourPopup = nullptr;
+
 };
 

@@ -3,6 +3,7 @@
 #include "IOverlayFeature.h"
 #include "Common/EventData.h"
 #include "Common/RenderViewState.h"
+#include "Common/ROIDisplayInfo.h"
 #include "Utils/RTStructureData.h"  // 只依赖数据结构，不依赖具体 Feature
 
 #include <typeinfo>
@@ -100,6 +101,12 @@ public:
     T* GetFeature() {
         return dynamic_cast<T*>(GetFeatureImpl(typeid(T)));
     }
+
+    /// 获取 ROI 列表（供 UI 显示）
+    virtual std::vector<ROIDisplayInfo> GetROIList() const = 0;
+
+    /// 设置某个 ROI 的可见性
+    virtual void SetROIVisible(int roiNumber, bool visible) = 0;
 
 protected:
     /// @brief 按 type_info 查找 Feature 的底层实现（供模板函数调用）

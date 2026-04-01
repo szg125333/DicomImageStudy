@@ -148,3 +148,17 @@ void SimpleOverlayManager::SetRTStructureData(std::shared_ptr<RTStructureData> d
         feature->SetRTStructureData(data);
     }
 }
+
+
+std::vector<ROIDisplayInfo> SimpleOverlayManager::GetROIList() const {
+    // 从 SimpleContourOverlayManager 获取（需要给它也加这个方法）
+    auto* feature = const_cast<SimpleOverlayManager*>(this)
+        ->GetFeature<SimpleContourOverlayManager>();
+    if (feature) return feature->GetROIList();
+    return {};
+}
+
+void SimpleOverlayManager::SetROIVisible(int roiNumber, bool visible) {
+    auto* feature = GetFeature<SimpleContourOverlayManager>();
+    if (feature) feature->SetROIVisible(roiNumber, visible);
+}

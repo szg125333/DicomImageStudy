@@ -94,6 +94,23 @@ void TitleBarWidget::initConnections()
 	connect(ui.FreehandROI, &QToolButton::toggled, this, &TitleBarWidget::on_FreehandROI_toggled);
 	connect(ui.ImageDrag, &QToolButton::toggled, this, &TitleBarWidget::on_ToolButton_toggled);
 	connect(ui.CrosshairRuler, &QToolButton::toggled, this, &TitleBarWidget::on_CrosshairRuler_toggled);
+
+    connect(ui.ContourOverlay, &QToolButton::clicked, this, [this]() {
+        if (!m_contourPopup) {
+            m_contourPopup = new ContourListPopup(this);
+            connect(m_contourPopup, &ContourListPopup::roiVisibilityChanged,
+                this, &TitleBarWidget::roiVisibilityChanged);
+        }
+        // 请求 Controller 刷新列表
+        emit requestContourList();
+
+        // 在按钮右下方弹出
+        QPoint pos = ui.ContourOverlay->mapToGlobal(
+            QPoint(0, ui.ContourOverlay->height()));
+        m_contourPopup->move(pos);
+        m_contourPopup->show();
+        m_contourPopup->setFocus();
+        });
 }
 
 
@@ -138,3 +155,8 @@ void TitleBarWidget::on_ToolButton_toggled(bool state)
 	emit requestMode(InteractionMode::ImageDrag, state);
 }
 
+void TitleBarWidget::UpdateContourList(const std::vector<ROIDisplayInfo>& roiList) {
+    if (m_contourPopup) {
+        m_contourPopup->SetROIList(roiList);
+    }
+}

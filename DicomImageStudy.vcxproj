@@ -148,6 +148,7 @@
     <ClCompile Include="Renderer\OverlayManager\SimpleOverlayManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\OverlayInfoManager\SimpleOverlayInfoManager.cpp" />
     <ClCompile Include="Renderer\VtkViewRenderer.cpp" />
+    <ClCompile Include="UI\ContourListPopup.cpp" />
     <ClCompile Include="UI\DicomImageStudy.cpp" />
     <ClCompile Include="UI\LeftToolWidget.cpp" />
     <ClCompile Include="UI\StartWidget.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="Common\InteractionMode.h" />
     <ClInclude Include="Common\Measurement\MeasurementTypes.h" />
     <ClInclude Include="Common\RenderViewState.h" />
+    <ClInclude Include="Common\ROIDisplayInfo.h" />
     <ClInclude Include="Common\ViewTypes.h" />
     <ClInclude Include="Controller\Strategy\AbstractMeasureStrategy.h" />
     <ClInclude Include="Controller\Strategy\AngleMeasureStrategy\AngleMeasureStrategy.h" />
@@ -216,6 +218,7 @@
     <QtMoc Include="UI\StartWidget.h" />
     <QtMoc Include="UI\TitleBarWidget.h" />
     <QtMoc Include="UI\LeftToolWidget.h" />
+    <QtMoc Include="UI\ContourListPopup.h" />
     <ClInclude Include="Utils\DicomLoader.h" />
     <ClInclude Include="Utils\ImageOrientationResampler.h" />
     <ClInclude Include="Utils\MyInteractorStyle.h" />

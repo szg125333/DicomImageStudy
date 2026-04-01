@@ -25,6 +25,9 @@ public:
 	void LoadRtStruct(const std::string& rsPath);
     // 直接请求设置某视图切片（转发到 controller）
     void RequestSetSlice(ViewType view, int slice);
+    ThreeViewController* getController() const {
+        return m_controller;
+    }
 
 public slots:
     void setModeToMeasurement(InteractionMode mode, bool state);
