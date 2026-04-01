@@ -95,21 +95,30 @@ void TitleBarWidget::initConnections()
 	connect(ui.ImageDrag, &QToolButton::toggled, this, &TitleBarWidget::on_ToolButton_toggled);
 	connect(ui.CrosshairRuler, &QToolButton::toggled, this, &TitleBarWidget::on_CrosshairRuler_toggled);
 
-    connect(ui.ContourOverlay, &QToolButton::clicked, this, [this]() {
-        if (!m_contourPopup) {
-            m_contourPopup = new ContourListPopup(this);
-            connect(m_contourPopup, &ContourListPopup::roiVisibilityChanged,
-                this, &TitleBarWidget::roiVisibilityChanged);
-        }
-        // 请求 Controller 刷新列表
-        emit requestContourList();
+    connect(ui.ContourOverlay, &QToolButton::toggled, this, [this](bool state) {
+        if (state) {
+            // 【true】显示弹窗：没有就创建，有就显示
+            if (!m_contourPopup) {
+                m_contourPopup = new ContourListPopup(this);
+                connect(m_contourPopup, &ContourListPopup::roiVisibilityChanged,
+                    this, &TitleBarWidget::roiVisibilityChanged);
+            }
 
-        // 在按钮右下方弹出
-        QPoint pos = ui.ContourOverlay->mapToGlobal(
-            QPoint(0, ui.ContourOverlay->height()));
-        m_contourPopup->move(pos);
-        m_contourPopup->show();
-        m_contourPopup->setFocus();
+            // 请求刷新列表
+            emit requestContourList();
+
+            // 弹出位置
+            QPoint pos = ui.ContourOverlay->mapToGlobal(QPoint(0, ui.ContourOverlay->height()));
+            m_contourPopup->move(pos);
+            m_contourPopup->show();
+            m_contourPopup->raise();
+            m_contourPopup->setFocus();
+        }
+        else {
+            if (m_contourPopup) {
+                m_contourPopup->hide();
+            }
+        }
         });
 }
 
