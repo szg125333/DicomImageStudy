@@ -11,6 +11,11 @@ TitleBarWidget::TitleBarWidget(QWidget *parent)
 TitleBarWidget::~TitleBarWidget()
 {}
 
+void TitleBarWidget::SetContourListProvider(
+    std::function<std::vector<ROIDisplayInfo>()> provider)
+{
+    m_contourListProvider = std::move(provider);
+}
 
 
 void TitleBarWidget::initUI()
@@ -104,8 +109,9 @@ void TitleBarWidget::initConnections()
                     this, &TitleBarWidget::roiVisibilityChanged);
             }
 
-            // 请求刷新列表
-            emit requestContourList();
+            if (m_contourListProvider) {
+                m_contourPopup->SetROIList(m_contourListProvider());
+            }
 
             // 弹出位置
             QPoint pos = ui.ContourOverlay->mapToGlobal(QPoint(0, ui.ContourOverlay->height()));
@@ -164,8 +170,3 @@ void TitleBarWidget::on_ToolButton_toggled(bool state)
 	emit requestMode(InteractionMode::ImageDrag, state);
 }
 
-void TitleBarWidget::UpdateContourList(const std::vector<ROIDisplayInfo>& roiList) {
-    if (m_contourPopup) {
-        m_contourPopup->SetROIList(roiList);
-    }
-}

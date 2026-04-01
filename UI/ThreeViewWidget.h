@@ -7,6 +7,7 @@
 #include <vtkImageData.h>
 #include "Common/ViewTypes.h"
 #include "Common/InteractionMode.h"
+#include "Common/ROIDisplayInfo.h"
 
 class QVTKOpenGLNativeWidget;
 class VtkViewRenderer;
@@ -28,6 +29,9 @@ public:
     ThreeViewController* getController() const {
         return m_controller;
     }
+
+    std::vector<ROIDisplayInfo> GetROIList() const;
+    void SetROIVisible(int roiNumber, bool visible);
 
 public slots:
     void setModeToMeasurement(InteractionMode mode, bool state);

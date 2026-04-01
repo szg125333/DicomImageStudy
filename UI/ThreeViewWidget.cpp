@@ -12,6 +12,7 @@
 #include "Controller/ThreeViewController.h"    // 控制器实现
 #include "Interface/IViewRenderer.h"
 #include "Utils/RtStructReader.h"
+#include "Renderer/OverlayManager/IOverlayManager.h"
 
 #include <vtkImageData.h>
 
@@ -150,5 +151,24 @@ void ThreeViewWidget::ResetAllViews()
 void ThreeViewWidget::LoadRtStruct(const std::string& rtStructFilePath) {
 	if (m_controller) {
 		m_controller->LoadRtStruct(rtStructFilePath);
+	}
+}
+
+std::vector<ROIDisplayInfo> ThreeViewWidget::GetROIList() const {
+	auto* mgr = m_controller->GetRenderer(0)->GetOverlayManager();
+	return mgr ? mgr->GetROIList() : std::vector<ROIDisplayInfo>{};
+}
+
+void ThreeViewWidget::SetROIVisible(int roiNumber, bool visible) {
+	for (int i = 0; i < 3; ++i) {
+		auto* mgr = m_controller->GetRenderer(i)->GetOverlayManager();
+		if (mgr) mgr->SetROIVisible(roiNumber, visible);
+	}
+	// 触发重绘
+	for (int i = 0; i < 3; ++i) {
+		auto vt = static_cast<ViewType>(i);
+		m_controller->GetRenderer(i)->GetOverlayManager()->OnSliceChanged(
+			vt, m_controller->GetSlice(vt));
+		m_controller->GetRenderer(i)->RequestRender();
 	}
 }

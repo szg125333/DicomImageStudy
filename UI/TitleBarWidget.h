@@ -12,7 +12,7 @@ class TitleBarWidget : public QWidget
 public:
 	TitleBarWidget(QWidget *parent = nullptr);
 	~TitleBarWidget();
-	void UpdateContourList(const std::vector<ROIDisplayInfo>& roiList);
+	void SetContourListProvider(std::function<std::vector<ROIDisplayInfo>()> provider);
 
 signals:
 	void requestOpenFolder();
@@ -27,7 +27,6 @@ signals:
 	void requestMode(InteractionMode mode, bool state);
 
 	void roiVisibilityChanged(int roiNumber, bool visible);
-	void requestContourList();  // 请求 Controller 提供 ROI 列表
 
 private slots:
 	void on_NormalMode_toggled(bool state);
@@ -47,6 +46,7 @@ private:
 	Ui::TitleBarWidgetClass ui;
 
 	ContourListPopup* m_contourPopup = nullptr;
+	std::function<std::vector<ROIDisplayInfo>()> m_contourListProvider;
 
 };
 

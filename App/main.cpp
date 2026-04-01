@@ -13,139 +13,103 @@
 #include "UI/LeftToolWidget.h"
 #include "Dicom/DicomMetadataExtractor.h"
 #include "Utils/DicomLoader.h"
-#include "Controller/ThreeViewController.h"    // 控制器实现
-#include "Interface/IViewRenderer.h"
-#include "Renderer/OverlayManager/IOverlayManager.h"
 
 int main(int argc, char* argv[])
 {
-	QApplication app(argc, argv);
+    QApplication app(argc, argv);
 
-	QString exeDir = QCoreApplication::applicationDirPath();
-	QString logPath = exeDir + "/memory_leak_report.txt";
-	std::wstring wlog = logPath.toStdWString();
-	VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, wlog.c_str());
+    QString exeDir = QCoreApplication::applicationDirPath();
+    QString logPath = exeDir + "/memory_leak_report.txt";
+    std::wstring wlog = logPath.toStdWString();
+    VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, wlog.c_str());
 
-	//QString path = "C:\\Workspace\\testData\\PositionTest\\HFS\\CT";
-	//QString path = "C:\\Workspace\\testData\\FZJ";
-	//QString path = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT";
-	//std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+    QString path = "Chest1\\CT";
+    std::string rsPath = "Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
 
-	QString path = "Chest1\\CT";
-	std::string rsPath = "Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+    // ===== 数据加载 =====
+    DicomLoader loader;
+    auto vtkImage = loader.Load(path.toStdString());
 
-	DicomLoader loader;
-	auto vtkImage = loader.Load(path.toStdString());
+    // ===== UI 创建 =====
+    StartWidget startWidget;
+    ThreeViewWidget* threeViewWidget = new ThreeViewWidget(&startWidget);
+    TitleBarWidget* titleBarWidget = new TitleBarWidget(&startWidget);
+    LeftToolWidget* leftToolWidget = new LeftToolWidget(&startWidget);
 
-	ImageOrientationResampler resampler;
-	std::vector<std::string> dicomFiles = resampler.loadDicomSeries(path);
-	dicomFiles = resampler.SortDicomFiles(dicomFiles);
-	auto cbctImage = resampler.ReadDicomSeries(dicomFiles);    // 读取 CBCT 序列
+    // ===== 数据注入 =====
+    threeViewWidget->SetImageData(vtkImage);
+    threeViewWidget->LoadRtStruct(rsPath);
 
-	double  origin1[3];
-	origin1[0] = cbctImage->GetOrigin()[0];
-	origin1[1] = cbctImage->GetOrigin()[1];
-	origin1[2] = cbctImage->GetOrigin()[2];
+    // ===== 布局 =====
+    QSplitter* centralSplitter = new QSplitter(Qt::Horizontal, &startWidget);
+    centralSplitter->setHandleWidth(6);
+    centralSplitter->setChildrenCollapsible(false);
+    centralSplitter->addWidget(leftToolWidget);
+    centralSplitter->addWidget(threeViewWidget);
 
+    QTimer::singleShot(0, [centralSplitter]() {
+        centralSplitter->setSizes({ 200, 800 });
+        });
 
-	using ITKToVTKFilterType = itk::ImageToVTKImageFilter<itk::Image<short, 3>>;
-	auto itkToVtk = ITKToVTKFilterType::New();
-	itkToVtk->SetInput(cbctImage);
-	itkToVtk->Update();
+    QWidget* titleContainer = new QWidget(&startWidget);
+    QHBoxLayout* titleLayout = new QHBoxLayout(titleContainer);
+    titleLayout->setContentsMargins(0, 0, 0, 0);
+    titleLayout->setSpacing(0);
+    titleLayout->addWidget(titleBarWidget);
+    titleLayout->addStretch(1);
 
-	double  origin2[3];
-	origin2[0] = itkToVtk->GetOutput()->GetOrigin()[0];
-	origin2[1] = itkToVtk->GetOutput()->GetOrigin()[1];
-	origin2[2] = itkToVtk->GetOutput()->GetOrigin()[2];
+    QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(startWidget.layout());
+    if (mainLayout) {
+        QWidget* contentContainer = new QWidget(&startWidget);
+        QVBoxLayout* contentLayout = new QVBoxLayout(contentContainer);
+        contentLayout->setContentsMargins(0, 0, 0, 0);
+        contentLayout->setSpacing(0);
+        contentLayout->addWidget(titleContainer, 4);
+        contentLayout->addWidget(centralSplitter, 96);
+        mainLayout->insertWidget(2, contentContainer, 1);
+    }
 
-	StartWidget startWidget;
+    startWidget.showMaximized();
 
-	// 创建子部件
-	ThreeViewWidget* threeViewWidget = new ThreeViewWidget(&startWidget);
-	TitleBarWidget* titleBarWidget = new TitleBarWidget(&startWidget);
-	LeftToolWidget* leftToolWidget = new LeftToolWidget(&startWidget);
+    // ===== 信号连接（只做连接，不做逻辑） =====
 
-	threeViewWidget->SetImageData(vtkImage);
-	threeViewWidget->LoadRtStruct(rsPath);
+    // 工具栏 → 交互模式
+    QObject::connect(titleBarWidget, &TitleBarWidget::requestEnableDistanceMeasurement,
+        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget, &TitleBarWidget::requestEnableAngleMeasurement,
+        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget, &TitleBarWidget::requestEnableNormalMode,
+        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget, &TitleBarWidget::requestRoiNormalMode,
+        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget, &TitleBarWidget::requestFreehandROIMode,
+        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget, &TitleBarWidget::requestCrosshairRulerMode,
+        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
+    QObject::connect(titleBarWidget, &TitleBarWidget::requestMode,
+        threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
 
-	// === 使用 QSplitter 实现可拖拽分栏 ===
-	QSplitter* centralSplitter = new QSplitter(Qt::Horizontal, &startWidget);
-	centralSplitter->setHandleWidth(6);
-	centralSplitter->setChildrenCollapsible(false);
-	centralSplitter->addWidget(leftToolWidget);
-	centralSplitter->addWidget(threeViewWidget);
+    // 工具栏 → 重置视图
+    QObject::connect(titleBarWidget, &TitleBarWidget::requestResetViews,
+        threeViewWidget, &ThreeViewWidget::ResetAllViews);
 
-	// 延迟设置 splitter 尺寸（解决 setSizes 无效问题）
-	QTimer::singleShot(0, [centralSplitter]() {
-		centralSplitter->setSizes({ 200, 800 });
-		});
+    // 图像拖拽 → 左侧面板
+    QObject::connect(threeViewWidget, &ThreeViewWidget::imageDragUpdated,
+        leftToolWidget, &LeftToolWidget::OnDragUpdated);
+    QObject::connect(threeViewWidget, &ThreeViewWidget::imageDragReset,
+        leftToolWidget, &LeftToolWidget::OnDragReset);
 
-	// === 构建带弹簧的标题栏 ===
-	QWidget* titleContainer = new QWidget(&startWidget);
-	QHBoxLayout* titleLayout = new QHBoxLayout(titleContainer);
-	titleLayout->setContentsMargins(0, 0, 0, 0);
-	titleLayout->setSpacing(0);
-	titleLayout->addWidget(titleBarWidget);
-	titleLayout->addStretch(1); // ← 弹簧！让标题靠左
+    // DICOM 元数据 → 左侧面板
+    QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);
+    leftToolWidget->SetDicomMetadata(metadata);
 
-	// === 整体垂直布局：标题栏 + 分栏区域 ===
-	QVBoxLayout* mainLayout = qobject_cast<QVBoxLayout*>(startWidget.layout());
-	if (mainLayout)
-	{
-		QWidget* contentContainer = new QWidget(&startWidget);
-		QVBoxLayout* contentLayout = new QVBoxLayout(contentContainer);
-		contentLayout->setContentsMargins(0, 0, 0, 0);
-		contentLayout->setSpacing(0);
+    // ★ 轮廓列表：注入数据提供者 + 连接可见性变化
+    titleBarWidget->SetContourListProvider([threeViewWidget]() {
+        return threeViewWidget->GetROIList();
+        });
 
-		contentLayout->addWidget(titleContainer, 4);      // ← 新的标题容器
-		contentLayout->addWidget(centralSplitter, 96);
+    QObject::connect(titleBarWidget, &TitleBarWidget::roiVisibilityChanged,
+        threeViewWidget, &ThreeViewWidget::SetROIVisible);
 
-		mainLayout->insertWidget(2, contentContainer, 1);
-	}
-
-	startWidget.showMaximized();
-
-	QObject::connect(titleBarWidget, &TitleBarWidget::requestEnableDistanceMeasurement, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-	QObject::connect(titleBarWidget, &TitleBarWidget::requestEnableAngleMeasurement, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-	QObject::connect(titleBarWidget, &TitleBarWidget::requestEnableNormalMode, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-	QObject::connect(titleBarWidget, &TitleBarWidget::requestRoiNormalMode, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-	QObject::connect(titleBarWidget, &TitleBarWidget::requestResetViews, threeViewWidget, &ThreeViewWidget::ResetAllViews);
-	QObject::connect(titleBarWidget, &TitleBarWidget::requestFreehandROIMode, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-	QObject::connect(titleBarWidget, &TitleBarWidget::requestCrosshairRulerMode, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-
-	QObject::connect(titleBarWidget, &TitleBarWidget::requestMode, threeViewWidget, &ThreeViewWidget::setModeToMeasurement);
-	QObject::connect(threeViewWidget, &ThreeViewWidget::imageDragUpdated,
-		leftToolWidget, &LeftToolWidget::OnDragUpdated);
-
-	QObject::connect(threeViewWidget, &ThreeViewWidget::imageDragReset,
-		leftToolWidget, &LeftToolWidget::OnDragReset);
-	QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);
-	leftToolWidget->SetDicomMetadata(metadata);
-
-
-	// TitleBarWidget 请求列表 → 从 ThreeViewWidget 获取
-	QObject::connect(titleBarWidget, &TitleBarWidget::requestContourList, [threeViewWidget, titleBarWidget]() {
-		auto* mgr = threeViewWidget->getController()->GetRenderer(0)->GetOverlayManager();
-		if (mgr) {
-			titleBarWidget->UpdateContourList(mgr->GetROIList());
-		}
-		});
-
-	// TitleBarWidget 可见性变化 → 更新所有视图
-	QObject::connect(titleBarWidget, &TitleBarWidget::roiVisibilityChanged,
-		[threeViewWidget](int roiNumber, bool visible) {
-			auto* controller = threeViewWidget->getController();
-			for (int i = 0; i < 3; ++i) {
-				auto* mgr = controller->GetRenderer(i)->GetOverlayManager();
-				if (mgr) mgr->SetROIVisible(roiNumber, visible);
-			}
-			for (int i = 0; i < 3; ++i) {
-				auto vt = static_cast<ViewType>(i);
-				controller->GetRenderer(i)->GetOverlayManager()->OnSliceChanged(vt, controller->GetSlice(vt));
-				controller->GetRenderer(i)->RequestRender();
-			}
-		});
-
-	return app.exec();
+    return app.exec();
 }
-
