@@ -118,10 +118,8 @@ void ThreeViewWidget::setupRenderersAndController()
 void ThreeViewWidget::SetImageData(vtkImageData* image)
 {
 	if (!m_controller) return;
-	m_controller->SetImageData(image);
-
-	//std::string rsPath = "C:\\Workspace\\testData\\registrationData\\Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
-	//m_controller->LoadRtStruct(rsPath);
+	//m_controller->SetImageData(image);
+	m_blendController.SetPrimaryImage(image);
 }
 
 void ThreeViewWidget::RequestSetSlice(ViewType view, int slice)
@@ -170,5 +168,21 @@ void ThreeViewWidget::SetROIVisible(int roiNumber, bool visible) {
 		m_controller->GetRenderer(i)->GetOverlayManager()->OnSliceChanged(
 			vt, m_controller->GetSlice(vt));
 		m_controller->GetRenderer(i)->RequestRender();
+	}
+}
+
+void ThreeViewWidget::SetOverlayImage(vtkImageData* cbctImage) {
+	// CBCT 必须已经重采样到与 CT 一致的网格
+	m_blendController.SetSecondaryImage(cbctImage);
+	m_controller->SetImageData(m_blendController.GetBlendedImage());
+}
+
+void ThreeViewWidget::SetBlendRatio(double ratio) {
+	m_blendController.SetBlendRatio(ratio);
+
+	// 获取混合后的图像，更新三视图显示
+	auto* blended = m_blendController.GetBlendedImage();
+	if (blended) {
+		m_controller->SetImageData(blended);
 	}
 }

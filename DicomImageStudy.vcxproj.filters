@@ -157,7 +157,13 @@
     <ClCompile Include="Utils\DicomLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UI\ContourListPopup.cpp">
+    <ClCompile Include="UI\Dialog\ContourListPopup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Controller\Strategy\SliceScrollStrategy\SliceScrollStrategy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Controller\ImageBlend.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -333,6 +339,12 @@
     <ClInclude Include="Common\ROIDisplayInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Controller\Strategy\SliceScrollStrategy\SliceScrollStrategy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Controller\ImageBlend.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="UI\DicomImageStudy.h">
@@ -356,7 +368,7 @@
     <QtMoc Include="UI\LeftToolWidget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="UI\ContourListPopup.h">
+    <QtMoc Include="UI\Dialog\ContourListPopup.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

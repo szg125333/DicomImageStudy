@@ -8,6 +8,7 @@
 #include "Common/ViewTypes.h"
 #include "Common/InteractionMode.h"
 #include "Common/ROIDisplayInfo.h"
+#include "Controller/ImageBlend.h"
 
 class QVTKOpenGLNativeWidget;
 class VtkViewRenderer;
@@ -33,9 +34,19 @@ public:
     std::vector<ROIDisplayInfo> GetROIList() const;
     void SetROIVisible(int roiNumber, bool visible);
 
+    /// 设置叠加图像（CBCT），内部自动重采样
+    void SetOverlayImage(vtkImageData* cbctImage);
+
+    /// 设置混合比例并刷新显示
+    void SetBlendRatio(double ratio);
+
+    /// 获取当前混合比例
+    double GetBlendRatio() const { return m_blendController.GetBlendRatio(); }
+
 public slots:
     void setModeToMeasurement(InteractionMode mode, bool state);
     void ResetAllViews();
+
 
 signals:
     // 对外暴露切片变化信号（由 controller 转发）
@@ -58,6 +69,8 @@ private:
 
     // Controller 可以由外部注入，也可以由 widget 创建并拥有
     ThreeViewController* m_controller = nullptr;
+    ImageBlend m_blendController;
+
     bool m_controllerOwned = false;
 };
 

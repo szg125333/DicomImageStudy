@@ -24,13 +24,20 @@ int main(int argc, char* argv[])
     std::wstring wlog = logPath.toStdWString();
     VLDSetReportOptions(VLD_OPT_REPORT_TO_FILE, wlog.c_str());
 
-    // ===== 数据路径 =====
-    QString path = "Chest1\\CT";
-    std::string rsPath = "Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+    //// ===== 数据路径 =====
+    //QString ctPath = "Chest1\\CT";
+    //QString cbctPath = "Chest1\\CBCT";
+    //std::string rsPath = "Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+    
+    QString ctPath = "C:\\Workspace\\testData\\registrationData\\Head1\\CT";
+    QString cbctPath = "C:\\Workspace\\testData\\registrationData\\Head1\\CBCT";
+    //std::string rsPath = "Chest1\\CT\\RS1.2.752.243.1.1.20240509084617335.3000.36570.dcm";
+
 
     // ===== 数据加载 =====
     DicomLoader loader;
-    auto vtkImage = loader.Load(path.toStdString());
+    auto ctImage = loader.Load(ctPath.toStdString());
+    auto cbctImage = loader.LoadAndResample(cbctPath.toStdString(), ctPath.toStdString());
 
     // ===== UI 创建 =====
     StartWidget startWidget;
@@ -39,9 +46,9 @@ int main(int argc, char* argv[])
     LeftToolWidget* leftToolWidget = new LeftToolWidget(&startWidget);
 
     // ===== 数据注入 =====
-    threeViewWidget->SetImageData(vtkImage);
-    threeViewWidget->LoadRtStruct(rsPath);
-
+    threeViewWidget->SetImageData(ctImage);         // CT 作为主图像
+    threeViewWidget->SetOverlayImage(cbctImage);       // CBCT 作为叠加图像
+    //threeViewWidget->LoadRtStruct(rsPath);
     // ===== 布局 =====
     QSplitter* centralSplitter = new QSplitter(Qt::Horizontal, &startWidget);
     centralSplitter->setHandleWidth(6);
@@ -90,7 +97,7 @@ int main(int argc, char* argv[])
         leftToolWidget, &LeftToolWidget::OnDragReset);
 
     // DICOM 元数据 → 左侧面板
-    QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(path);
+    QMap<QString, QString> metadata = DicomMetadataExtractor::extractFromDirectory(ctPath);
     leftToolWidget->SetDicomMetadata(metadata);
 
     // 轮廓列表：注入数据提供者 + 连接可见性变化

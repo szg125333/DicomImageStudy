@@ -2,60 +2,57 @@
 
 #include <string>
 #include <vector>
-#include <array>
 #include <vtkSmartPointer.h>
+#include <vtkImageData.h>
+#include <itkImage.h>
 
-class vtkImageData;
-
-/**
- * @brief 标准 DICOM CT 序列加载器
- *
- * 设计原则：
- *   加载完成后，vtkImageData 的世界坐标（origin + spacing）
- *   与 DICOM LPS 物理坐标完全对齐，无需任何额外变换。
- *   这样 RT-S 轮廓点（LPS 坐标，mm）可以直接叠加显示，无需坐标转换。
- *
- * 核心流程（正确做法）：
- *   1. ITK 读取 DICOM 序列（保留 LPS origin/spacing/direction）
- *   2. 用 itkOrientImageFilter 把图像重定向为 LPS 标准轴对齐（RAI→LPS）
- *      这一步只是重新排列体素顺序和翻转轴，不做插值，不改变物理坐标系
- *   3. ITK → VTK 转换（itk::ImageToVTKImageFilter）
- *   4. 把 ITK 的 LPS origin 手动设置到 vtkImageData
- *      （因为 ITK→VTK 转换器不传递 origin）
- *
- * 错误做法（之前的问题）：
- *   用 vtkImageReslice 对图像做空间变换 → origin 被重置 → 坐标系漂移
- *
- * 加载结果验证：
- *   vtkImageData::GetOrigin() 应该等于 DICOM Image Position Patient (0020,0032)
- *   vtkImageData::GetSpacing() 应该等于 DICOM Pixel Spacing + Slice Thickness
- */
+/// @brief DICOM 图像加载器
+///
+/// 负责所有 DICOM 图像的加载和预处理工作：
+/// - 加载 DICOM 序列 → vtkImageData（自动处理方向矩阵）
+/// - 加载 CBCT 并重采样到 CT 网格 → vtkImageData
+/// 
+/// 调用者不需要关心 ITK/GDCM 的细节。
 class DicomLoader {
 public:
+    using ITKImageType = itk::Image<short, 3>;
+
     DicomLoader() = default;
+    ~DicomLoader() = default;
 
-    /**
-     * @brief 从文件夹加载 CT DICOM 序列
-     *
-     * @param folderPath  DICOM 文件夹路径
-     * @return            vtkImageData（LPS 坐标系，origin 与 DICOM 对齐）
-     *                    失败返回 nullptr
-     */
-    vtkSmartPointer<vtkImageData> Load(const std::string& folderPath);
+    /// @brief 加载 DICOM 序列并转换为 vtkImageData
+    /// @param dicomFolder DICOM 文件夹路径
+    /// @return vtkImageData 指针，失败返回 nullptr
+    vtkSmartPointer<vtkImageData> Load(const std::string& dicomFolder);
 
-    /**
-     * @brief 获取加载后图像的 LPS origin（供外部验证使用）
-     */
-    std::array<double, 3> GetOrigin() const { return m_origin; }
+    /// @brief 加载 CBCT 并重采样到参考图像（CT）的网格上
+    /// @param cbctFolder CBCT DICOM 文件夹路径
+    /// @param referenceCtFolder CT DICOM 文件夹路径（用于获取目标网格参数）
+    /// @return 重采样后的 vtkImageData，与 CT 具有相同的 spacing/origin/dimensions
+    vtkSmartPointer<vtkImageData> LoadAndResample(
+        const std::string& cbctFolder,
+        const std::string& referenceCtFolder);
 
-    /**
-     * @brief 获取加载后图像的 spacing
-     */
-    std::array<double, 3> GetSpacing() const { return m_spacing; }
+    /// @brief 加载 CBCT 并重采样到已加载的 CT ITK 图像网格上
+    /// @param cbctFolder CBCT DICOM 文件夹路径
+    /// @param referenceCtImage 已加载的 CT ITK 图像
+    /// @return 重采样后的 vtkImageData
+    vtkSmartPointer<vtkImageData> LoadAndResample(
+        const std::string& cbctFolder,
+        ITKImageType::Pointer referenceCtImage);
 
 private:
-    std::vector<std::string> FindDicomFiles(const std::string& folderPath);
+    /// @brief 从文件夹加载排序后的 DICOM 文件列表
+    std::vector<std::string> loadSortedDicomFiles(const std::string& folder);
 
-    std::array<double, 3> m_origin = { 0, 0, 0 };
-    std::array<double, 3> m_spacing = { 1, 1, 1 };
+    /// @brief 读取 DICOM 序列为 ITK 图像
+    ITKImageType::Pointer readDicomAsITK(const std::vector<std::string>& files);
+
+    /// @brief ITK 图像重采样到目标网格
+    ITKImageType::Pointer resampleToReference(
+        ITKImageType::Pointer inputImage,
+        ITKImageType::Pointer referenceImage);
+
+    /// @brief ITK 图像转换为 vtkImageData（包含方向矩阵处理）
+    vtkSmartPointer<vtkImageData> itkToVtk(ITKImageType::Pointer itkImage);
 };

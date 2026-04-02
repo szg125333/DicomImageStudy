@@ -118,6 +118,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App\main.cpp" />
+    <ClCompile Include="Controller\ImageBlend.cpp" />
     <ClCompile Include="Controller\Strategy\AbstractMeasureStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\AngleMeasureStrategy\AngleMeasureStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\CheckboardStrategy\CheckboardStrategy.cpp" />
@@ -128,6 +129,7 @@
     <ClCompile Include="Controller\Strategy\ImageDragStrategy\ImageDragStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\NormalStrategy\NormalStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\RegistrationROIStrategy\RegistrationROIStrategy.cpp" />
+    <ClCompile Include="Controller\Strategy\SliceScrollStrategy\SliceScrollStrategy.cpp" />
     <ClCompile Include="Controller\Strategy\WindowLevelStrategy\WindowLevelStrategy.cpp" />
     <ClCompile Include="Controller\ThreeViewController.cpp" />
     <ClCompile Include="Dicom\DicomMetadataExtractor.cpp" />
@@ -148,7 +150,7 @@
     <ClCompile Include="Renderer\OverlayManager\SimpleOverlayManager.cpp" />
     <ClCompile Include="Renderer\OverlayManager\OverlayInfoManager\SimpleOverlayInfoManager.cpp" />
     <ClCompile Include="Renderer\VtkViewRenderer.cpp" />
-    <ClCompile Include="UI\ContourListPopup.cpp" />
+    <ClCompile Include="UI\Dialog\ContourListPopup.cpp" />
     <ClCompile Include="UI\DicomImageStudy.cpp" />
     <ClCompile Include="UI\LeftToolWidget.cpp" />
     <ClCompile Include="UI\StartWidget.cpp" />
@@ -171,6 +173,7 @@
     <ClInclude Include="Common\RenderViewState.h" />
     <ClInclude Include="Common\ROIDisplayInfo.h" />
     <ClInclude Include="Common\ViewTypes.h" />
+    <ClInclude Include="Controller\ImageBlend.h" />
     <ClInclude Include="Controller\Strategy\AbstractMeasureStrategy.h" />
     <ClInclude Include="Controller\Strategy\AngleMeasureStrategy\AngleMeasureStrategy.h" />
     <ClInclude Include="Controller\Strategy\CheckboardStrategy\CheckboardStrategy.h" />
@@ -182,6 +185,7 @@
     <ClInclude Include="Controller\Strategy\ImageDragStrategy\ImageDragStrategy.h" />
     <ClInclude Include="Controller\Strategy\NormalStrategy\NormalStrategy.h" />
     <ClInclude Include="Controller\Strategy\RegistrationROIStrategy\RegistrationROIStrategy.h" />
+    <ClInclude Include="Controller\Strategy\SliceScrollStrategy\SliceScrollStrategy.h" />
     <ClInclude Include="Controller\Strategy\WindowLevelStrategy\WindowLevelStrategy.h" />
     <ClInclude Include="Dicom\ContourData.h" />
     <ClInclude Include="Dicom\DicomMetadataExtractor.h" />
@@ -218,7 +222,7 @@
     <QtMoc Include="UI\StartWidget.h" />
     <QtMoc Include="UI\TitleBarWidget.h" />
     <QtMoc Include="UI\LeftToolWidget.h" />
-    <QtMoc Include="UI\ContourListPopup.h" />
+    <QtMoc Include="UI\Dialog\ContourListPopup.h" />
     <ClInclude Include="Utils\DicomLoader.h" />
     <ClInclude Include="Utils\ImageOrientationResampler.h" />
     <ClInclude Include="Utils\MyInteractorStyle.h" />

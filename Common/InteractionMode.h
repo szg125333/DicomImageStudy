@@ -16,6 +16,7 @@ enum class InteractionMode :int{
     RegistrationROI,      // 配准 ROI（盒子）模式
     FreehandROI,          // 手工不规则轮廓
     CrosshairRuler,          // 手工不规则轮廓
+    SliceScroll,       
     None                  // 无交互（占位，用于计数或禁用）
 };
 

@@ -10,6 +10,7 @@
 #include "ImageDragStrategy/ImageDragStrategy.h"    // ÐÂÔö
 #include "RulerLineStrategy/RulerLineStrategy.h"
 #include "AngleMeasureStrategy/AngleMeasureStrategy.h"
+#include "SliceScrollStrategy/SliceScrollStrategy.h"
 
 std::map<InteractionMode, std::unique_ptr<IInteractionStrategy>>
 InteractionStrategyFactory::CreateStrategies(IViewController* controller)
@@ -42,6 +43,9 @@ InteractionStrategyFactory::CreateStrategies(IViewController* controller)
 
     strategies[InteractionMode::CrosshairRuler]
         = std::make_unique<RulerLineStrategy>(controller);
+
+    strategies[InteractionMode::SliceScroll]
+        = std::make_unique<SliceScrollStrategy>(controller);
 
     return strategies;
 }

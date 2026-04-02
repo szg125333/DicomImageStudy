@@ -1,5 +1,5 @@
 #include "TitleBarWidget.h"
-#include "ContourListPopup.h"
+#include "Dialog/ContourListPopup.h"
 
 TitleBarWidget::TitleBarWidget(QWidget* parent)
     : QWidget(parent)
@@ -17,10 +17,6 @@ void TitleBarWidget::SetContourListProvider(
     m_contourListProvider = std::move(provider);
 }
 
-// ============================================================
-//  核心：一行绑定一个按钮和一个模式
-// ============================================================
-
 void TitleBarWidget::bindModeButton(QToolButton* button, InteractionMode mode) {
     connect(button, &QToolButton::toggled, this, [this, mode](bool state) {
         emit requestMode(mode, state);
@@ -33,7 +29,6 @@ void TitleBarWidget::bindModeButton(QToolButton* button, InteractionMode mode) {
 
 void TitleBarWidget::initConnections()
 {
-    // 模式按钮：以后加新模式只需加一行
     bindModeButton(ui.NormalMode, InteractionMode::Normal);
     bindModeButton(ui.DistanceMeasurement, InteractionMode::DistanceMeasure);
     bindModeButton(ui.AngleMeasurement, InteractionMode::AngleMeasure);
@@ -41,6 +36,7 @@ void TitleBarWidget::initConnections()
     bindModeButton(ui.FreehandROI, InteractionMode::FreehandROI);
     bindModeButton(ui.CrosshairRuler, InteractionMode::CrosshairRuler);
     bindModeButton(ui.ImageDrag, InteractionMode::ImageDrag);
+    bindModeButton(ui.SliceScrollButton, InteractionMode::SliceScroll);
 
     // 重置视图（click，不是 toggle）
     connect(ui.ResetView, &QToolButton::clicked, this, &TitleBarWidget::requestResetViews);
@@ -142,4 +138,7 @@ void TitleBarWidget::initUI()
 
     ui.CrosshairRuler->setStyleSheet(buttonStyle);
     ui.CrosshairRuler->setIcon(QIcon(":/DicomImageStudy/images/crosshair1.png"));
+
+    ui.SliceScrollButton->setStyleSheet(buttonStyle);
+    ui.SliceScrollButton->setIcon(QIcon(":/DicomImageStudy/images/Updown.png"));
 }

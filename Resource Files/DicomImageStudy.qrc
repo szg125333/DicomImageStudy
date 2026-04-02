@@ -12,5 +12,6 @@
         <file>images/FlatStyle-Squares.png</file>
         <file>images/move.png</file>
         <file>images/FlatStyle-Lasso.png</file>
+        <file>images/Updown.png</file>
     </qresource>
 </RCC>
